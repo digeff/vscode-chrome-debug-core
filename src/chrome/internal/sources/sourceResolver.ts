@@ -5,20 +5,12 @@
 import { ILoadedSource } from './loadedSource';
 import { ISource, SourceToBeResolvedViaPath } from './source';
 import { newResourceIdentifierMap, IResourceIdentifier } from './resourceIdentifier';
-import { IComponent } from '../features/feature';
+import { IComponentWithAsyncInitialization } from '../features/components';
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../../dependencyInjection.ts/types';
 import { IScript } from '../scripts/script';
 
-// TODO: Remove next line and use the import instead
-interface IScriptParsedEvent {
-    readonly script: IScript;
-}
-// import { IScriptParsedEvent } from '../../cdtpDebuggee/eventsProviders/cdtpOnScriptParsedEventProvider';
-
-export interface IEventsConsumedBySourceResolver {
-    onScriptParsed(listener: (scriptEvent: IScriptParsedEvent) => Promise<void>): void;
-}
+import { IScriptParsedEvent, IScriptParsedProvider } from '../../cdtpDebuggee/eventsProviders/cdtpOnScriptParsedEventProvider';
 
 /**
  * The SourceResolver listens to onScriptParsed events to build a map of paths to loaded sources. When an SourceToBeResolvedViaPath is created, it'll store a reference to this object,
@@ -26,11 +18,18 @@ export interface IEventsConsumedBySourceResolver {
  */
 
 @injectable()
-export class SourceResolver implements IComponent {
+export class SourceResolver {
     private _pathToSource = newResourceIdentifierMap<ILoadedSource>();
 
     constructor(
-        @inject(TYPES.EventsConsumedByConnectedCDA) private readonly _dependencies: IEventsConsumedBySourceResolver) { }
+        @inject(TYPES.IScriptParsedProvider) public readonly _cdtpOnScriptParsedEventProvider: IScriptParsedProvider) {
+        this._cdtpOnScriptParsedEventProvider.onScriptParsed(async params => {
+            params.script.allSources.forEach(source => {
+                // The same file can be loaded as a script twice, and different scripts can share the same mapped source, so we ignore exact duplicates
+                this._pathToSource.setAndIgnoreDuplicates(source.identifier, source, (left, right) => left.isEquivalentTo(right));
+            });
+        });
+    }
 
     public tryResolving<R>(sourceIdentifier: IResourceIdentifier,
         succesfulAction: (resolvedSource: ILoadedSource) => R,
@@ -49,16 +48,5 @@ export class SourceResolver implements IComponent {
 
     public toString(): string {
         return `Source resolver { path to source: ${this._pathToSource} }`;
-    }
-
-    public install(): this {
-        this._dependencies.onScriptParsed(async params => {
-            params.script.allSources.forEach(source => {
-                // The same file can be loaded as a script twice, and different scripts can share the same mapped source, so we ignore exact duplicates
-                this._pathToSource.setAndIgnoreDuplicates(source.identifier, source, (left, right) => left.isEquivalentTo(right));
-            });
-        });
-
-        return this;
     }
 }
