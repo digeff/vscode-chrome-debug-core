@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "sourceMap": true,
+        "outFile": "both-shared-libs-combined.js",
+        "module": "amd"
+    },
+    "include": [
+        "shared-ts-lib.ts",
+        "shared-js-lib.ts",
+        "run-ts-lib.ts"
+    ]
+}
