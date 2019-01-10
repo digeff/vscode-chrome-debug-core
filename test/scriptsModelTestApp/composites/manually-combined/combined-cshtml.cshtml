@@ -1,0 +1,160 @@
+<!doctype html>
+<html>
+<head>
+    <title>This web-page has two TypeScript tags</title>
+</head>
+<body>
+    <h1>Hello TypeScript world!</h1>
+    <h2 id="result"></h2>
+    <div id="buttons">
+        <!--
+      <input type="button" value="Console APIs" onclick="consoleAPIs()" />
+        -->
+    </div>
+<script type="text/typescript">
+import { Script } from 'vm';
+
+export class SharedLibTS {
+    private readonly fileTitle = 'cshtml-ts-first-script';
+    private readonly currentScriptURL = this.getCurrentScriptURL();
+    private readonly title = `${this.fileTitle} at ${this.currentScriptURL}`;
+    private readonly buttonsArea = document.getElementById('buttons');
+
+    private getCurrentScript(): HTMLScriptElement {
+        const allScripts = document.getElementsByTagName('script');
+        return allScripts[allScripts.length - 1];
+    }
+
+    private getCurrentScriptURL(): string {
+        return this.getCurrentScript().src;
+    }
+
+    public addButton(): void {
+        const newButton = document.createElement('input');
+        newButton.type = 'button';
+        newButton.value = this.title;
+        newButton.onclick = () => this.onButtonClicked();
+
+        this.buttonsArea.appendChild(newButton);
+        this.buttonsArea.appendChild(document.createElement('br'));
+    }
+
+    private onButtonClicked(): void {
+        console.log(`Button from ${this.title} was clicked message 0`);
+        console.log(`Button from ${this.title} was clicked message 1`);
+        console.log(`Button from ${this.title} was clicked message 2`);
+        console.log(`Button from ${this.title} was clicked message 3`);
+        console.log(`Button from ${this.title} was clicked message 4`);
+        console.log(`Button from ${this.title} was clicked message 5`);
+        console.log(`Button from ${this.title} was clicked message 6`);
+        console.log(`Button from ${this.title} was clicked message 7`);
+        console.log(`Button from ${this.title} was clicked message 8`);
+        console.log(`Button from ${this.title} was clicked message 9`);
+    }
+}
+
+new SharedLibTS().addButton();    
+</script>
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sodales, sapien sed porttitor ultrices, velit ligula consequat nunc, id laoreet enim lacus ut metus. Vivamus bibendum tincidunt facilisis. Nullam vehicula augue a sem dignissim tristique. Quisque suscipit ut magna et accumsan. Duis vitae urna faucibus, tempor urna non, tristique orci. Suspendisse potenti. Sed ac tortor condimentum, finibus metus vel, blandit justo. Donec risus felis, gravida ac leo ut, consequat eleifend ligula. Donec venenatis augue vel gravida consectetur. Phasellus consequat dolor id vulputate mattis. Nunc eu scelerisque mauris, non eleifend nibh.
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sodales, sapien sed porttitor ultrices, velit ligula consequat nunc, id laoreet enim lacus ut metus. Vivamus bibendum tincidunt facilisis. Nullam vehicula augue a sem dignissim tristique. Quisque suscipit ut magna et accumsan. Duis vitae urna faucibus, tempor urna non, tristique orci. Suspendisse potenti. Sed ac tortor condimentum, finibus metus vel, blandit justo. Donec risus felis, gravida ac leo ut, consequat eleifend ligula. Donec venenatis augue vel gravida consectetur. Phasellus consequat dolor id vulputate mattis. Nunc eu scelerisque mauris, non eleifend nibh.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sodales, sapien sed porttitor ultrices, velit ligula consequat nunc, id laoreet enim lacus ut metus. Vivamus bibendum tincidunt facilisis. Nullam vehicula augue a sem dignissim tristique. Quisque suscipit ut magna et accumsan. Duis vitae urna faucibus, tempor urna non, tristique orci. Suspendisse potenti. Sed ac tortor condimentum, finibus metus vel, blandit justo. Donec risus felis, gravida ac leo ut, consequat eleifend ligula. Donec venenatis augue vel gravida consectetur. Phasellus consequat dolor id vulputate mattis. Nunc eu scelerisque mauris, non eleifend nibh.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sodales, sapien sed porttitor ultrices, velit ligula consequat nunc, id laoreet enim lacus ut metus. Vivamus bibendum tincidunt facilisis. Nullam vehicula augue a sem dignissim tristique. Quisque suscipit ut magna et accumsan. Duis vitae urna faucibus, tempor urna non, tristique orci. Suspendisse potenti. Sed ac tortor condimentum, finibus metus vel, blandit justo. Donec risus felis, gravida ac leo ut, consequat eleifend ligula. Donec venenatis augue vel gravida consectetur. Phasellus consequat dolor id vulputate mattis. Nunc eu scelerisque mauris, non eleifend nibh.
+
+
+
+
+
+
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sodales, sapien sed porttitor ultrices, velit ligula consequat nunc, id laoreet enim lacus ut metus. Vivamus bibendum tincidunt facilisis. Nullam vehicula augue a sem dignissim tristique. Quisque suscipit ut magna et accumsan. Duis vitae urna faucibus, tempor urna non, tristique orci. Suspendisse potenti. Sed ac tortor condimentum, finibus metus vel, blandit justo. Donec risus felis, gravida ac leo ut, consequat eleifend ligula. Donec venenatis augue vel gravida consectetur. Phasellus consequat dolor id vulputate mattis. Nunc eu scelerisque mauris, non eleifend nibh
+<script type="text/typescript">
+import { Script } from 'vm';
+
+export class SharedLibTS {
+    private readonly fileTitle = 'cshtml-ts-second-script';
+    private readonly currentScriptURL = this.getCurrentScriptURL();
+    private readonly title = `${this.fileTitle} at ${this.currentScriptURL}`;
+    private readonly buttonsArea = document.getElementById('buttons');
+
+    private getCurrentScript(): HTMLScriptElement {
+        const allScripts = document.getElementsByTagName('script');
+        return allScripts[allScripts.length - 1];
+    }
+
+    private getCurrentScriptURL(): string {
+        return this.getCurrentScript().src;
+    }
+
+    public addButton(): void {
+        const newButton = document.createElement('input');
+        newButton.type = 'button';
+        newButton.value = this.title;
+        newButton.onclick = () => this.onButtonClicked();
+
+        this.buttonsArea.appendChild(newButton);
+        this.buttonsArea.appendChild(document.createElement('br'));
+    }
+
+    private onButtonClicked(): void {
+        console.log(`Button from ${this.title} was clicked message 0`);
+        console.log(`Button from ${this.title} was clicked message 1`);
+        console.log(`Button from ${this.title} was clicked message 2`);
+        console.log(`Button from ${this.title} was clicked message 3`);
+        console.log(`Button from ${this.title} was clicked message 4`);
+        console.log(`Button from ${this.title} was clicked message 5`);
+        console.log(`Button from ${this.title} was clicked message 6`);
+        console.log(`Button from ${this.title} was clicked message 7`);
+        console.log(`Button from ${this.title} was clicked message 8`);
+        console.log(`Button from ${this.title} was clicked message 9`);
+    }
+}
+
+new SharedLibTS().addButton();    
+</script>
+<script src="originalSources/shared-js-lib.js">
+</script>
+<script src="originalSources/shared-js-lib.js">
+</script>
+<script src="originalSources/shared-ts-lib.js">
+</script>
+</html>

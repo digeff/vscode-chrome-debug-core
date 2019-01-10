@@ -16,7 +16,7 @@ export interface IExecutionContext {
 export class ExecutionContext implements IExecutionContext {
     private _isDestroyed = false;
 
-    public constructor(public readonly frameId: FrameId) {}
+    public constructor(public readonly frameId: FrameId) { }
 
     public isDestroyed(): boolean {
         return this._isDestroyed;
