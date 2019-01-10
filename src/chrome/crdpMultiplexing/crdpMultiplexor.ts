@@ -58,7 +58,7 @@ export class CRDPMultiplexor {
     private _channels: CRDPChannel[] = [];
 
     constructor(private _wrappedLikeSocket: LikeSocket) {
-        this._wrappedLikeSocket.on('message', data => this.onMessage(data));
+        this._wrappedLikeSocket.on('message', (data: string) => this.onMessage(data));
     }
 
     private onMessage(data: string): void {
