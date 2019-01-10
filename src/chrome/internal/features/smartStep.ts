@@ -24,13 +24,13 @@ export interface ISmartStepLogicConfiguration {
 }
 
 export interface IShouldStepInToAvoidSkippedSourceDependencies {
-    stepIntoDebugee(): Promise<void>;
+    stepIntoDebuggee(): Promise<void>;
 }
 export class ShouldStepInToAvoidSkippedSource extends BaseActionToTakeWhenPaused {
     private readonly _dependencies: IShouldStepInToAvoidSkippedSourceDependencies;
 
     public async execute(): Promise<void> {
-        return this._dependencies.stepIntoDebugee();
+        return this._dependencies.stepIntoDebuggee();
     }
 }
 
