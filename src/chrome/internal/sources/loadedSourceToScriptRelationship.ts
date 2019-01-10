@@ -2,7 +2,7 @@ import { IScript } from '../scripts/script';
 import { UnmappedSourceMapper } from '../scripts/sourcesMapper';
 import { ILoadedSource, ScriptAndSourceMapper } from './loadedSource';
 
-export interface ILoadedSourceToScriptRelationship {
+export interface  ILoadedSourceToScriptRelationship {
     readonly scriptAndSourceMapper: ScriptAndSourceMapper;
     readonly script: IScript;
 }

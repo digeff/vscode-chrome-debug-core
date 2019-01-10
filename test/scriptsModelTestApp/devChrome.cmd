@@ -1,0 +1,1 @@
+start "Chrome" "%PROGRAMFILES(X86)%\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --user-data-dir=%TEMP%/dev-chrome-profile --disable-web-security -–allow-file-access-from-files "http://127.0.0.1:8081/combined-cshtml.html" "https://pastcompute.github.io/ScriptMapper/" "http://localhost:9222"

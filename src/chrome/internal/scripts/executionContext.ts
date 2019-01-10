@@ -1,6 +1,4 @@
-// TODO: Remove next line and use the import instead
-type FrameId = number;
-// import { FrameId } from '../../cdtpDebuggee/cdtpPrimitives';
+import { FrameId } from '../../cdtpDebuggee/cdtpPrimitives';
 
 /*---------------------------------------------------------
  * Copyright (C) Microsoft Corporation. All rights reserved.
@@ -18,7 +16,7 @@ export interface IExecutionContext {
 export class ExecutionContext implements IExecutionContext {
     private _isDestroyed = false;
 
-    public constructor(public readonly frameId: FrameId) {}
+    public constructor(public readonly frameId: FrameId) { }
 
     public isDestroyed(): boolean {
         return this._isDestroyed;

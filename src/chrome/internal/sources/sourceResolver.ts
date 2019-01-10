@@ -10,11 +10,7 @@ import { injectable, inject } from 'inversify';
 import { TYPES } from '../../dependencyInjection.ts/types';
 import { IScript } from '../scripts/script';
 
-// TODO: Remove next line and use the import instead
-interface IScriptParsedEvent {
-    readonly script: IScript;
-}
-// import { IScriptParsedEvent } from '../../cdtpDebuggee/eventsProviders/cdtpOnScriptParsedEventProvider';
+import { IScriptParsedEvent } from '../../cdtpDebuggee/eventsProviders/cdtpOnScriptParsedEventProvider';
 
 export interface IEventsConsumedBySourceResolver {
     onScriptParsed(listener: (scriptEvent: IScriptParsedEvent) => Promise<void>): void;
@@ -25,7 +21,7 @@ export interface IEventsConsumedBySourceResolver {
  * and use it when it tries to resolve the path to a loaded source
  */
 
- @injectable()
+@injectable()
 export class SourceResolver implements IComponent {
     private _pathToSource = newResourceIdentifierMap<ILoadedSource>();
 
