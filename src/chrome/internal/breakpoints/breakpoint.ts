@@ -5,7 +5,7 @@
 import { LocationInScript, LocationInLoadedSource } from '../locations/location';
 import { IScript } from '../scripts/script';
 import { URLRegexp } from '../locations/subtypes';
-import { IResourceIdentifier } from '../sources/resourceIdentifier';
+import { IResourceIdentifier, IURL } from '../sources/resourceIdentifier';
 import { CDTPScriptUrl } from '../sources/resourceIdentifierSubtypes';
 import { ISource } from '../sources/source';
 import { IMappedBPRecipe } from './baseMappedBPRecipe';
@@ -45,6 +45,10 @@ export class MappableBreakpoint<TResource extends MappableBPPossibleResources> e
         super();
     }
 }
+
+export class BreakpointInScript extends MappableBreakpoint<IScript> { }
+
+export class BreakpointInUrl extends MappableBreakpoint<IURL<CDTPScriptUrl>> { }
 
 export class BreakpointInSource extends BaseBreakpoint<ISource> {
     constructor(public readonly recipe: BPRecipeInSource, public readonly actualLocation: ActualLocation<ISource>) {

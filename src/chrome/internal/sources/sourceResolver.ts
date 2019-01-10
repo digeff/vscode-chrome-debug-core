@@ -8,12 +8,7 @@ import { newResourceIdentifierMap, IResourceIdentifier } from './resourceIdentif
 import { IComponent } from '../features/feature';
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../../dependencyInjection.ts/types';
-import { IScript } from '../scripts/script';
-
-// TODO: Delete this and use the proper interface
-interface IScriptParsedEvent {
-    script: IScript;
-}
+import { IScriptParsedEvent } from '../../cdtpDebuggee/eventsProviders/cdtpOnScriptParsedEventProvider';
 
 export interface IEventsConsumedBySourceResolver {
     onScriptParsed(listener: (scriptEvent: IScriptParsedEvent) => Promise<void>): void;
