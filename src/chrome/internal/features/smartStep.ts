@@ -16,7 +16,8 @@ import * as nls from 'vscode-nls';
 import { injectable, inject } from 'inversify';
 import { IStackTracePresentationLogicProvider } from '../stackTraces/stackTracesLogic';
 import { TYPES } from '../../dependencyInjection.ts/types';
-import { utils, ConnectedCDAConfiguration } from '../../..';
+import { ConnectedCDAConfiguration } from '../../client/chromeDebugAdapter/cdaConfiguration';
+import * as utils from '../../../utils';
 const localize = nls.loadMessageBundle();
 
 export interface IEventsConsumedBySmartStepLogic {

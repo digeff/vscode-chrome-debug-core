@@ -1,6 +1,10 @@
 /*---------------------------------------------------------
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
+import { breakWhileDebugging } from '../../validation';
+import _ = require('lodash');
+import { printTopLevelObjectDescription } from './printObjectDescription';
+import { logger } from 'vscode-debugadapter';
 
 enum Synchronicity {
     Sync,
@@ -12,6 +16,16 @@ enum Outcome {
     Failure
 }
 
+export class ReplacementInstruction {
+    public constructor(
+        public readonly pattern: RegExp,
+        public readonly replacement: string) { }
+}
+
+export class MethodsCalledLoggerConfiguration {
+    public constructor(readonly replacements: ReplacementInstruction[]) { }
+}
+
 export class MethodsCalledLogger<T extends object> {
     public wrapped(): T {
         const handler = {
@@ -21,8 +35,9 @@ export class MethodsCalledLogger<T extends object> {
                     return (...args: any) => {
                         try {
                             const result = originalPropertyValue.apply(target, args);
-                            if (!result.then) {
+                            if (!result || !result.then) {
                                 this.logCall(propertyKey, Synchronicity.Sync, args, Outcome.Succesful, result);
+                                return result;
                             } else {
                                 return result.then((promiseResult: unknown) => {
                                     this.logCall(propertyKey, Synchronicity.Async, args, Outcome.Succesful, promiseResult);
@@ -34,6 +49,7 @@ export class MethodsCalledLogger<T extends object> {
                             }
                         } catch (exception) {
                             this.logCall(propertyKey, Synchronicity.Sync, args, Outcome.Failure, exception);
+                            throw exception;
                         }
                     };
                 } else {
@@ -59,7 +75,7 @@ export class MethodsCalledLogger<T extends object> {
 
     private logCall(propertyKey: PropertyKey, synchronicity: Synchronicity, methodCallArguments: any[], outcome: Outcome, resultOrException: unknown): void {
         const message = `${this.printMethodCall(propertyKey, methodCallArguments)} ${this.printMethodSynchronicity(synchronicity)}  ${this.printMethodResponse(outcome, resultOrException)}`;
-        console.log(message);
+        logger.verbose(message);
     }
 
     private printArguments(methodCallArguments: any[]): string {
@@ -67,8 +83,22 @@ export class MethodsCalledLogger<T extends object> {
     }
 
     private printObject(objectToPrint: unknown): string {
-        return `${objectToPrint}`;
+        const description = printTopLevelObjectDescription(objectToPrint);
+        const printtedReduced = _.reduce(Array.from(this._configuration.replacements),
+            (text, replacement) =>
+                text.replace(replacement.pattern, replacement.replacement),
+            description);
+
+        return printtedReduced;
     }
 
-    constructor(private readonly _objectToWrap: T, private readonly _objectToWrapName: string) { }
+    constructor(
+        private readonly _configuration: MethodsCalledLoggerConfiguration,
+        private readonly _objectToWrap: T,
+        private readonly _objectToWrapName: string) {
+    }
+}
+
+export function wrapWithMethodLogger<T extends object>(objectToWrap: T, objectToWrapName = `${objectToWrap}`): T {
+    return new MethodsCalledLogger(new MethodsCalledLoggerConfiguration([]), objectToWrap, objectToWrapName).wrapped();
 }

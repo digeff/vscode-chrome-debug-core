@@ -5,7 +5,6 @@
 import { InformationAboutPausedProvider, NotifyStoppedCommonLogic } from '../features/takeProperActionOnPausedEvent';
 import { IComponent } from '../features/feature';
 import * as errors from '../../../errors';
-import { utils } from '../../..';
 import { FormattedExceptionParser, IFormattedExceptionLineDescription } from '../formattedExceptionParser';
 import { IPauseOnPromiseRejectionsStrategy, IPauseOnExceptionsStrategy } from './strategies';
 import { VoteRelevance, IVote, Abstained } from '../../communication/collaborativeDecision';
@@ -15,6 +14,7 @@ import { IEventsToClientReporter } from '../../client/eventSender';
 import { DeleteMeScriptsRegistry } from '../scripts/scriptsRegistry';
 import { PausedEvent } from '../../cdtpDebuggee/eventsProviders/cdtpDebuggeeExecutionEventsProvider';
 import { IPauseOnExceptionsConfigurer } from '../../cdtpDebuggee/features/cdtpPauseOnExceptionsConfigurer';
+import * as utils from '../../../utils';
 
 type ExceptionBreakMode = 'never' | 'always' | 'unhandled' | 'userUnhandled';
 

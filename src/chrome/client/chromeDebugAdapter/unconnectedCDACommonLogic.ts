@@ -2,10 +2,10 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { ITelemetryPropertyCollector, ISetBreakpointsResponseBody, IStackTraceResponseBody, IScopesResponseBody, IVariablesResponseBody, ISourceResponseBody, IEvaluateResponseBody, IGetLoadedSourcesResponseBody } from '../../../debugAdapterInterfaces';
+import { ITelemetryPropertyCollector, ISetBreakpointsResponseBody, IStackTraceResponseBody, IScopesResponseBody, IVariablesResponseBody, ISourceResponseBody, IEvaluateResponseBody, IGetLoadedSourcesResponseBody, IDebugAdapterState, ILaunchRequestArgs, IAttachRequestArgs, IExceptionInfoResponseBody, IToggleSkipFileStatusArgs } from '../../../debugAdapterInterfaces';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { ChromeDebugLogic, ILaunchRequestArgs, IAttachRequestArgs, IExceptionInfoResponseBody, IDebugAdapterState, IToggleSkipFileStatusArgs } from '../../..';
 import { PromiseOrNot } from '../../utils/promises';
+import { ChromeDebugLogic } from '../../chromeDebugAdapter';
 
 export abstract class BaseUnconnectedCDA implements IDebugAdapterState {
     public abstract chromeDebugAdapter(): ChromeDebugLogic;

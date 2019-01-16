@@ -4,7 +4,8 @@
 
 import { BaseWrappedSession } from './session';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { utils } from '../..';
+import { ValidatedSet } from '../collections/validatedSet';
+import * as utils from '../../utils';
 
 const steppingRequests = {
     continue: true,

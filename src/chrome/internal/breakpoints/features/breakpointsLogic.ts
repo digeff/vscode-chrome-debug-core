@@ -3,14 +3,13 @@
  *--------------------------------------------------------*/
 
 import { IBPRecipe } from '../bpRecipe';
-import { ITelemetryPropertyCollector, IComponent, ConnectedCDAConfiguration } from '../../../..';
 import { BPRecipesInSource, BPRecipesInLoadedSource } from '../bpRecipes';
-import { ReAddBPsWhenSourceIsLoaded, IEventsConsumedByReAddBPsWhenSourceIsLoaded } from './reAddBPsWhenSourceIsLoaded';
+import { ExistingBPsForJustParsedScriptSetter } from './existingBPsForJustParsedScriptSetter';
 import { asyncMap } from '../../../collections/async';
 import { IBPRecipeStatus } from '../bpRecipeStatus';
 import { ClientCurrentBPRecipesRegistry } from '../registries/clientCurrentBPRecipesRegistry';
 import { BreakpointsRegistry } from '../registries/breakpointsRegistry';
-import { BPRecipeAtLoadedSourceLogic } from './bpRecipeAtLoadedSourceLogic';
+import { BPRecipeAtLoadedSourceLogic, IBreakpointsInLoadedSource } from './bpRecipeAtLoadedSourceLogic';
 import { RemoveProperty } from '../../../../typeUtils';
 import { IEventsToClientReporter } from '../../../client/eventSender';
 import { PauseScriptLoadsToSetBPs, IPauseScriptLoadsToSetBPsDependencies } from './pauseScriptLoadsToSetBPs';
@@ -20,9 +19,19 @@ import { IDebuggeeBreakpoints } from '../../../cdtpDebuggee/features/cdtpDebugge
 import { BPRsDeltaInRequestedSource } from './bpsDeltaCalculator';
 import { CDTPBreakpoint } from '../../../cdtpDebuggee/cdtpPrimitives';
 import { ISource } from '../../sources/source';
+import { IComponent } from '../../features/feature';
+import { ITelemetryPropertyCollector } from '../../../..';
+import { ConnectedCDAConfiguration } from '../../../client/chromeDebugAdapter/cdaConfiguration';
+import { IScriptParsedProvider } from '../../../cdtpDebuggee/eventsProviders/cdtpOnScriptParsedEventProvider';
+import { DebuggeeBPRsSetForClientBPRFinder } from '../registries/debuggeeBPRsSetForClientBPRFinder';
+import { BPRecipeInSource } from '../bpRecipeInSource';
+import { IDOMInstrumentationBreakpoints } from '../../../cdtpDebuggee/features/cdtpDOMInstrumentationBreakpoints';
+import { IDebugeeExecutionController } from '../../../cdtpDebuggee/features/cdtpDebugeeExecutionController';
+import { IDebugeeRuntimeVersionProvider } from '../../../cdtpDebuggee/features/cdtpDebugeeRuntimeVersionProvider';
+import { IBreakpointFeaturesSupport } from '../../../cdtpDebuggee/features/cdtpBreakpointFeaturesSupport';
+import { wrapWithMethodLogger } from '../../../logging/methodsCalledLogger';
 
 export interface InternalDependencies extends
-    IEventsConsumedByReAddBPsWhenSourceIsLoaded,
     IPauseScriptLoadsToSetBPsDependencies {
 
     onAsyncBreakpointResolved(listener: (params: CDTPBreakpoint) => void): void;
@@ -31,28 +40,39 @@ export interface InternalDependencies extends
 export type EventsConsumedByBreakpointsLogic = RemoveProperty<InternalDependencies,
     'waitUntilUnboundBPsAreSet' |
     'notifyAllBPsAreBound' |
-    'tryGettingBreakpointAtLocation'> & { onNoPendingBreakpoints(listener: () => void): void };
+    'tryGettingBreakpointAtLocation'> & IPauseScriptLoadsToSetBPsDependencies;
 
 @injectable()
 export class BreakpointsLogic implements IComponent {
-    private _isBpsWhileLoadingEnable: boolean;
+    private readonly _clientCurrentBPRecipesRegistry = wrapWithMethodLogger(new ClientCurrentBPRecipesRegistry(), 'ClientCurrentBPRecipesRegistry');
+    private readonly _debuggeeBPRsSetForClientBPRFinder = wrapWithMethodLogger(new DebuggeeBPRsSetForClientBPRFinder(), 'DebuggeeBPRsSetForClientBPRFinder');
+    private readonly _breakpointRegistry = wrapWithMethodLogger(new BreakpointsRegistry({ onBPRecipeStatusChanged: recipie => this.onUnbounBPRecipeIsNowBound(recipie) }), 'BreakpointsRegistry');
 
-    private readonly _clientBreakpointsRegistry = new ClientCurrentBPRecipesRegistry();
+    private readonly _breakpointsInLoadedSource = new BPRecipeAtLoadedSourceLogic(this._dependencies, this._breakpointFeaturesSupport, this._breakpointRegistry, this._debuggeeBPRsSetForClientBPRFinder,
+        this._targetBreakpoints, this._eventsToClientReporter).withLogging;
+
+    private readonly _existingBPsForJustParsedScriptSetter = new ExistingBPsForJustParsedScriptSetter({ onBPRecipeStatusChanged: (bpr: BPRecipeInSource) => this.onUnbounBPRecipeIsNowBound(bpr) },
+        this._scriptParsedProvider, this._debuggeeBPRsSetForClientBPRFinder, this._clientCurrentBPRecipesRegistry, this._breakpointsInLoadedSource, this._breakpointRegistry).withLogging;
+
+    private readonly _bpsWhileLoadingLogic: PauseScriptLoadsToSetBPs = new PauseScriptLoadsToSetBPs(this._dependencies, this._domInstrumentationBreakpoints, this._debugeeExecutionControl, this._eventsToClientReporter,
+        this._debugeeVersionProvider, this._existingBPsForJustParsedScriptSetter, this._breakpointRegistry).withLogging;
+
+    private _isBpsWhileLoadingEnable: boolean;
 
     protected onBreakpointResolved(breakpoint: CDTPBreakpoint): void {
         this._breakpointRegistry.registerBreakpointAsBound(breakpoint);
         this.onUnbounBPRecipeIsNowBound(breakpoint.recipe.unmappedBPRecipe);
     }
 
-    private onUnbounBPRecipeIsNowBound(bpRecipe: IBPRecipe<ISource>): void {
+    private onUnbounBPRecipeIsNowBound(bpRecipe: BPRecipeInSource): void {
         const bpRecipeStatus = this._breakpointRegistry.getStatusOfBPRecipe(bpRecipe);
-        this._eventsToClientReporter.sendBPStatusChanged({ reason: 'changed', bpRecipeStatus });
+        this._eventsToClientReporter.sendBPStatusChanged({ reason: 'changed', bpRecipeStatus: bpRecipeStatus });
     }
 
     public async updateBreakpointsForFile(requestedBPs: BPRecipesInSource, _?: ITelemetryPropertyCollector): Promise<IBPRecipeStatus[]> {
-        const bpsDelta = this._clientBreakpointsRegistry.updateBPRecipesAndCalculateDelta(requestedBPs);
+        const bpsDelta = this._clientCurrentBPRecipesRegistry.updateBPRecipesAndCalculateDelta(requestedBPs);
         const requestedBPsToAdd = new BPRecipesInSource(bpsDelta.resource, bpsDelta.requestedToAdd);
-        bpsDelta.requestedToAdd.forEach(requestedBP => this._breakpointRegistry.registerBPRecipe(requestedBP));
+        bpsDelta.requestedToAdd.forEach(requestedBP => this._breakpointRegistry.registerBPRecipeIfNeeded(requestedBP));
 
         await requestedBPsToAdd.tryResolving(
             async requestedBPsToAddInLoadedSources => {
@@ -72,7 +92,6 @@ export class BreakpointsLogic implements IComponent {
                 if (this._isBpsWhileLoadingEnable) {
                     this._bpsWhileLoadingLogic.enableIfNeccesary();
                 }
-                this._unbindedBreakpointsLogic.replaceBPsForSourceWith(requestedBPsPendingToAdd);
             });
 
         return bpsDelta.matchesForRequested.map(bpRecipe => this._breakpointRegistry.getStatusOfBPRecipe(bpRecipe));
@@ -80,39 +99,41 @@ export class BreakpointsLogic implements IComponent {
 
     private async removeDeletedBreakpointsFromFile(bpsDelta: BPRsDeltaInRequestedSource) {
         await asyncMap(bpsDelta.existingToRemove, async (existingBPToRemove) => {
-            await this._bprInLoadedSourceLogic.removeBreakpoint(existingBPToRemove);
+            await this._breakpointsInLoadedSource.removeBreakpoint(existingBPToRemove);
         });
     }
 
     private async addNewBreakpointsForFile(requestedBPsToAddInLoadedSources: BPRecipesInLoadedSource) {
         await asyncMap(requestedBPsToAddInLoadedSources.breakpoints, async (requestedBP) => {
             // DIEGO TODO: Do we need to do one breakpoint at a time to avoid issues on CDTP, or can we do them in parallel now that we use a different algorithm?
-            await this._bprInLoadedSourceLogic.addBreakpointAtLoadedSource(requestedBP);
+            await this._breakpointsInLoadedSource.addBreakpointAtLoadedSource(requestedBP);
         });
     }
 
     public install(): this {
-        this._unbindedBreakpointsLogic.install();
+        this._existingBPsForJustParsedScriptSetter.install();
         this._bpsWhileLoadingLogic.install();
-        this._dependencies.onNoPendingBreakpoints(() => this._bpsWhileLoadingLogic.disableIfNeccesary());
         this._debuggeeBreakpoints.onBreakpointResolvedSyncOrAsync(breakpoint => this.onBreakpointResolved(breakpoint));
-        this._bprInLoadedSourceLogic.install();
+        this._breakpointsInLoadedSource.install();
         return this.configure();
     }
 
     public configure(): this {
         this._isBpsWhileLoadingEnable = this._configuration.args.breakOnLoadStrategy !== 'off';
         return this;
+
     }
 
     constructor(
         @inject(TYPES.EventsConsumedByConnectedCDA) private readonly _dependencies: EventsConsumedByBreakpointsLogic,
-        @inject(TYPES.BreakpointsRegistry) private readonly _breakpointRegistry: BreakpointsRegistry,
-        @inject(TYPES.ReAddBPsWhenSourceIsLoaded) private readonly _unbindedBreakpointsLogic: ReAddBPsWhenSourceIsLoaded,
-        @inject(TYPES.PauseScriptLoadsToSetBPs) private readonly _bpsWhileLoadingLogic: PauseScriptLoadsToSetBPs,
-        @inject(TYPES.BPRecipeInLoadedSourceLogic) private readonly _bprInLoadedSourceLogic: BPRecipeAtLoadedSourceLogic,
-        @inject(TYPES.EventSender) private readonly _eventsToClientReporter: IEventsToClientReporter,
         @inject(TYPES.ITargetBreakpoints) private readonly _debuggeeBreakpoints: IDebuggeeBreakpoints,
-        @inject(TYPES.ConnectedCDAConfiguration) private readonly _configuration: ConnectedCDAConfiguration) {
+        @inject(TYPES.ConnectedCDAConfiguration) private readonly _configuration: ConnectedCDAConfiguration,
+        @inject(TYPES.IScriptParsedProvider) private readonly _scriptParsedProvider: IScriptParsedProvider,
+        @inject(TYPES.IDOMInstrumentationBreakpoints) private readonly _domInstrumentationBreakpoints: IDOMInstrumentationBreakpoints,
+        @inject(TYPES.IDebugeeExecutionControl) private readonly _debugeeExecutionControl: IDebugeeExecutionController,
+        @inject(TYPES.IEventsToClientReporter) protected readonly _eventsToClientReporter: IEventsToClientReporter,
+        @inject(TYPES.IBreakpointFeaturesSupport) private readonly _breakpointFeaturesSupport: IBreakpointFeaturesSupport,
+        @inject(TYPES.ITargetBreakpoints) private readonly _targetBreakpoints: IDebuggeeBreakpoints,
+        @inject(TYPES.IDebugeeVersionProvider) protected readonly _debugeeVersionProvider: IDebugeeRuntimeVersionProvider) {
     }
 }

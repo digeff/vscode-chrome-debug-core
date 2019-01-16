@@ -4,22 +4,23 @@
 
 import { inject, injectable, LazyServiceIdentifer } from 'inversify';
 import { logger } from 'vscode-debugadapter/lib/logger';
+import { StackTracesLogic, IStackTracePresentationLogicProvider } from '../stackTraces/stackTracesLogic';
+import { newResourceIdentifierMap, IResourceIdentifier, parseResourceIdentifier } from '../sources/resourceIdentifier';
+import { IComponent } from './feature';
+import { LocationInLoadedSource, LocationInScript, Position } from '../locations/location';
+import { ICallFramePresentationDetails, CallFramePresentation } from '../stackTraces/callFramePresentation';
 import * as nls from 'vscode-nls';
 import { IToggleSkipFileStatusArgs } from '../../../debugAdapterInterfaces';
 import * as utils from '../../../utils';
 import { IScriptParsedEvent } from '../../cdtpDebuggee/eventsProviders/cdtpOnScriptParsedEventProvider';
 import { IBlackboxPatternsConfigurer } from '../../cdtpDebuggee/features/cdtpBlackboxPatternsConfigurer';
 import { ConnectedCDAConfiguration } from '../../client/chromeDebugAdapter/cdaConfiguration';
+import { ILoadedSource } from '../sources/loadedSource';
+import { asyncMap } from '../../collections/async';
+import { createLineNumber, createColumnNumber } from '../locations/subtypes';
 import { ClientToInternal } from '../../client/clientToInternal';
-import { TYPES } from '../../dependencyInjection.ts/types';
-import { LocationInLoadedSource } from '../locations/location';
-import { createColumnNumber, createLineNumber } from '../locations/subtypes';
 import { IScript } from '../scripts/script';
-import { IPositionInScript } from '../scripts/sourcesMapper';
-import { IResourceIdentifier, newResourceIdentifierMap } from '../sources/resourceIdentifier';
-import { CallFramePresentation, ICallFramePresentationDetails } from '../stackTraces/callFramePresentation';
-import { IStackTracePresentationLogicProvider, StackTracesLogic } from '../stackTraces/stackTracesLogic';
-import { IComponent } from './feature';
+import { TYPES } from '../../dependencyInjection.ts/types';
 const localize = nls.loadMessageBundle();
 
 export interface IEventsConsumedBySkipFilesLogic {
@@ -41,13 +42,13 @@ export class SkipFilesLogic implements IComponent<ISkipFilesConfiguration>, ISta
      * If the source has a saved skip status, return that, whether true or false.
      * If not, check it against the patterns list.
      */
-    public shouldSkipSource(sourcePath: IResourceIdentifier): boolean | undefined {
+    public shouldSkipSource(sourcePath: ILoadedSource): boolean | undefined {
         const status = this.getSkipStatus(sourcePath);
         if (typeof status === 'boolean') {
             return status;
         }
 
-        if (this.matchesSkipFilesPatterns(sourcePath)) {
+        if (this.matchesSkipFilesPatterns(sourcePath.identifier)) {
             return true;
         }
 
@@ -55,7 +56,7 @@ export class SkipFilesLogic implements IComponent<ISkipFilesConfiguration>, ISta
     }
 
     public getCallFrameAdditionalDetails(locationInLoadedSource: LocationInLoadedSource): ICallFramePresentationDetails[] {
-        return this.shouldSkipSource(locationInLoadedSource.source.identifier)
+        return this.shouldSkipSource(locationInLoadedSource.source)
             ? [{
                 additionalSourceOrigins: [localize('skipFilesFeatureName', 'skipFiles')],
                 sourcePresentationHint: 'deemphasize'
@@ -75,12 +76,8 @@ export class SkipFilesLogic implements IComponent<ISkipFilesConfiguration>, ISta
     /**
      * Returns the current skip status for this path, which is either an authored or generated script.
      */
-    private getSkipStatus(sourcePath: IResourceIdentifier): boolean | undefined {
-        if (this._skipFileStatuses.has(sourcePath)) {
-            return this._skipFileStatuses.get(sourcePath);
-        }
-
-        return undefined;
+    private getSkipStatus(sourcePath: ILoadedSource): boolean | undefined {
+        return this._skipFileStatuses.tryGetting(sourcePath.identifier);
     }
 
     /* __GDPR__
@@ -92,39 +89,39 @@ export class SkipFilesLogic implements IComponent<ISkipFilesConfiguration>, ISta
         }
     */
     public async toggleSkipFileStatus(clientArgs: IToggleSkipFileStatusArgs): Promise<void> {
-        const args = this._clientToInternal.toSource(clientArgs);
-        await args.tryResolving(async resolvedSource => {
-            if (!await this.isInCurrentStack(clientArgs)) {
-                // Only valid for files that are in the current stack
-                const logName = resolvedSource;
-                logger.log(`Can't toggle the skipFile status for ${logName} - it's not in the current stack.`);
-                return;
-            }
+        // const args = this._clientToInternal.toSource(clientArgs);
+        // await args.tryResolving(async resolvedSource => {
+        //     if (!await this.isInCurrentStack(clientArgs)) {
+        //         // Only valid for files that are in the current stack
+        //         const logName = resolvedSource;
+        //         logger.log(`Can't toggle the skipFile status for ${logName} - it's not in the current stack.`);
+        //         return;
+        //     }
 
-            if (resolvedSource === resolvedSource.script.developmentSource && resolvedSource.script.mappedSources.length < 0) {
-                // Ignore toggling skip status for generated scripts with sources
-                logger.log(`Can't toggle skipFile status for ${resolvedSource} - it's a script with a sourcemap`);
-                return;
-            }
+        //     if (resolvedSource === resolvedSource.script.developmentSource && resolvedSource.script.mappedSources.length < 0) {
+        //         // Ignore toggling skip status for generated scripts with sources
+        //         logger.log(`Can't toggle skipFile status for ${resolvedSource} - it's a script with a sourcemap`);
+        //         return;
+        //     }
 
-            const newStatus = !this.shouldSkipSource(resolvedSource.identifier);
-            logger.log(`Setting the skip file status for: ${resolvedSource} to ${newStatus}`);
-            this._skipFileStatuses.set(resolvedSource.identifier, newStatus);
+        //     const newStatus = !this.shouldSkipSource(resolvedSource.identifier);
+        //     logger.log(`Setting the skip file status for: ${resolvedSource} to ${newStatus}`);
+        //     this._skipFileStatuses.set(resolvedSource.identifier, newStatus);
 
-            await this.resolveSkipFiles(resolvedSource.script, resolvedSource.script.developmentSource.identifier,
-                resolvedSource.script.mappedSources.map(s => s.identifier), /*toggling=*/true);
+        //     await this.resolveSkipFiles(resolvedSource, resolvedSource.script.developmentSource.identifier,
+        //         resolvedSource.script.mappedSources.map(s => s.identifier), /*toggling=*/true);
 
-            if (newStatus) {
-                // TODO: Verify that using targetPath works here. We need targetPath to be this.getScriptByUrl(targetPath).url
-                this.makeRegexesSkip(resolvedSource.script.runtimeSource.identifier.textRepresentation);
-            } else {
-                this.makeRegexesNotSkip(resolvedSource.script.runtimeSource.identifier.textRepresentation);
-            }
+        //     if (newStatus) {
+        //         // TODO: Verify that using targetPath works here. We need targetPath to be this.getScriptByUrl(targetPath).url
+        //         this.makeRegexesSkip(resolvedSource.url);
+        //     } else {
+        //         this.makeRegexesNotSkip(resolvedSource.url);
+        //     }
 
-            this.reprocessPausedEvent();
-        }, async sourceIdentifier => {
-            logger.log(`Can't toggle the skipFile status for: ${sourceIdentifier} - haven't seen it yet.`);
-        });
+        //     this.reprocessPausedEvent();
+        // }, async sourceIdentifier => {
+        //     logger.log(`Can't toggle the skipFile status for: ${sourceIdentifier} - haven't seen it yet.`);
+        // });
     }
 
     private makeRegexesSkip(skipPath: string): void {
@@ -179,10 +176,12 @@ export class SkipFilesLogic implements IComponent<ISkipFilesConfiguration>, ISta
         }
     }
 
-    public async resolveSkipFiles(script: IScript, mappedUrl: IResourceIdentifier, sources: IResourceIdentifier[], toggling?: boolean): Promise<void> {
+    public async resolveSkipFiles(script: IScript, mappedUrl: ILoadedSource, sources: ILoadedSource[], toggling?: boolean): Promise<void> {
+        const originInScript = new LocationInScript(script, Position.origin);
+
         if (sources && sources.length) {
-            const parentIsSkipped = this.shouldSkipSource(script.runtimeSource.identifier);
-            const libPositions: IPositionInScript[] = [];
+            const parentIsSkipped = this.shouldSkipSource(script.runtimeSource);
+            const libPositions: LocationInScript[] = [];
 
             // Figure out skip/noskip transitions within script
             let inLibRange = parentIsSkipped;
@@ -193,13 +192,13 @@ export class SkipFilesLogic implements IComponent<ISkipFilesConfiguration>, ISta
                     isSkippedFile = parentIsSkipped;
                 }
 
-                this._skipFileStatuses.set(s, isSkippedFile);
+                this._skipFileStatuses.setAndReplaceIfExist(s.identifier, isSkippedFile);
 
                 if ((isSkippedFile && !inLibRange) || (!isSkippedFile && inLibRange)) {
-                    const sourcesMapper = script.sourcesMapper;
-                    const pos = sourcesMapper.getPositionInScript({ source: s.canonicalized, line: createLineNumber(0) });
+                    const sourcesMapper = script.sourceMapper;
+                    const pos = sourcesMapper.getPositionInScript(new LocationInLoadedSource(s, Position.origin));
                     if (!pos) {
-                        throw new Error(`Source '${s.canonicalized}' start not found in script.`);
+                        throw new Error(`Source '${s}' start not found in script.`);
                     }
 
                     libPositions.push(pos);
@@ -210,16 +209,13 @@ export class SkipFilesLogic implements IComponent<ISkipFilesConfiguration>, ISta
             // If there's any change from the default, set proper blackboxed ranges
             if (libPositions.length || toggling) {
                 if (parentIsSkipped) {
-                    libPositions.splice(0, 0, { line: createLineNumber(0), column: createColumnNumber(0) });
+                    libPositions.splice(0, 0, originInScript);
                 }
 
-                if (libPositions[0].line !== 0 || libPositions[0].column !== 0) {
+                if (!libPositions[0].position.isOrigin) {
                     // The list of blackboxed ranges must start with 0,0 for some reason.
                     // https://github.com/Microsoft/vscode-chrome-debug/issues/667
-                    libPositions[0] = {
-                        line: createLineNumber(0),
-                        column: createColumnNumber(0)
-                    };
+                    libPositions[0] = originInScript;
                 }
 
                 await this._blackboxPatternsConfigurer.setBlackboxedRanges(script, []).catch(() => this.warnNoSkipFiles());
@@ -230,9 +226,9 @@ export class SkipFilesLogic implements IComponent<ISkipFilesConfiguration>, ISta
             }
         } else {
             const status = await this.getSkipStatus(mappedUrl);
-            const skippedByPattern = this.matchesSkipFilesPatterns(mappedUrl);
+            const skippedByPattern = this.matchesSkipFilesPatterns(mappedUrl.identifier);
             if (typeof status === 'boolean' && status !== skippedByPattern) {
-                const positions = status ? [{ line: createLineNumber(0), column: createColumnNumber(0) }] : [];
+                const positions = status ? [originInScript] : [];
                 this._blackboxPatternsConfigurer.setBlackboxedRanges(script, positions).catch(() => this.warnNoSkipFiles());
             }
         }
@@ -245,7 +241,7 @@ export class SkipFilesLogic implements IComponent<ISkipFilesConfiguration>, ISta
     private async onScriptParsed(scriptEvent: IScriptParsedEvent): Promise<void> {
         const script = scriptEvent.script;
         const sources = script.mappedSources;
-        await this.resolveSkipFiles(script, script.developmentSource.identifier, sources.map(source => source.identifier));
+        await this.resolveSkipFiles(script, script.developmentSource, sources);
     }
 
     public install(): this {

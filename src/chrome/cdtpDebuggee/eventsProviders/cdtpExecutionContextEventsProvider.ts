@@ -9,6 +9,7 @@ import { inject, injectable } from 'inversify';
 import { CDTPScriptsRegistry } from '../registries/cdtpScriptsRegistry';
 import { TYPES } from '../../dependencyInjection.ts/types';
 import { CDTPDomainsEnabler } from '../infrastructure/cdtpDomainsEnabler';
+import { FrameId } from '../cdtpPrimitives';
 
 @injectable()
 export class CDTPExecutionContextEventsProvider extends CDTPEventsEmitterDiagnosticsModule<CDTP.RuntimeApi> {
@@ -20,7 +21,7 @@ export class CDTPExecutionContextEventsProvider extends CDTPEventsEmitterDiagnos
         this._scriptsRegistry.markExecutionContextAsDestroyed(params.executionContextId));
 
     public readonly onExecutionContextCreated = this.addApiListener('executionContextCreated', async (params: CDTP.Runtime.ExecutionContextCreatedEvent) =>
-        this._scriptsRegistry.registerExecutionContext(params.context.id));
+        this._scriptsRegistry.registerExecutionContext(params.context.id, <FrameId>params.context.auxData.frameId));
 
     constructor(
         @inject(TYPES.CDTPClient) private readonly _protocolApi: CDTP.ProtocolApi,

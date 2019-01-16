@@ -10,6 +10,8 @@ import { ILoadedSource } from '../../sources/loadedSource';
 import { IBPActionWhenHit } from '../bpActionWhenHit';
 import { SetUsingProjection } from '../../../collections/setUsingProjection';
 import assert = require('assert');
+import { ValidatedSet } from '../../../collections/validatedSet';
+import { printArray } from '../../../collections/printing';
 
 function canonicalizeBPLocation(breakpoint: BPRecipeInSource): string {
     return `${breakpoint.location.position.lineNumber}:${breakpoint.location.position.columnNumber}[${breakpoint.bpActionWhenHit}]`;
@@ -48,7 +50,7 @@ export class BPRsDeltaCalculator {
             match.matchesForRequested.push(matchingBreakpoint);
         });
 
-        const setOfExistingToLeaveAsIs = new Set(match.existingToLeaveAsIs);
+        const setOfExistingToLeaveAsIs = new ValidatedSet(match.existingToLeaveAsIs);
 
         match.existingToRemove = Array.from(this._currentBPRecipes).filter(bp => !setOfExistingToLeaveAsIs.has(bp));
 
@@ -103,6 +105,10 @@ export abstract class BPRsDeltaCommonLogic<TResource extends ILoadedSource | ISo
         public readonly requestedToAdd: BPRecipe<TResource>[],
         public readonly existingToRemove: BPRecipe<TResource>[],
         public readonly existingToLeaveAsIs: BPRecipe<TResource>[]) { }
+
+    public toString(): string {
+        return `${printArray('New BPs', this.requestedToAdd)}\n${printArray('BPs to remove', this.existingToRemove)}\n${printArray('BPs to keep', this.existingToLeaveAsIs)}`;
+    }
 }
 
 export class BPRsDeltaInRequestedSource extends BPRsDeltaCommonLogic<ISource> { }

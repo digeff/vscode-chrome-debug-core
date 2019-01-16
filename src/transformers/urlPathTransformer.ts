@@ -9,8 +9,7 @@ import { logger } from 'vscode-debugadapter';
 import * as ChromeUtils from '../chrome/chromeUtils';
 
 import * as path from 'path';
-import { newResourceIdentifierMap, IResourceIdentifier } from '../chrome/internal/sources/resourceIdentifier';
-import { parseResourceIdentifier } from '..';
+import { newResourceIdentifierMap, IResourceIdentifier, parseResourceIdentifier } from '../chrome/internal/sources/resourceIdentifier';
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../chrome/dependencyInjection.ts/types';
 import { IConnectedCDAConfiguration } from '../chrome/client/chromeDebugAdapter/cdaConfiguration';

@@ -3,18 +3,24 @@
  *--------------------------------------------------------*/
 
 import * as Validation from '../../../validation';
-import { IScript, Script } from '../scripts/script';
+import * as utils from '../../../utils';
+import { IScript, isScript, Script } from '../scripts/script';
 import { ISource, isSource } from '../sources/source';
-import { ILoadedSource, isLoadedSource } from '../sources/loadedSource';
+import { ILoadedSource, isLoadedSource, ScriptAndSourceMapper } from '../sources/loadedSource';
 import { logger } from 'vscode-debugadapter';
-import { ColumnNumber, LineNumber, URLRegexp, createURLRegexp } from './subtypes';
+import { ColumnNumber, LineNumber, URLRegexp, createURLRegexp, createLineNumber, createColumnNumber } from './subtypes';
 import { CDTPScriptUrl } from '../sources/resourceIdentifierSubtypes';
 import { IResourceIdentifier, parseResourceIdentifier, IURL, isResourceIdentifier } from '../sources/resourceIdentifier';
 import { IEquivalenceComparable } from '../../utils/equivalence';
+import { printArray } from '../../collections/printing';
+import { breakWhileDebugging } from '../../../validation';
+import _ = require('lodash');
 
 export type integer = number;
 
 export class Position implements IEquivalenceComparable {
+    public static readonly origin = new Position(createLineNumber(0), createColumnNumber(0));
+
     constructor(
         public readonly lineNumber: LineNumber,
         public readonly columnNumber?: ColumnNumber) {
@@ -29,10 +35,31 @@ export class Position implements IEquivalenceComparable {
             && this.columnNumber === location.columnNumber;
     }
 
+    public isOrigin(): boolean {
+        return this.lineNumber === 0 && (this.columnNumber === undefined || this.columnNumber === 0);
+    }
+
+    public doesAppearBefore(right: Position): boolean {
+        return this.lineNumber < right.lineNumber ||
+            (this.lineNumber === right.lineNumber && this.columnNumber < right.columnNumber);
+    }
+
     public toString(): string {
         return this.columnNumber !== undefined
             ? `${this.lineNumber}:${this.columnNumber}`
             : `${this.lineNumber}`;
+    }
+
+    public static appearingLastOf(...positions: Position[]): Position {
+        return _.reduce(positions, (left, right) => left.doesAppearBefore(right) ? right : left);
+    }
+
+    public static appearingFirstOf(...positions: Position[]): Position {
+        return _.reduce(positions, (left, right) => left.doesAppearBefore(right) ? left : right);
+    }
+
+    public static isBetween(start: Position, maybeInBetween: Position, end: Position): boolean {
+        return !maybeInBetween.doesAppearBefore(start) && !end.doesAppearBefore(maybeInBetween);
     }
 }
 
@@ -67,6 +94,7 @@ export function createLocation<T extends ScriptOrSourceOrURLOrURLRegexp>(resourc
     } else if (isResourceIdentifier(resource)) {
         return <Location<T>>new LocationInUrl(<IURL<CDTPScriptUrl>>resource, position); // TODO: Figure out way to remove this cast
     } else {
+        Validation.breakWhileDebugging();
         throw Error(`Can't create a location because the type of resource ${resource} wasn't recognized`);
     }
 }
@@ -115,29 +143,27 @@ export class LocationInSource extends BaseLocation<ISource> implements ILocation
     }
 }
 
+/**
+ * The position of the location in a script is always relative to the resource that contains the script. If the resource is just a script, then both positions will be the same.
+ * If the script is an inline script in an .html file, and it starts on line 10, then the first line of the script will be line 10.
+ */
 export class LocationInScript extends BaseLocation<IScript> {
+    public mappedToUrlRegexp(): LocationInUrlRegexp {
+        // DIEGO TODO: Use a better regexp id
+        const urlRegexp = createURLRegexp(utils.pathToRegex(this.script.url, `${Math.random() * 100000000000000}`));
+        return new LocationInUrlRegexp(urlRegexp, this.position);
+    }
+
+    public mappedToRuntimeSource(): LocationInLoadedSource {
+        return new LocationInLoadedSource(this.script.runtimeSource, this.position);
+    }
+
     public get script(): IScript {
         return this.resource;
     }
 
     public mappedToSource(): LocationInLoadedSource {
-        const mapped = this.script.sourcesMapper.getPositionInSource({ line: this.position.lineNumber, column: this.position.columnNumber });
-        if (mapped) {
-            const loadedSource = this.script.getSource(parseResourceIdentifier(mapped.source));
-            const result = new LocationInLoadedSource(loadedSource, new Position(mapped.line, mapped.column));
-            logger.verbose(`SourceMap: ${this} to ${result}`);
-            return result;
-        } else {
-            return new LocationInLoadedSource(this.script.developmentSource, this.position);
-        }
-    }
-
-    public mappedToUrl(): LocationInUrl {
-        if (this.script.runtimeSource.doesScriptHasUrl()) {
-            return new LocationInUrl(this.script.runtimeSource.identifier, this.position);
-        } else {
-            throw new Error(`Can't convert a location in a script without an URL (${this}) into a location in an URL`);
-        }
+        return this.script.sourceMapper.getPositionInSource(this);
     }
 
     public isSameAs(locationInScript: LocationInScript): boolean {
@@ -155,19 +181,8 @@ export class LocationInLoadedSource extends BaseLocation<ILoadedSource> {
         return this.resource;
     }
 
-    public mappedToScript(): LocationInScript {
-        const mapped = this.source.script.sourcesMapper.getPositionInScript({
-            source: this.source.identifier.textRepresentation,
-            line: this.position.lineNumber,
-            column: this.position.columnNumber
-        });
-        if (mapped) {
-            const result = new LocationInScript(this.source.script, new Position(mapped.line, mapped.column));
-            logger.verbose(`SourceMap: ${this} to ${result}`);
-            return result;
-        } else {
-            throw new Error(`Couldn't map the location (${this.position}) in the source $(${this.source}) to a script file`);
-        }
+    public mappedToScript(): LocationInScript[] {
+        return this.source.scriptMapper().mapToScripts(this);
     }
 }
 

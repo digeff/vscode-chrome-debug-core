@@ -13,7 +13,7 @@ import { IEquivalenceComparable } from '../../utils/equivalence';
  */
 const ImplementsSource = Symbol();
 export interface ISource extends IEquivalenceComparable {
-    [ImplementsSource]: void;
+    [ImplementsSource]: string;
 
     readonly sourceIdentifier: IResourceIdentifier;
     tryResolving<R>(succesfulAction: (resolvedSource: ILoadedSource) => R, failedAction: (sourceIdentifier: IResourceIdentifier) => R): R;
@@ -21,12 +21,12 @@ export interface ISource extends IEquivalenceComparable {
     isEquivalentTo(right: ISource): boolean;
 }
 
-export function isSource(object: object): object is ISource {
-    return object.hasOwnProperty(ImplementsSource);
+export function isSource(object: unknown): object is ISource {
+    return !!(<any>object)[ImplementsSource];
 }
 
 abstract class BaseSource implements ISource {
-    [ImplementsSource]: void;
+    [ImplementsSource]: 'ISource';
 
     public abstract tryResolving<R>(succesfulAction: (loadedSource: ILoadedSource) => R, failedAction: (identifier: IResourceIdentifier) => R): R;
     public abstract get sourceIdentifier(): IResourceIdentifier;
@@ -43,7 +43,7 @@ export class SourceToBeResolvedViaPath extends BaseSource implements ISource {
     }
 
     public toString(): string {
-        return `Resolve source via #${this.sourceIdentifier}`;
+        return `${this.sourceIdentifier}`;
     }
 
     constructor(public readonly sourceIdentifier: IResourceIdentifier, private readonly _sourceResolver: SourceResolver) {

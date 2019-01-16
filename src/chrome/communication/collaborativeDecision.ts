@@ -51,6 +51,10 @@ export class Abstained<T> extends VoteCommonLogic<T> {
     constructor(public readonly voter: unknown /* Used for debugging purposes only */) {
         super();
     }
+
+    public toString(): string {
+        return `${this.voter} abstained`;
+    }
 }
 
 export class ExecuteDecisionBasedOnVotes<T> {

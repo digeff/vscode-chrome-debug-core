@@ -9,14 +9,15 @@ import { ValidatedMap } from '../../collections/validatedMap';
 import { IResourceIdentifier, newResourceIdentifierMap } from '../sources/resourceIdentifier';
 import { ExecutionContext, IExecutionContext } from './executionContext';
 import { injectable } from 'inversify';
+import { FrameId } from '../../cdtpDebuggee/cdtpPrimitives';
 
 @injectable()
 export class DeleteMeScriptsRegistry {
     private readonly _scriptsGeneration = new ScriptsGeneration();
     private readonly _idToExecutionContext = new ValidatedMap<CDTP.Runtime.ExecutionContextId, ExecutionContext>();
 
-    public registerExecutionContext(executionContextId: CDTP.Runtime.ExecutionContextId): IExecutionContext {
-        const executionContext = new ExecutionContext();
+    public registerExecutionContext(executionContextId: CDTP.Runtime.ExecutionContextId, frameId: FrameId): IExecutionContext {
+        const executionContext = new ExecutionContext(frameId);
         this._idToExecutionContext.set(executionContextId, executionContext);
         return executionContext;
     }

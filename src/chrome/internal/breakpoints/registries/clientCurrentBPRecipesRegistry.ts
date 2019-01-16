@@ -22,8 +22,13 @@ export class ClientCurrentBPRecipesRegistry {
     }
 
     private calculateBPSDeltaFromExistingBPs(requestedBPRecipes: BPRecipesInSource): BPRsDeltaInRequestedSource {
-        const bpRecipesInSource = this._requestedSourcePathToCurrentBPRecipes.getOrAdd(requestedBPRecipes.requestedSourcePath, () => []);
+        const sourcePath = requestedBPRecipes.requestedSourcePath;
+        const bpRecipesInSource = this.bpRecipesForSource(sourcePath);
         return new BPRsDeltaCalculator(requestedBPRecipes.source, requestedBPRecipes, bpRecipesInSource).calculate();
+    }
+
+    public bpRecipesForSource(sourcePath: IResourceIdentifier<string>) {
+        return this._requestedSourcePathToCurrentBPRecipes.getOr(sourcePath, () => []);
     }
 
     public toString(): string {

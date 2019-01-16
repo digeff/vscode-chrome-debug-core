@@ -7,8 +7,13 @@ import * as path from 'path';
 
 import * as sourceMapUtils from './sourceMapUtils';
 import * as utils from '../utils';
-import { logger } from 'vscode-debugadapter';
+import { logger, Source } from 'vscode-debugadapter';
 import { IPathMapping } from '../debugAdapterInterfaces';
+import { ValidatedMap } from '../chrome/collections/validatedMap';
+import { Position } from '../chrome/internal/locations/location';
+import { createLineNumber, createColumnNumber } from '../chrome/internal/locations/subtypes';
+import { newResourceIdentifierMap, IResourceIdentifier, parseResourceIdentifier } from '../chrome/internal/sources/resourceIdentifier';
+import _ = require('lodash');
 
 export type MappedPosition = MappedPosition;
 
@@ -19,6 +24,16 @@ export interface ISourcePathDetails {
     originalPath: string;
     inferredPath: string;
     startPosition: MappedPosition;
+}
+
+export class SourceRange {
+    public constructor(
+        readonly start: Position,
+        readonly end: Position) { }
+
+    public toString(): string {
+        return `[${this.start} to ${this.end}]`;
+    }
 }
 
 export class SourceMap {
@@ -232,5 +247,21 @@ export class SourceMap {
     public sourceContentFor(authoredSourcePath: string): string {
         authoredSourcePath = utils.pathToFileURL(authoredSourcePath, true);
         return (<any>this._smc).sourceContentFor(authoredSourcePath, /*returnNullOnMissing=*/true);
+    }
+
+    public rangesInSources(): Map<IResourceIdentifier, SourceRange> {
+        const sourceToRange = newResourceIdentifierMap<SourceRange>();
+        const memoizedParseResourceIdentifier = _.memoize(parseResourceIdentifier);
+        this._smc.eachMapping(mapping => {
+            const positionInSource = new Position(createLineNumber(mapping.originalLine), createColumnNumber(mapping.originalColumn));
+            const sourceIdentifier = memoizedParseResourceIdentifier(mapping.source);
+            const range = sourceToRange.getOr(sourceIdentifier, () => new SourceRange(positionInSource, positionInSource));
+            const expandedRange = new SourceRange(
+                Position.appearingFirstOf(range.start, positionInSource),
+                Position.appearingLastOf(range.end, positionInSource));
+            sourceToRange.setAndReplaceIfExist(sourceIdentifier, expandedRange);
+        });
+
+        return sourceToRange;
     }
 }

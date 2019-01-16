@@ -6,10 +6,20 @@ import { Protocol as CDTP } from 'devtools-protocol';
 
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../../dependencyInjection.ts/types';
-import { Version } from '../../utils/version';
+import { Version } from '../../utils/Version';
+import _ = require('lodash');
+
+export interface CDTPComponentsVersions {
+    product: string;
+    crdp: string;
+    revision: string;
+    userAgent: string;
+    v8: string;
+}
 
 export interface IDebugeeRuntimeVersionProvider {
     version(): Promise<Version>;
+    componentVersions(): Promise<CDTPComponentsVersions>;
 }
 
 /// TODO: Move this to a browser-shared package
@@ -17,6 +27,7 @@ export interface IDebugeeRuntimeVersionProvider {
 @injectable()
 export class CDTPDebugeeRuntimeVersionProvider implements IDebugeeRuntimeVersionProvider {
     protected api = this._protocolApi.Browser;
+    private readonly _componentsVersions = _.memoize(() => this.api.getVersion());
 
     constructor(
         @inject(TYPES.CDTPClient)
@@ -24,7 +35,17 @@ export class CDTPDebugeeRuntimeVersionProvider implements IDebugeeRuntimeVersion
     }
 
     public async version(): Promise<Version> {
-        // const version = productVersionText.replace(/Chrome\/([0-9]{2})\..*/, '$1');
-        return Version.coerce((await this.api.getVersion()).product);
+        return Version.coerce((await this._componentsVersions()).product);
+    }
+
+    public async componentVersions(): Promise<CDTPComponentsVersions> {
+        const rawComponentVersions = await this._componentsVersions();
+        return {
+            product: rawComponentVersions.product,
+            revision: rawComponentVersions.revision,
+            crdp: rawComponentVersions.protocolVersion,
+            v8: rawComponentVersions.jsVersion,
+            userAgent: rawComponentVersions.userAgent
+        };
     }
 }

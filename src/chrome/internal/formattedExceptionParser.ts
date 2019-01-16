@@ -2,9 +2,8 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { parseResourceIdentifier } from '../..';
 import { LocationInScript, LocationInLoadedSource } from './locations/location';
-import { IResourceIdentifier } from './sources/resourceIdentifier';
+import { IResourceIdentifier, parseResourceIdentifier } from './sources/resourceIdentifier';
 import { CDTPScriptUrl } from './sources/resourceIdentifierSubtypes';
 import { createLineNumber, createColumnNumber } from './locations/subtypes';
 import { DeleteMeScriptsRegistry } from './scripts/scriptsRegistry';

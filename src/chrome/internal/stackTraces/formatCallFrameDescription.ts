@@ -14,7 +14,7 @@ import { functionDescription } from './callFramePresentation';
 export function formatCallFrameDescription(callFrame: LoadedSourceCallFrame, formatArgs?: DebugProtocol.StackFrameFormat): string {
     const location = callFrame.location;
 
-    let formattedDescription = functionDescription(callFrame.codeFlow.functionName, location.source.script);
+    let formattedDescription = functionDescription(callFrame.codeFlow.functionName, location.source);
 
     if (formatArgs) {
         if (formatArgs.module) {

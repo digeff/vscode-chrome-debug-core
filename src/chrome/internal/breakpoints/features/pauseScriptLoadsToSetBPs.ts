@@ -14,12 +14,13 @@ import { injectable, inject } from 'inversify';
 import { TYPES } from '../../../dependencyInjection.ts/types';
 import { IEventsToClientReporter } from '../../../client/eventSender';
 import { IDebugeeExecutionController } from '../../../cdtpDebuggee/features/cdtpDebugeeExecutionController';
-import { ReAddBPsWhenSourceIsLoaded } from './reAddBPsWhenSourceIsLoaded';
+import { ExistingBPsForJustParsedScriptSetter } from './existingBPsForJustParsedScriptSetter';
 import { BreakpointsRegistry } from '../registries/breakpointsRegistry';
 import { IDOMInstrumentationBreakpoints } from '../../../cdtpDebuggee/features/cdtpDOMInstrumentationBreakpoints';
 import { IDebugeeRuntimeVersionProvider } from '../../../cdtpDebuggee/features/cdtpDebugeeRuntimeVersionProvider';
 import { PausedEvent } from '../../../cdtpDebuggee/eventsProviders/cdtpDebuggeeExecutionEventsProvider';
 import { IScript } from '../../scripts/script';
+import { wrapWithMethodLogger } from '../../../logging/methodsCalledLogger';
 export type Dummy = VoteRelevance; // If we don't do this the .d.ts doesn't include VoteRelevance and the compilation fails. Remove this when the issue disappears...
 
 export interface IPauseScriptLoadsToSetBPsDependencies {
@@ -49,11 +50,12 @@ export class PausedWhileLoadingScriptToResolveBreakpoints extends ResumeCommonLo
 }
 
 /// TODO: Move this to a browser-shared package
-@injectable()
 export class PauseScriptLoadsToSetBPs implements IComponent {
     private readonly stopsWhileScriptsLoadInstrumentationName = 'scriptFirstStatement';
     private _isInstrumentationEnabled = false;
     private _scriptFirstStatementStopsBeforeFile: boolean;
+
+    public readonly withLogging = wrapWithMethodLogger(this);
 
     public async enableIfNeccesary(): Promise<void> {
         if (this._isInstrumentationEnabled === false) {
@@ -61,6 +63,7 @@ export class PauseScriptLoadsToSetBPs implements IComponent {
         }
     }
 
+    // TODO: Figure out if and when we can disable break on load for performance reasons
     public async disableIfNeccesary(): Promise<void> {
         if (this._isInstrumentationEnabled === true) {
             await this.stopPausingOnScriptFirstStatement();
@@ -69,9 +72,7 @@ export class PauseScriptLoadsToSetBPs implements IComponent {
 
     private async askForInformationAboutPaused(paused: PausedEvent): Promise<IVote<void>> {
         if (this.isInstrumentationPause(paused)) {
-            await asyncMap(paused.callFrames[0].location.script.allSources, async source => {
-                await this._reAddBPsWhenSourceIsLoaded.waitUntilBPsAreSet(source);
-            });
+            await this._existingBPsForJustParsedScriptSetter.waitUntilBPsAreSet(paused.callFrames[0].location.script);
 
             // If we pause before starting the script, we can just resume, and we'll a breakpoint if it's on 0,0
             if (!this._scriptFirstStatementStopsBeforeFile) {
@@ -110,7 +111,7 @@ export class PauseScriptLoadsToSetBPs implements IComponent {
     }
 
     public async install(): Promise<this> {
-        this._dependencies.subscriberForAskForInformationAboutPaused(params => this.askForInformationAboutPaused(params));
+        this._dependencies.subscriberForAskForInformationAboutPaused(params => this.withLogging.askForInformationAboutPaused(params));
         // TODO DIEGO: Figure out exactly when we want to block on the browser version
         // On version 69 Chrome stopped sending an extra event for DOM Instrumentation: See https://bugs.chromium.org/p/chromium/issues/detail?id=882909
         // On Chrome 68 we were relying on that event to make Break on load work on breakpoints on the first line of a file. On Chrome 69 we need an alternative way to make it work.
@@ -126,8 +127,12 @@ export class PauseScriptLoadsToSetBPs implements IComponent {
         @inject(TYPES.IDebugeeExecutionControl) private readonly _debugeeExecutionControl: IDebugeeExecutionController,
         @inject(TYPES.IEventsToClientReporter) protected readonly _eventsToClientReporter: IEventsToClientReporter,
         @inject(TYPES.IDebugeeVersionProvider) protected readonly _debugeeVersionProvider: IDebugeeRuntimeVersionProvider,
-        @inject(TYPES.ReAddBPsWhenSourceIsLoaded) protected readonly _reAddBPsWhenSourceIsLoaded: ReAddBPsWhenSourceIsLoaded,
-        @inject(TYPES.BreakpointsRegistry) protected readonly _breakpointsRegistry: BreakpointsRegistry,
+        @inject(ExistingBPsForJustParsedScriptSetter) protected readonly _existingBPsForJustParsedScriptSetter: ExistingBPsForJustParsedScriptSetter,
+        protected readonly _breakpointsRegistry: BreakpointsRegistry,
     ) {
+    }
+
+    public toString(): string {
+        return 'PauseScriptLoadsToSetBPs';
     }
 }

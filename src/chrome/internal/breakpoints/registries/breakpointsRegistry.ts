@@ -2,48 +2,79 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { IBPRecipeStatus, BPRecipeIsBound, BPRecipeIsUnbound } from '../bpRecipeStatus';
+import { BPRecipeHasBoundSubstatuses as BPRecipeHasBoundSubstatuses, BPRecipeIsUnboundDueToNoSubstatuses, createBPRecipieStatus, IBPRecipeStatus } from '../bpRecipeStatus';
 import { ValidatedMultiMap } from '../../../collections/validatedMultiMap';
 import { IBPRecipe } from '../bpRecipe';
-import { LocationInScript } from '../../locations/location';
+import { LocationInScript, LocationInLoadedSource } from '../../locations/location';
 import { injectable } from 'inversify';
 import { CDTPBreakpoint } from '../../../cdtpDebuggee/cdtpPrimitives';
 import { ISource } from '../../sources/source';
+import { ValidatedMap, IValidatedMap } from '../../../collections/validatedMap';
+import { BPRecipeInSource } from '../bpRecipeInSource';
+import { ILoadedSource } from '../../sources/loadedSource';
+import { CDTPScriptUrl } from '../../sources/resourceIdentifierSubtypes';
+import { BPRecipeIsUnbound, BPRecipeIsBound, IBPRecipeSingleLocationStatus } from '../bpRecipeStatusForRuntimeSource';
+import { BreakpointInSource } from '../breakpoint';
+import { IScript } from '../../scripts/script';
 
-@injectable()
+export interface IBreakpointsRegistryDependencies {
+    onBPRecipeStatusChanged(bpRecipeInSource: BPRecipeInSource): void;
+}
+
 export class BreakpointsRegistry {
-    private readonly _unmappedRecipeToBreakpoints = new ValidatedMultiMap<IBPRecipe<ISource>, CDTPBreakpoint>();
+    private readonly _unmappedRecipeToBreakpoints = new ValidatedMap<BPRecipeInSource, IValidatedMap<LocationInLoadedSource, IBPRecipeSingleLocationStatus>>();
+    private readonly _scriptToBreakpoints = new ValidatedMultiMap<IScript, CDTPBreakpoint>();
 
-    public registerBPRecipe(bpRecipe: IBPRecipe<ISource>): void {
-        this._unmappedRecipeToBreakpoints.addKeyIfNotExistant(bpRecipe);
+    constructor(private readonly _dependencies: IBreakpointsRegistryDependencies) { }
+
+    public registerBPRecipeIfNeeded(bpRecipe: BPRecipeInSource): void {
+        // If the same breakpoint recipe maps to multiple runtime files with different URLs, we'll get the call to registerBPRecipeIfNeeded with the same recipe more than once
+        if (!this._unmappedRecipeToBreakpoints.has(bpRecipe)) {
+            this._unmappedRecipeToBreakpoints.set(bpRecipe, new ValidatedMap<LocationInLoadedSource, IBPRecipeSingleLocationStatus>());
+        }
+    }
+
+    public unregisterBPRecipe(bpRecipe: BPRecipeInSource): void {
+        this._unmappedRecipeToBreakpoints.delete(bpRecipe);
     }
 
     public registerBreakpointAsBound(bp: CDTPBreakpoint): void {
-        this._unmappedRecipeToBreakpoints.add(bp.recipe.unmappedBPRecipe, bp);
+        this._unmappedRecipeToBreakpoints.getOrAdd(bp.recipe.unmappedBPRecipe, () => new ValidatedMap<LocationInLoadedSource, IBPRecipeSingleLocationStatus>());
+        this._scriptToBreakpoints.add(bp.actualLocation.script, bp);
     }
 
-    public getStatusOfBPRecipe(bpRecipe: IBPRecipe<ISource>): IBPRecipeStatus {
-        const breakpoints = Array.from(this._unmappedRecipeToBreakpoints.get(bpRecipe));
-        if (breakpoints.length > 0) {
-            const mappedBreakpoints = breakpoints.map(breakpoint => breakpoint.mappedToSource());
-            return new BPRecipeIsBound(bpRecipe, mappedBreakpoints, 'TODO DIEGO');
-        } else {
-            return new BPRecipeIsUnbound(bpRecipe, 'TODO DIEGO');
-        }
+    public bpRecipeIsBoundForRuntimeSource(bpRecipe: BPRecipeInSource, locationInRuntimeSource: LocationInLoadedSource, bpsInSource: BreakpointInSource[]): void {
+        const runtimeSourceToBPRStatus = this._unmappedRecipeToBreakpoints.get(bpRecipe);
+        runtimeSourceToBPRStatus.set(locationInRuntimeSource, new BPRecipeIsBound(bpRecipe, locationInRuntimeSource, bpsInSource));
+
+        this._dependencies.onBPRecipeStatusChanged(bpRecipe);
+    }
+
+    public bpRecipeIsUnboundForRuntimeSource(bpRecipe: BPRecipeInSource, locationInRuntimeSource: LocationInLoadedSource, error: Error): void {
+        const runtimeSourceToBPRStatus = this._unmappedRecipeToBreakpoints.get(bpRecipe);
+        runtimeSourceToBPRStatus.set(locationInRuntimeSource, new BPRecipeIsUnbound(bpRecipe, locationInRuntimeSource, error));
+
+        this._dependencies.onBPRecipeStatusChanged(bpRecipe);
+    }
+
+    public getStatusOfBPRecipe(bpRecipe: BPRecipeInSource): IBPRecipeStatus {
+        const statusForRuntimeSources = Array.from(this._unmappedRecipeToBreakpoints.get(bpRecipe).values());
+        const boundSubstatuses = <BPRecipeIsBound[]>statusForRuntimeSources.filter(s => s instanceof BPRecipeIsBound);
+        const unboundSubstatuses = <BPRecipeIsUnbound[]>statusForRuntimeSources.filter(s => s instanceof BPRecipeIsUnbound);
+
+        return createBPRecipieStatus(bpRecipe, boundSubstatuses, unboundSubstatuses);
     }
 
     public tryGettingBreakpointAtLocation(locationInScript: LocationInScript): CDTPBreakpoint[] {
-        // TODO DIEGO: Figure out if we need a faster algorithm for this
-        const matchinbBps = [];
-        for (const bps of this._unmappedRecipeToBreakpoints.values()) {
-            for (const bp of bps) {
-                if (bp.actualLocation.isSameAs(locationInScript)) {
-                    matchinbBps.push(bp);
-                }
+        const breakpoints = this._scriptToBreakpoints.tryGetting(locationInScript.script) || new Set();
+        const bpsAtLocation = [];
+        for (const bp of breakpoints) {
+            if (bp.actualLocation.isSameAs(locationInScript)) {
+                bpsAtLocation.push(bp);
             }
         }
 
-        return matchinbBps;
+        return bpsAtLocation;
     }
 
     public toString(): string {

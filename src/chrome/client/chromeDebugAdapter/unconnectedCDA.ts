@@ -2,10 +2,10 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
- import { InitializedEvent, Logger } from 'vscode-debugadapter';
-import { ChromeDebugLogic, ChromeDebugSession, IAttachRequestArgs, IDebugAdapterState, ILaunchRequestArgs, ITelemetryPropertyCollector, LineColTransformer, utils, BaseSourceMapTransformer, BasePathTransformer } from '../../..';
-import { IClientCapabilities } from '../../../debugAdapterInterfaces';
+import { InitializedEvent, Logger } from 'vscode-debugadapter';
+import { IClientCapabilities, IDebugAdapterState, ILaunchRequestArgs, ITelemetryPropertyCollector, IAttachRequestArgs } from '../../../debugAdapterInterfaces';
 import * as errors from '../../../errors';
+import * as utils from '../../../utils';
 import { EagerSourceMapTransformer } from '../../../transformers/eagerSourceMapTransformer';
 import { FallbackToClientPathTransformer } from '../../../transformers/fallbackToClientPathTransformer';
 import { RemotePathTransformer } from '../../../transformers/remotePathTransformer';
@@ -24,6 +24,14 @@ import { ConnectedCDAEventsCreator } from './connectedCDAEvents';
 import { BaseUnconnectedCDA } from './unconnectedCDACommonLogic';
 import { IDebuggeeLauncher } from '../../debugeeStartup/debugeeLauncher';
 import { IDomainsEnabler } from '../../cdtpDebuggee/infrastructure/cdtpDomainsEnabler';
+import { MethodsCalledLoggerConfiguration, ReplacementInstruction } from '../../logging/methodsCalledLogger';
+import Uri from 'vscode-uri';
+import * as path from 'path';
+import { ChromeDebugLogic } from '../../chromeDebugAdapter';
+import { LineColTransformer } from '../../../transformers/lineNumberTransformer';
+import { ChromeDebugSession } from '../../chromeDebugSession';
+import { BasePathTransformer } from '../../../transformers/basePathTransformer';
+import { BaseSourceMapTransformer } from '../../../transformers/baseSourceMapTransformer';
 
 export enum ScenarioType {
     Launch,
@@ -60,7 +68,7 @@ export class UnconnectedCDA extends BaseUnconnectedCDA implements IDebugAdapterS
         }
 
         utils.setCaseSensitivePaths(this._clientCapabilities.clientID !== 'visualstudio'); // TODO DIEGO: Find a way to remove this
-        const di = new DependencyInjection();
+        const di = new DependencyInjection(this._extensibilityPoints.componentCustomizationCallback);
 
         const pathTransformerClass = this._clientCapabilities.supportsMapURLToFilePathRequest
             ? FallbackToClientPathTransformer
@@ -111,8 +119,23 @@ export class UnconnectedCDA extends BaseUnconnectedCDA implements IDebugAdapterS
 
     private getDIContainer(di: DependencyInjection, lineColTransformerClass: typeof LineColTransformer, communicator: LoggingCommunicator, chromeConnection: ChromeConnection, pathTransformerClass: (new (configuration: ConnectedCDAConfiguration) => BasePathTransformer), sourceMapTransformerClass: new (configuration: ConnectedCDAConfiguration) => BaseSourceMapTransformer, args: ILaunchRequestArgs | IAttachRequestArgs, scenarioType: ScenarioType): DependencyInjection {
         const configuration = this.createConfiguration(args, scenarioType);
+        const workspace = args.pathMapping['/'];
+        const workspaceRegexp = utils.pathToRegex(workspace);
+        const replacements = [
+            new ReplacementInstruction(new RegExp(workspaceRegexp, 'gi'), '%ws%'),
+        ];
+        const chromeUrl = (<any>args).url;
+        if (chromeUrl) {
+            replacements.push(new ReplacementInstruction(new RegExp((<any>args).url, 'gi'), '%url%'));
+            const uri = Uri.parse(chromeUrl);
+            const websitePath = path.dirname(uri.path);
+            const websiteNoSeparator = websitePath[websitePath.length] === '/' ? websitePath.substr(0, -1) : websitePath;
+            const website = uri.with({ path: websiteNoSeparator, query: '' }).toString();
+            replacements.push(new ReplacementInstruction(new RegExp(website, 'gi'), '%website%'));
+        }
+        const loggingConfiguration = new MethodsCalledLoggerConfiguration(replacements);
         return di
-            .bindAll()
+            .bindAll(loggingConfiguration)
             .configureClass(LineColTransformer, lineColTransformerClass)
             .configureClass(TYPES.IDebugeeRunner, this._extensibilityPoints.debugeeRunner)
             .configureClass(TYPES.IDebuggeeLauncher, this._extensibilityPoints.debugeeLauncher)

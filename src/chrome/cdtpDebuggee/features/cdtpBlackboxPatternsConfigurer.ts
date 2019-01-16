@@ -7,11 +7,11 @@ import { IScript } from '../../internal/scripts/script';
 import { CDTPScriptsRegistry } from '../registries/cdtpScriptsRegistry';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '../../dependencyInjection.ts/types';
-import { IPositionInScript } from '../../internal/scripts/sourcesMapper';
+import { LocationInScript } from '../../internal/locations/location';
 
 export interface IBlackboxPatternsConfigurer {
     setBlackboxPatterns(params: CDTP.Debugger.SetBlackboxPatternsRequest): Promise<void>;
-    setBlackboxedRanges(script: IScript, positions: IPositionInScript[]): Promise<void>;
+    setBlackboxedRanges(script: IScript, positions: LocationInScript[]): Promise<void>;
 }
 
 @injectable()
@@ -25,10 +25,14 @@ export class CDTPBlackboxPatternsConfigurer implements IBlackboxPatternsConfigur
         private readonly _scriptsRegistry: CDTPScriptsRegistry) {
     }
 
-    public setBlackboxedRanges(script: IScript, positions: IPositionInScript[]): Promise<void> {
+    public setBlackboxedRanges(script: IScript, positions: LocationInScript[]): Promise<void> {
+        if (!positions.every(location => location.script === script)) {
+            throw new Error(`Expected all the position: ${positions} to be in the script ${script}`);
+        }
+
         const cdtpPositions: CDTP.Debugger.ScriptPosition[] = positions.map(p => ({
-            lineNumber: p.line,
-            columnNumber: p.column
+            lineNumber: p.position.lineNumber,
+            columnNumber: p.position.columnNumber
         }));
 
         return this.api.setBlackboxedRanges({ scriptId: this._scriptsRegistry.getCdtpId(script), positions: cdtpPositions });

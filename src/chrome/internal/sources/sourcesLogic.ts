@@ -12,14 +12,15 @@ import { IResourceIdentifier } from './resourceIdentifier';
 import { IComponent } from '../features/feature';
 import { injectable } from 'inversify';
 
-@injectable()
-export class SourcesLogic implements IComponent {
-    public tryResolving<R>(sourceIdentifier: IResourceIdentifier,
-        ifSuccesfulDo: (resolvedSource: ILoadedSource) => R,
-        ifFailedDo?: (sourceIdentifier: IResourceIdentifier) => R): R {
-        return this._sourceResolverLogic.tryResolving(sourceIdentifier, ifSuccesfulDo, ifFailedDo);
-    }
+export interface ISourcesLogic extends IComponent<void> {
+    createSourceResolver(sourceIdentifier: IResourceIdentifier): ISource;
+    getLoadedSourcesTrees(): Promise<ILoadedSourceTreeNode[]>;
+    getLoadedSourcesTreeForScript(script: IScript): ILoadedSourceTreeNode;
+    getText(source: ISource): Promise<string>;
+}
 
+@injectable()
+export class SourcesLogic implements ISourcesLogic, IComponent {
     public createSourceResolver(sourceIdentifier: IResourceIdentifier): ISource {
         return this._sourceResolverLogic.createUnresolvedSource(sourceIdentifier);
     }
@@ -30,10 +31,6 @@ export class SourcesLogic implements IComponent {
 
     public getLoadedSourcesTreeForScript(script: IScript): ILoadedSourceTreeNode {
         return this._sourceTreeNodeLogic.getLoadedSourcesTreeForScript(script);
-    }
-
-    public async getScriptText(script: IScript): Promise<string> {
-        return await this._sourceTextLogic.text(script.runtimeSource);
     }
 
     public async getText(source: ISource): Promise<string> {

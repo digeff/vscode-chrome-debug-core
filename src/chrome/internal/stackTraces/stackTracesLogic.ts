@@ -19,11 +19,11 @@ import { IComponent, ComponentConfiguration } from '../features/feature';
 import { InformationAboutPausedProvider } from '../features/takeProperActionOnPausedEvent';
 import { asyncMap } from '../../collections/async';
 import { TYPES } from '../../dependencyInjection.ts/types';
-import { ConnectedCDAConfiguration } from '../../..';
 import { IVote, Abstained } from '../../communication/collaborativeDecision';
 import { IAsyncDebuggingConfigurer } from '../../cdtpDebuggee/features/cdtpAsyncDebuggingConfigurer';
 import { IStackTracePresentation } from './stackTracePresentation';
 import { StackTraceLabel, CallFramePresentationHint, IStackTracePresentationRow } from './stackTracePresentationRow';
+import { ConnectedCDAConfiguration } from '../../client/chromeDebugAdapter/cdaConfiguration';
 
 export interface IEventsConsumedByStackTrace {
     subscriberForAskForInformationAboutPaused(listener: InformationAboutPausedProvider): void;

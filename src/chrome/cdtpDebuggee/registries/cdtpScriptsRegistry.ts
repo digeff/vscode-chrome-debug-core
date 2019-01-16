@@ -8,6 +8,7 @@ import { ValidatedMap } from '../../collections/validatedMap';
 import { ExecutionContext, IExecutionContext } from '../../internal/scripts/executionContext';
 import { injectable } from 'inversify';
 import { IResourceIdentifier, newResourceIdentifierMap } from '../../internal/sources/resourceIdentifier';
+import { FrameId } from '../cdtpPrimitives';
 
 /**
  * TODO: The CDTPScriptsRegistry is still a work in progress. We need to understand exactly how the ExecutionContexts, the Scripts, and the script "generations" work to figure out the best way to implement this
@@ -19,8 +20,8 @@ export class CDTPScriptsRegistry {
     private readonly _idToExecutionContext = new ValidatedMap<CDTP.Runtime.ExecutionContextId, ExecutionContext>();
     private readonly _scripts = new CDTPCurrentGeneration();
 
-    public registerExecutionContext(executionContextId: CDTP.Runtime.ExecutionContextId): IExecutionContext {
-        const executionContext = new ExecutionContext();
+    public registerExecutionContext(executionContextId: CDTP.Runtime.ExecutionContextId, frameId: FrameId): IExecutionContext {
+        const executionContext = new ExecutionContext(frameId);
         this._idToExecutionContext.set(executionContextId, executionContext);
         return executionContext;
     }

@@ -31,17 +31,17 @@ import * as executionTimingsReporter from './executionTimingsReporter';
 
 import { Protocol as CDTP } from 'devtools-protocol';
 import { TargetVersions } from './chrome/chromeTargetDiscoveryStrategy';
-import { Version } from "./chrome/utils/version";
-import { parseResourceIdentifier } from './chrome/internal/sources/resourceIdentifier';
+import { Version } from './chrome/utils/version';
+import { parseResourceIdentifier, IResourceIdentifier } from './chrome/internal/sources/resourceIdentifier';
 import { ChromeDebugAdapter } from './chrome/client/chromeDebugAdapter/chromeDebugAdapterV2';
 import { IExtensibilityPoints, OnlyProvideCustomLauncherExtensibilityPoints } from './chrome/extensibility/extensibilityPoints';
 import { IDebuggeeLauncher, ILaunchResult, IDebuggeeRunner } from './chrome/debugeeStartup/debugeeLauncher';
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct, interfaces } from 'inversify';
 import { ConnectedCDAConfiguration } from './chrome/client/chromeDebugAdapter/cdaConfiguration';
 import { IComponent } from './chrome/internal/features/feature';
 import { TYPES } from './chrome/dependencyInjection.ts/types';
 import { IInspectDebugeeState } from './chrome/cdtpDebuggee/features/cdtpInspectDebugeeState';
-import { CDTPEventsEmitterDiagnosticsModule } from './chrome/cdtpDebuggee/infrastructure/cdtpDiagnosticsModule';
+import { CDTPEventsEmitterDiagnosticsModule, CDTPEnableableDiagnosticsModule } from './chrome/cdtpDebuggee/infrastructure/cdtpDiagnosticsModule';
 import { ICommunicator } from './chrome/communication/communicator';
 import { ISupportedDomains } from './chrome/internal/domains/supportedDomains';
 import { Internal } from './chrome/communication/internalChannels';
@@ -50,6 +50,13 @@ import { IPausedOverlay } from './chrome/cdtpDebuggee/features/cdtpPausedOverlay
 import { INetworkCacheConfiguration } from './chrome/cdtpDebuggee/features/cdtpNetworkCacheConfiguration';
 import { IDebugeeRuntimeVersionProvider } from './chrome/cdtpDebuggee/features/cdtpDebugeeRuntimeVersionProvider';
 import { IBrowserNavigator } from './chrome/cdtpDebuggee/features/cdtpBrowserNavigator';
+import { ISourcesLogic } from './chrome/internal/sources/sourcesLogic';
+import { ISource } from './chrome/internal/sources/source';
+import { ILoadedSourceTreeNode, SourceScriptRelationship } from './chrome/internal/sources/loadedSource';
+import { IScript } from './chrome/internal/scripts/script';
+import * as utilities from './chrome/collections/utilities';
+import { CDTPDomainsEnabler } from './chrome/cdtpDebuggee/infrastructure/cdtpDomainsEnabler';
+import { GetComponentByID } from './chrome/dependencyInjection.ts/di';
 
 export {
     chromeConnection,
@@ -111,5 +118,25 @@ export {
 
     IInspectDebugeeState,
 
-    CDTP
+    CDTP,
+
+    ISourcesLogic,
+
+    interfaces,
+
+    IResourceIdentifier,
+
+    ISource,
+
+    ILoadedSourceTreeNode,
+
+    IScript,
+
+    SourceScriptRelationship,
+
+    utilities,
+
+    CDTPEnableableDiagnosticsModule,
+    CDTPDomainsEnabler,
+    GetComponentByID,
 };

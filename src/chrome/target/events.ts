@@ -29,28 +29,6 @@ export interface ScriptParsedEvent {
     readonly stackTrace?: CodeFlowStackTrace;
 }
 
-export class PausedEvent {
-    public cloneButWithHitBreakpoints(hitBreakpoints: IBPRecipe<ScriptOrSourceOrURLOrURLRegexp>[]): PausedEvent {
-        return new PausedEvent(
-            this.callFrames,
-            this.reason,
-            this.data,
-            hitBreakpoints,
-            this.asyncStackTrace,
-            this.asyncCallStackTraceId,
-            this.asyncStackTraceId);
-    }
-
-    constructor(
-        public readonly callFrames: ICallFrame<IScript>[],
-        public readonly reason: ('XHR' | 'DOM' | 'EventListener' | 'exception' | 'assert' | 'debugCommand' | 'promiseRejection' | 'OOM' | 'other' | 'ambiguous'),
-        public readonly data?: any,
-        public readonly hitBreakpoints?: IBPRecipe<ScriptOrSourceOrURLOrURLRegexp>[], // TODO DIEGO: Make this readonly
-        public readonly asyncStackTrace?: CodeFlowStackTrace,
-        public readonly asyncStackTraceId?: CDTP.Runtime.StackTraceId,
-        public readonly asyncCallStackTraceId?: CDTP.Runtime.StackTraceId) { }
-}
-
 export interface ConsoleAPICalledEvent {
     readonly type: ('log' | 'debug' | 'info' | 'error' | 'warning' | 'dir' | 'dirxml' | 'table' | 'trace' | 'clear' | 'startGroup' | 'startGroupCollapsed' | 'endGroup' | 'assert' | 'profile' | 'profileEnd' | 'count' | 'timeEnd');
     readonly args: CDTP.Runtime.RemoteObject[];

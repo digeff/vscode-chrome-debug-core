@@ -8,7 +8,7 @@ import { URLRegexp } from '../locations/subtypes';
 import { IResourceIdentifier, IURL } from '../sources/resourceIdentifier';
 import { CDTPScriptUrl } from '../sources/resourceIdentifierSubtypes';
 import { ISource } from '../sources/source';
-import { IMappedBPRecipe } from './baseMappedBPRecipe';
+import { IMappedBPRecipe, IBPRecipeForRuntimeSource } from './baseMappedBPRecipe';
 import { BPRecipeInSource } from './bpRecipeInSource';
 import { IBPRecipe, BPInScriptSupportedHitActions } from './bpRecipe';
 
@@ -41,7 +41,7 @@ export class MappableBreakpoint<TResource extends MappableBPPossibleResources> e
         return new BreakpointInSource(this.recipe.unmappedBPRecipe, this.actualLocation.mappedToSource());
     }
 
-    constructor(public readonly recipe: IMappedBPRecipe<TResource, BPInScriptSupportedHitActions>, public readonly actualLocation: ActualLocation<TResource>) {
+    constructor(public readonly recipe: IBPRecipeForRuntimeSource<TResource, BPInScriptSupportedHitActions>, public readonly actualLocation: ActualLocation<TResource>) {
         super();
     }
 }

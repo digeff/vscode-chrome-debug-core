@@ -10,12 +10,13 @@ import { ChromeDebugLogic } from './chromeDebugAdapter';
 import * as ChromeUtils from './chromeUtils';
 import * as assert from 'assert';
 import { InternalSourceBreakpoint } from './internalSourceBreakpoint';
-import { Version, parseResourceIdentifier } from '..';
 import { LocationInScript } from './internal/locations/location';
 import { BreakpointsLogic } from './internal/breakpoints/features/breakpointsLogic';
-import { IResourceIdentifier, newResourceIdentifierMap } from './internal/sources/resourceIdentifier';
+import { IResourceIdentifier, newResourceIdentifierMap, parseResourceIdentifier } from './internal/sources/resourceIdentifier';
 import { PausedEvent } from './cdtpDebuggee/eventsProviders/cdtpDebuggeeExecutionEventsProvider';
 import { IDOMInstrumentationBreakpoints } from './cdtpDebuggee/features/cdtpDOMInstrumentationBreakpoints';
+import { ValidatedSet } from './collections/validatedSet';
+import { Version } from './utils/Version';
 
 export interface IUrlRegexAndFileSet {
     urlRegex: string;
@@ -227,7 +228,7 @@ export class BreakOnLoadHelper {
             if (regexAndFileNames !== undefined) {
                 regexAndFileNames.fileSet.add(normalizedUrl);
             } else { // else create an entry for this breakpoint id
-                const fileSet = new Set<IResourceIdentifier>();
+                const fileSet = new ValidatedSet<IResourceIdentifier>();
                 fileSet.add(normalizedUrl);
                 this._stopOnEntryBreakpointIdToRequestedFileName.set(breakpointId, { urlRegex, fileSet });
             }

@@ -3,12 +3,11 @@
  *--------------------------------------------------------*/
 
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { utils, LineColTransformer, IExceptionInfoResponseBody } from '../..';
 import * as pathModule from 'path';
 import { ILoadedSource, ILoadedSourceTreeNode } from '../internal/sources/loadedSource';
 import { LocationInLoadedSource } from '../internal/locations/location';
 import { RemoveProperty } from '../../typeUtils';
-import { IBPRecipeStatus, BPRecipeIsBound } from '../internal/breakpoints/bpRecipeStatus';
+import { IBPRecipeStatus, BPRecipeHasBoundSubstatuses } from '../internal/breakpoints/bpRecipeStatus';
 import { IBPRecipe } from '../internal/breakpoints/bpRecipe';
 import { HandlesRegistry } from './handlesRegistry';
 import { IExceptionInformation } from '../internal/exceptions/pauseOnException';
@@ -19,7 +18,10 @@ import { Source } from 'vscode-debugadapter';
 import { CallFramePresentation } from '../internal/stackTraces/callFramePresentation';
 import { asyncMap } from '../collections/async';
 import { ISource } from '../internal/sources/source';
-import { IStackTracePresentationRow, StackTraceLabel } from '../internal/stackTraces/stackTracePresentationRow';
+import { StackTraceLabel, IStackTracePresentationRow } from '../internal/stackTraces/stackTracePresentationRow';
+import { IExceptionInfoResponseBody } from '../..';
+import { LineColTransformer } from '../../transformers/lineNumberTransformer';
+import * as utils from '../../utils';
 
 interface IClientLocationInSource {
     source: DebugProtocol.Source;
@@ -96,7 +98,7 @@ export class InternalToClient {
             message: bpRecipeStatus.statusDescription
         };
 
-        if (bpRecipeStatus instanceof BPRecipeIsBound) {
+        if (bpRecipeStatus instanceof BPRecipeHasBoundSubstatuses) {
             await this.toLocationInSource(bpRecipeStatus.actualLocationInSource, clientStatus);
         }
 

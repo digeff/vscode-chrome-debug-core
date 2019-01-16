@@ -31,6 +31,10 @@ export class PausedEvent {
         public readonly asyncStackTrace: CodeFlowStackTrace | undefined,
         public readonly asyncStackTraceId: CDTP.Runtime.StackTraceId | undefined,
         public readonly asyncCallStackTraceId: CDTP.Runtime.StackTraceId | undefined) { }
+
+    public toString(): string {
+        return `Debugger paused due to ${this.reason} on ${this.callFrames.length > 0 ? this.callFrames[0] : 'No call frame'}${this.hitBreakpoints.length > 0 ? 'at ' + this.hitBreakpoints.join(',') : ''}`;
+    }
 }
 
 export interface ICDTDebuggeeExecutionEventsProvider {

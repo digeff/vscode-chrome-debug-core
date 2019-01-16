@@ -3,7 +3,6 @@
  *--------------------------------------------------------*/
 
 import { inject, injectable } from 'inversify';
-import { parseResourceIdentifier } from '../../../..';
 import { BaseSourceMapTransformer } from '../../../../transformers/baseSourceMapTransformer';
 import { IEventsToClientReporter } from '../../../client/eventSender';
 import { determineOrderingOfStrings } from '../../../collections/utilities';
@@ -11,13 +10,14 @@ import { TYPES } from '../../../dependencyInjection.ts/types';
 import { IScript } from '../../scripts/script';
 import { CDTPScriptsRegistry } from '../../../cdtpDebuggee/registries/cdtpScriptsRegistry';
 import { IScriptSourcesRetriever } from '../../../cdtpDebuggee/features/cdtpScriptSourcesRetriever';
+import { parseResourceIdentifier } from '../resourceIdentifier';
 
 @injectable()
 export class DotScriptCommand {
     constructor(
         @inject(TYPES.BaseSourceMapTransformer) private readonly _sourceMapTransformer: BaseSourceMapTransformer,
         @inject(TYPES.IScriptSources) private readonly _scriptSources: IScriptSourcesRetriever,
-        @inject(TYPES.EventSender) private readonly _eventsToClientReporter: IEventsToClientReporter,
+        @inject(TYPES.IEventsToClientReporter) private readonly _eventsToClientReporter: IEventsToClientReporter,
         @inject(TYPES.CDTPScriptsRegistry) private readonly _scriptsRegistry: CDTPScriptsRegistry) { }
 
     /**

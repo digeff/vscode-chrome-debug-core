@@ -16,7 +16,7 @@ import { PauseOnExceptionOrRejection } from '../internal/exceptions/pauseOnExcep
 import { Stepping } from '../internal/stepping/stepping';
 import { DotScriptCommand } from '../internal/sources/features/dotScriptsCommand';
 import { BreakpointsRegistry } from '../internal/breakpoints/registries/breakpointsRegistry';
-import { ReAddBPsWhenSourceIsLoaded } from '../internal/breakpoints/features/reAddBPsWhenSourceIsLoaded';
+import { ExistingBPsForJustParsedScriptSetter } from '../internal/breakpoints/features/existingBPsForJustParsedScriptSetter';
 import { PauseScriptLoadsToSetBPs } from '../internal/breakpoints/features/pauseScriptLoadsToSetBPs';
 import { BPRecipeAtLoadedSourceLogic } from '../internal/breakpoints/features/bpRecipeAtLoadedSourceLogic';
 import { DeleteMeScriptsRegistry } from '../internal/scripts/scriptsRegistry';
@@ -44,59 +44,79 @@ import { CDTPDebugeeSteppingController } from '../cdtpDebuggee/features/cdtpDebu
 import { CDTPDebugeeRuntimeVersionProvider } from '../cdtpDebuggee/features/cdtpDebugeeRuntimeVersionProvider';
 import { CDTPBlackboxPatternsConfigurer } from '../cdtpDebuggee/features/cdtpBlackboxPatternsConfigurer';
 import { CDTPDomainsEnabler } from '../cdtpDebuggee/infrastructure/cdtpDomainsEnabler';
+import { LoadedSourcesRegistry } from '../cdtpDebuggee/registries/loadedSourcesRegistry';
+import { ComponentCustomizationCallback } from './di';
+import { MethodsCalledLogger, MethodsCalledLoggerConfiguration } from '../logging/methodsCalledLogger';
+import { printTopLevelObjectDescription } from '../logging/printObjectDescription';
 
-export function bindAll(di: Container) {
-    bind<IDOMInstrumentationBreakpoints>(di, TYPES.IDOMInstrumentationBreakpoints, CDTPDOMDebugger);
-    bind<IAsyncDebuggingConfigurer>(di, TYPES.IAsyncDebuggingConfiguration, CDTPAsyncDebuggingConfigurer);
-    bind<IScriptSourcesRetriever>(di, TYPES.IScriptSources, CDTPScriptSourcesRetriever);
-    bind<IStackTracePresentationLogicProvider>(di, TYPES.IStackTracePresentationLogicProvider, SmartStepLogic);
-    //  bind<IStackTracePresentationLogicProvider>(di, TYPES.IStackTracePresentationLogicProvider, SkipFilesLogic);
-    bind(di, TYPES.IEventsToClientReporter, EventSender);
-    bind(di, TYPES.ChromeDebugLogic, ChromeDebugLogic);
-    bind(di, TYPES.SourcesLogic, SourcesLogic);
-    bind(di, TYPES.CDTPScriptsRegistry, CDTPScriptsRegistry);
-    bind(di, TYPES.ClientToInternal, ClientToInternal);
-    bind(di, TYPES.InternalToClient, InternalToClient);
-    bind(di, TYPES.StackTracesLogic, StackTracesLogic);
-    bind(di, TYPES.BreakpointsLogic, BreakpointsLogic);
-    bind(di, TYPES.PauseOnExceptionOrRejection, PauseOnExceptionOrRejection);
-    bind(di, TYPES.Stepping, Stepping);
-    bind(di, TYPES.DotScriptCommand, DotScriptCommand);
-    bind(di, TYPES.BreakpointsRegistry, BreakpointsRegistry);
-    bind(di, TYPES.ReAddBPsWhenSourceIsLoaded, ReAddBPsWhenSourceIsLoaded);
-    bind(di, TYPES.PauseScriptLoadsToSetBPs, PauseScriptLoadsToSetBPs);
-    bind(di, TYPES.EventSender, EventSender);
-    bind(di, TYPES.DeleteMeScriptsRegistry, DeleteMeScriptsRegistry);
-    //  bind<BaseSourceMapTransformer>(di, TYPES.BaseSourceMapTransformer, BaseSourceMapTransformer);
-    //  bind<BasePathTransformer>(di, TYPES.BasePathTransformer, BasePathTransformer);
-    //  bind<IStackTracePresentationLogicProvider>(di, TYPES.IStackTracePresentationLogicProvider, SkipFilesLogic);
-    bind(di, TYPES.IDebugeeExecutionControl, CDTPDebugeeExecutionController);
-    bind(di, TYPES.IPauseOnExceptions, CDTPPauseOnExceptionsConfigurer);
-    bind(di, TYPES.IBreakpointFeaturesSupport, CDTPBreakpointFeaturesSupport);
-    bind(di, TYPES.IInspectDebugeeState, CDTPInspectDebugeeState);
-    bind(di, TYPES.IUpdateDebugeeState, CDTPUpdateDebugeeState);
-    bind(di, TYPES.BPRecipeInLoadedSourceLogic, BPRecipeAtLoadedSourceLogic);
-    bind(di, TYPES.SyncStepping, SyncStepping);
-    bind(di, TYPES.AsyncStepping, AsyncStepping);
-    // bind<cdtpBreakpointIdsRegistry>(di, cdtpBreakpointIdsRegistry, cdtpBreakpointIdsRegistry);
-    bind(di, TYPES.ExceptionThrownEventProvider, CDTPExceptionThrownEventsProvider);
-    bind(di, TYPES.ExecutionContextEventsProvider, CDTPExecutionContextEventsProvider);
-    bind(di, TYPES.LineColTransformer, LineColTransformer);
-    bind(di, TYPES.IBrowserNavigation, CDTPBrowserNavigator);
-    bind(di, TYPES.IScriptParsedProvider, CDTPOnScriptParsedEventProvider);
-    bind(di, TYPES.ICDTPDebuggerEventsProvider, CDTDebuggeeExecutionEventsProvider);
-    bind(di, TYPES.IDebugeeVersionProvider, CDTPDebugeeRuntimeVersionProvider);
-    bind(di, TYPES.ITargetBreakpoints, CDTPDebuggeeBreakpoints);
-    bind(di, TYPES.IConsoleEventsProvider, CDTPConsoleEventsProvider);
-    bind(di, TYPES.ILogEventsProvider, CDTPLogEventsProvider);
-    bind(di, TYPES.IDebugeeSteppingController, CDTPDebugeeSteppingController);
-    bind(di, TYPES.IBlackboxPatternsConfigurer, CDTPBlackboxPatternsConfigurer);
-    bind(di, TYPES.IDomainsEnabler, CDTPDomainsEnabler);
+export function bindAll(loggingConfiguration: MethodsCalledLoggerConfiguration, di: Container, callback: ComponentCustomizationCallback) {
+    bind<IDOMInstrumentationBreakpoints>(loggingConfiguration, di, TYPES.IDOMInstrumentationBreakpoints, CDTPDOMDebugger, callback);
+    bind<IAsyncDebuggingConfigurer>(loggingConfiguration, di, TYPES.IAsyncDebuggingConfiguration, CDTPAsyncDebuggingConfigurer, callback);
+    bind<IScriptSourcesRetriever>(loggingConfiguration, di, TYPES.IScriptSources, CDTPScriptSourcesRetriever, callback);
+    bind<IStackTracePresentationLogicProvider>(loggingConfiguration, di, TYPES.IStackTracePresentationLogicProvider, SmartStepLogic, callback);
+    //  bind<IStackTracePresentationLogicProvider>(configuration, di, TYPES.IStackTracePresentationLogicProvider, SkipFilesLogic, callback);
+    bind(loggingConfiguration, di, TYPES.IEventsToClientReporter, EventSender, callback);
+    bind(loggingConfiguration, di, TYPES.ChromeDebugLogic, ChromeDebugLogic, callback);
+    bind(loggingConfiguration, di, TYPES.SourcesLogic, SourcesLogic, callback);
+    bind(loggingConfiguration, di, TYPES.CDTPScriptsRegistry, CDTPScriptsRegistry, callback);
+    bind(loggingConfiguration, di, TYPES.ClientToInternal, ClientToInternal, callback);
+    bind(loggingConfiguration, di, TYPES.InternalToClient, InternalToClient, callback);
+    bind(loggingConfiguration, di, TYPES.StackTracesLogic, StackTracesLogic, callback);
+    bind(loggingConfiguration, di, TYPES.BreakpointsLogic, BreakpointsLogic, callback);
+    bind(loggingConfiguration, di, TYPES.PauseOnExceptionOrRejection, PauseOnExceptionOrRejection, callback);
+    bind(loggingConfiguration, di, TYPES.Stepping, Stepping, callback);
+    bind(loggingConfiguration, di, TYPES.DotScriptCommand, DotScriptCommand, callback);
+    bind(loggingConfiguration, di, ExistingBPsForJustParsedScriptSetter, ExistingBPsForJustParsedScriptSetter, callback);
+    bind(loggingConfiguration, di, TYPES.DeleteMeScriptsRegistry, DeleteMeScriptsRegistry, callback);
+    //  bind<BaseSourceMapTransformer>(configuration, di, TYPES.BaseSourceMapTransformer, BaseSourceMapTransformer, callback);
+    //  bind<BasePathTransformer>(configuration, di, TYPES.BasePathTransformer, BasePathTransformer, callback);
+    //  bind<IStackTracePresentationLogicProvider>(configuration, di, TYPES.IStackTracePresentationLogicProvider, SkipFilesLogic, callback);
+    bind(loggingConfiguration, di, TYPES.IDebugeeExecutionControl, CDTPDebugeeExecutionController, callback);
+    bind(loggingConfiguration, di, TYPES.IPauseOnExceptions, CDTPPauseOnExceptionsConfigurer, callback);
+    bind(loggingConfiguration, di, TYPES.IBreakpointFeaturesSupport, CDTPBreakpointFeaturesSupport, callback);
+    bind(loggingConfiguration, di, TYPES.IInspectDebugeeState, CDTPInspectDebugeeState, callback);
+    bind(loggingConfiguration, di, TYPES.IUpdateDebugeeState, CDTPUpdateDebugeeState, callback);
+    bind(loggingConfiguration, di, TYPES.SyncStepping, SyncStepping, callback);
+    bind(loggingConfiguration, di, TYPES.AsyncStepping, AsyncStepping, callback);
+    // bind<cdtpBreakpointIdsRegistry>(configuration, di, cdtpBreakpointIdsRegistry, cdtpBreakpointIdsRegistry, callback);
+    bind(loggingConfiguration, di, TYPES.ExceptionThrownEventProvider, CDTPExceptionThrownEventsProvider, callback);
+    bind(loggingConfiguration, di, TYPES.ExecutionContextEventsProvider, CDTPExecutionContextEventsProvider, callback);
+    bind(loggingConfiguration, di, TYPES.LineColTransformer, LineColTransformer, callback);
+    bind(loggingConfiguration, di, TYPES.IBrowserNavigation, CDTPBrowserNavigator, callback);
+    bind(loggingConfiguration, di, TYPES.IScriptParsedProvider, CDTPOnScriptParsedEventProvider, callback);
+    bind(loggingConfiguration, di, TYPES.ICDTPDebuggerEventsProvider, CDTDebuggeeExecutionEventsProvider, callback);
+    bind(loggingConfiguration, di, TYPES.IDebugeeVersionProvider, CDTPDebugeeRuntimeVersionProvider, callback);
+    bind(loggingConfiguration, di, TYPES.ITargetBreakpoints, CDTPDebuggeeBreakpoints, callback);
+    bind(loggingConfiguration, di, TYPES.IConsoleEventsProvider, CDTPConsoleEventsProvider, callback);
+    bind(loggingConfiguration, di, TYPES.ILogEventsProvider, CDTPLogEventsProvider, callback);
+    bind(loggingConfiguration, di, TYPES.IDebugeeSteppingController, CDTPDebugeeSteppingController, callback);
+    bind(loggingConfiguration, di, TYPES.IBlackboxPatternsConfigurer, CDTPBlackboxPatternsConfigurer, callback);
+    bind(loggingConfiguration, di, TYPES.IDomainsEnabler, CDTPDomainsEnabler, callback);
+    bind(loggingConfiguration, di, LoadedSourcesRegistry, LoadedSourcesRegistry, callback);
 }
 
-function bind<T extends object>(container: Container, serviceIdentifier: interfaces.ServiceIdentifier<T>, newable: interfaces.Newable<T>): void {
+function bind<T extends object>(configuration: MethodsCalledLoggerConfiguration, container: Container, serviceIdentifier: interfaces.ServiceIdentifier<T>, newable: interfaces.Newable<T>, callback: ComponentCustomizationCallback): void {
     container.bind<T>(serviceIdentifier).to(newable).inSingletonScope().onActivation((_context, object) => {
-        return object;
-        /// return new MethodsCalledLogger<T>(object, serviceIdentifier.toString()).wrapped();
+        const objectWithLogging = wrapWithLogging(configuration, object, serviceIdentifier);
+        const possibleOverwrittenComponent = callback(serviceIdentifier, objectWithLogging, identifier => _context.container.get(identifier));
+        if (objectWithLogging === possibleOverwrittenComponent) {
+            return objectWithLogging;
+        } else {
+            return wrapWithLogging(configuration, possibleOverwrittenComponent, `${getName<T>(serviceIdentifier)}_Override`);
+        }
     });
+}
+
+const prefixLength = 'Symbol('.length;
+const postfixLength = ')'.length;
+function getName<T extends object>(serviceIdentifier: string | symbol | interfaces.Newable<T> | interfaces.Abstract<T>) {
+    if (typeof serviceIdentifier === 'symbol') {
+        return serviceIdentifier.toString().slice(prefixLength, -postfixLength);
+    } else {
+        return printTopLevelObjectDescription(serviceIdentifier);
+    }
+}
+
+function wrapWithLogging<T extends object>(configuration: MethodsCalledLoggerConfiguration, object: T, serviceIdentifier: string | symbol | interfaces.Newable<T> | interfaces.Abstract<T>) {
+    return new MethodsCalledLogger<T>(configuration, object, getName(serviceIdentifier)).wrapped();
 }

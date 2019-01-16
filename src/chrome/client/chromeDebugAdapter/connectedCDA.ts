@@ -4,13 +4,13 @@
 
 import * as errors from '../../../errors';
 import { DebugProtocol } from 'vscode-debugprotocol';
+import * as utils from '../../../utils';
 import { ChromeDebugLogic } from '../../chromeDebugAdapter';
 import { ClientToInternal } from '../clientToInternal';
 import { InternalToClient } from '../internalToClient';
-import { IGetLoadedSourcesResponseBody, IDebugAdapterState, PromiseOrNot, ISetBreakpointsResponseBody, IStackTraceResponseBody, IScopesResponseBody, IVariablesResponseBody, ISourceResponseBody, IThreadsResponseBody, IEvaluateResponseBody, IExceptionInfoResponseBody, ILaunchRequestArgs, IAttachRequestArgs } from '../../../debugAdapterInterfaces';
+import { IGetLoadedSourcesResponseBody, IDebugAdapterState, PromiseOrNot, ISetBreakpointsResponseBody, IStackTraceResponseBody, IScopesResponseBody, IVariablesResponseBody, ISourceResponseBody, IThreadsResponseBody, IEvaluateResponseBody, IExceptionInfoResponseBody, ILaunchRequestArgs, IAttachRequestArgs, IToggleSkipFileStatusArgs } from '../../../debugAdapterInterfaces';
 import { StackTracesLogic } from '../../internal/stackTraces/stackTracesLogic';
-import { SourcesLogic } from '../../internal/sources/sourcesLogic';
-import { BreakpointsLogic } from '../../internal/breakpoints/features/breakpointsLogic';
+import { SourcesLogic, ISourcesLogic } from '../../internal/sources/sourcesLogic';
 import { CDTPScriptsRegistry } from '../../cdtpDebuggee/registries/cdtpScriptsRegistry';
 import { PauseOnExceptionOrRejection } from '../../internal/exceptions/pauseOnException';
 import { Stepping } from '../../internal/stepping/stepping';
@@ -26,9 +26,10 @@ import { Target } from '../../communication/targetChannels';
 import { IDebuggeeRunner } from '../../debugeeStartup/debugeeLauncher';
 import { StepProgressEventsEmitter } from '../../../executionTimingsReporter';
 import { TelemetryPropertyCollector, ITelemetryPropertyCollector } from '../../../telemetry';
-import { ICommunicator, utils, IToggleSkipFileStatusArgs } from '../../..';
 import { CallFramePresentation } from '../../internal/stackTraces/callFramePresentation';
 import { asyncMap } from '../../collections/async';
+import { BreakpointsLogic } from '../../internal/breakpoints/features/breakpointsLogic';
+import { ICommunicator } from '../../communication/communicator';
 
 // TODO DIEGO: Remember to call here and only here         this._lineColTransformer.convertDebuggerLocationToClient(stackFrame); for all responses
 @injectable()
@@ -39,7 +40,7 @@ export class ConnectedCDA implements IDebugAdapterState {
 
     constructor(
         @inject(TYPES.ChromeDebugLogic) protected readonly _chromeDebugAdapter: ChromeDebugLogic,
-        @inject(TYPES.SourcesLogic) private readonly _sourcesLogic: SourcesLogic,
+        @inject(TYPES.SourcesLogic) private readonly _sourcesLogic: ISourcesLogic,
         @inject(TYPES.CDTPScriptsRegistry) protected _scriptsLogic: CDTPScriptsRegistry,
         @inject(TYPES.ClientToInternal) protected readonly _clientToInternal: ClientToInternal,
         @inject(TYPES.InternalToClient) private readonly _internalToVsCode: InternalToClient,

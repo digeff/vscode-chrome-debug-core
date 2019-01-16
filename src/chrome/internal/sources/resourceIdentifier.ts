@@ -104,7 +104,7 @@ export class LocalFileURL<TString extends string = string> extends IsEquivalentC
 
     constructor(fileUrl: TString) {
         super();
-        let filePath = decodeURIComponent(fileUrl.replace(`^file://`, ''));
+        let filePath = decodeURIComponent(fileUrl.replace(/^file:\/\/\//, ''));
         this._localResourcePath = parseLocalResourcePath(filePath);
     }
 }
@@ -169,10 +169,6 @@ export class WindowLocalFilePath<TString extends string = string> extends LocalF
 
     public static isValid(path: string) {
         return path.match(/^[A-Za-z]:/);
-    }
-
-    public get canonicalized(): string {
-        return this.textRepresentation.toLowerCase().replace(/[\\\/]+/, '\\');
     }
 }
 

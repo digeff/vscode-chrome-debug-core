@@ -216,7 +216,7 @@ function stackTraceToString(stackTrace: CodeFlowStackTrace): string {
 
     return stackTrace.codeFlowFrames
         .map(frame => {
-            const fnName = functionDescription(frame.functionName, frame.script);
+            const fnName = functionDescription(frame.functionName, frame.script.runtimeSource);
             const fileName = frame.script.developmentSource.identifier.textRepresentation;
             return `    at ${fnName} (${fileName}:${frame.lineNumber + 1}:${frame.columnNumber})`;
         })

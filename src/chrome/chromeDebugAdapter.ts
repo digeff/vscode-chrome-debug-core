@@ -38,10 +38,9 @@ import { IScript } from './internal/scripts/script';
 import { LocationInLoadedSource } from './internal/locations/location';
 import { IEvaluateArguments, ICompletionsArguments } from './internal/requests';
 import { EventSender } from './client/eventSender';
-import { parseResourceIdentifier, ConnectedCDAConfiguration, IInspectDebugeeState } from '..';
 import { LoadedSourceCallFrame } from './internal/stackTraces/callFrame';
 import { CodeFlowStackTrace } from './internal/stackTraces/codeFlowStackTrace';
-import { IResourceIdentifier } from './internal/sources/resourceIdentifier';
+import { IResourceIdentifier, parseResourceIdentifier } from './internal/sources/resourceIdentifier';
 import { FormattedExceptionParser } from './internal/formattedExceptionParser';
 import { DeleteMeScriptsRegistry } from './internal/scripts/scriptsRegistry';
 import { injectable, inject } from 'inversify';
@@ -53,7 +52,8 @@ import { IPauseOnExceptionsConfigurer } from './cdtpDebuggee/features/CDTPPauseO
 import { CDTPExceptionThrownEventsProvider, IExceptionThrownEvent } from './cdtpDebuggee/eventsProviders/cdtpExceptionThrownEventsProvider';
 import { CDTPExecutionContextEventsProvider } from './cdtpDebuggee/eventsProviders/cdtpExecutionContextEventsProvider';
 import { IUpdateDebugeeState } from './cdtpDebuggee/features/cdtpUpdateDebugeeState';
-import { IEvaluateOnCallFrameRequest } from './cdtpDebuggee/features/cdtpInspectDebugeeState';
+import { IEvaluateOnCallFrameRequest, IInspectDebugeeState } from './cdtpDebuggee/features/cdtpInspectDebugeeState';
+import { ConnectedCDAConfiguration } from './client/chromeDebugAdapter/cdaConfiguration';
 
 // export class ChromeDebugAdapter extends ChromeDebugAdapterClass {
 //     /** These methods are called by the ChromeDebugAdapter subclass in chrome-debug. We need to redirect them like this
@@ -201,7 +201,7 @@ export class ChromeDebugLogic {
         @inject(TYPES.ISession) session: ISession,
         @inject(TYPES.ChromeConnection) chromeConnection: ChromeConnection,
         @inject(TYPES.DeleteMeScriptsRegistry) private readonly _scriptsLogic: DeleteMeScriptsRegistry,
-        @inject(TYPES.EventSender) private readonly _eventSender: EventSender,
+        @inject(TYPES.IEventsToClientReporter) private readonly _eventSender: EventSender,
         @inject(TYPES.ExceptionThrownEventProvider) private readonly _exceptionThrownEventProvider: CDTPExceptionThrownEventsProvider,
         @inject(TYPES.ExecutionContextEventsProvider) private readonly _executionContextEventsProvider: CDTPExecutionContextEventsProvider,
         @inject(TYPES.IInspectDebugeeState) private readonly _inspectDebugeeState: IInspectDebugeeState,
@@ -585,7 +585,7 @@ export class ChromeDebugLogic {
 
         const scopesResponse = { scopes };
         if (currentFrame.source.doesScriptHasUrl()) {
-            this._sourceMapTransformer.scopesResponse(currentFrame.source.script.url, scopesResponse);
+            this._sourceMapTransformer.scopesResponse(currentFrame.source.url, scopesResponse);
             this._lineColTransformer.scopeResponse(scopesResponse);
         }
 
@@ -1159,5 +1159,9 @@ export class ChromeDebugLogic {
 
     public async onPaused(_notification: PausedEvent): Promise<void> {
         this._variableHandles.onPaused();
+    }
+
+    public toString(): string {
+        return 'ChromeDebugLogic';
     }
 }

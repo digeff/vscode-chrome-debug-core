@@ -13,7 +13,7 @@ import { IBPActionWhenHit, AlwaysPause, ConditionalPause } from '../internal/bre
 import { HandlesRegistry } from './handlesRegistry';
 import { createLineNumber, createColumnNumber } from '../internal/locations/subtypes';
 import { parseResourceIdentifier } from '../internal/sources/resourceIdentifier';
-import { IPauseOnExceptionsStrategy, PauseOnAllExceptions, PauseOnUnhandledExceptions, DoNotPauseOnAnyExceptions, PauseOnAllRejections, DoNotPauseOnAnyRejections, IPauseOnPromiseRejectionsStrategy } from '../internal/exceptions/strategies';
+import {  PauseOnAllExceptions, PauseOnUnhandledExceptions, DoNotPauseOnAnyExceptions, PauseOnAllRejections, DoNotPauseOnAnyRejections, IPauseOnExceptionsStrategy, IPauseOnPromiseRejectionsStrategy } from '../internal/exceptions/strategies';
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../dependencyInjection.ts/types';
 import { ISource, SourceAlreadyResolvedToLoadedSource } from '../internal/sources/source';

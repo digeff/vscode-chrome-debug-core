@@ -1,17 +1,12 @@
 /*---------------------------------------------------------
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
-
- import {
-    IDebugAdapter, ITelemetryPropertyCollector, PromiseOrNot, ILaunchRequestArgs, IAttachRequestArgs, IThreadsResponseBody,
-    ISetBreakpointsResponseBody, IStackTraceResponseBody, IScopesResponseBody, IVariablesResponseBody, ISourceResponseBody,
-    IEvaluateResponseBody, IExceptionInfoResponseBody, IGetLoadedSourcesResponseBody, IDebugAdapterState, IToggleSkipFileStatusArgs
-} from '../../..';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { ChromeDebugSession, IChromeDebugSessionOpts } from '../../chromeDebugSession';
 import { ChromeConnection } from '../../chromeConnection';
 import { StepProgressEventsEmitter } from '../../../executionTimingsReporter';
 import { UninitializedCDA } from './uninitializedCDA';
+import { IDebugAdapter, IDebugAdapterState, ITelemetryPropertyCollector, ILaunchRequestArgs, IAttachRequestArgs, PromiseOrNot, ISetBreakpointsResponseBody, IStackTraceResponseBody, IScopesResponseBody, IVariablesResponseBody, ISourceResponseBody, IThreadsResponseBody, IEvaluateResponseBody, IGetLoadedSourcesResponseBody, IExceptionInfoResponseBody, IToggleSkipFileStatusArgs } from '../../../debugAdapterInterfaces';
 
 export class ChromeDebugAdapter implements IDebugAdapter {
     private _state: IDebugAdapterState;

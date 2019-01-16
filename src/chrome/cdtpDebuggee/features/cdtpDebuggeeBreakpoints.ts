@@ -21,7 +21,7 @@ import { IURL, IResourceIdentifier } from '../../internal/sources/resourceIdenti
 import { CDTPScriptUrl } from '../../internal/sources/resourceIdentifierSubtypes';
 import { URLRegexp } from '../../internal/locations/subtypes';
 import { MappableBreakpoint, ActualLocation } from '../../internal/breakpoints/breakpoint';
-import { BPRecipeInScript, BPRecipeInUrl, BPRecipeInUrlRegexp, IMappedBPRecipe } from '../../internal/breakpoints/BaseMappedBPRecipe';
+import { BPRecipeInScript, BPRecipeInUrl, BPRecipeInUrlRegexp, IMappedBPRecipe, IBPRecipeForRuntimeSource } from '../../internal/breakpoints/BaseMappedBPRecipe';
 import { ConditionalPause } from '../../internal/breakpoints/bpActionWhenHit';
 import { singleElementOfArray } from '../../collections/utilities';
 
@@ -93,7 +93,7 @@ export class CDTPDebuggeeBreakpoints extends CDTPEventsEmitterDiagnosticsModule<
     }
 
     private async setBreakpointHelper<TResource extends IScript | IResourceIdentifier<CDTPScriptUrl> | URLRegexp, TBPActionWhenHit extends CDTPSupportedHitActions>
-        (bpRecipe: IMappedBPRecipe<TResource, TBPActionWhenHit>,
+        (bpRecipe: IBPRecipeForRuntimeSource<TResource, TBPActionWhenHit>,
             setBPInCDTPCall: SetBPInCDTPCall<TResource>): Promise<MappableBreakpoint<TResource>[]> {
         const cdtpConditionField = this.getCDTPConditionField(bpRecipe);
         const resource: TResource = bpRecipe.location.resource; // TODO: Figure out why the <TResource> is needed and remove it
@@ -114,8 +114,8 @@ export class CDTPDebuggeeBreakpoints extends CDTPEventsEmitterDiagnosticsModule<
 
     public async getPossibleBreakpoints(rangeInScript: RangeInScript): Promise<LocationInScript[]> {
         const response = await this.api.getPossibleBreakpoints({
-            start: this.toCrdpLocation(rangeInScript.startInScript),
-            end: this.toCrdpLocation(rangeInScript.endInScript)
+            start: this.toCrdpLocation(rangeInScript.start),
+            end: this.toCrdpLocation(rangeInScript.end)
         });
 
         return asyncMap(response.locations, async location => await this.toLocationInScript(location));
@@ -132,7 +132,7 @@ export class CDTPDebuggeeBreakpoints extends CDTPEventsEmitterDiagnosticsModule<
             : undefined;
     }
 
-    private async toBreakpoinInResource<TResource extends CDTPSupportedResources>(bpRecipe: IMappedBPRecipe<TResource, CDTPSupportedHitActions>, actualLocation: CDTP.Debugger.Location): Promise<MappableBreakpoint<TResource>> {
+    private async toBreakpoinInResource<TResource extends CDTPSupportedResources>(bpRecipe: IBPRecipeForRuntimeSource<TResource, CDTPSupportedHitActions>, actualLocation: CDTP.Debugger.Location): Promise<MappableBreakpoint<TResource>> {
         const breakpoint = new MappableBreakpoint<TResource>(bpRecipe, <ActualLocation<TResource>>await this.toLocationInScript(actualLocation));
         return breakpoint;
     }
