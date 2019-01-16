@@ -585,7 +585,7 @@ export class ChromeDebugLogic {
 
         const scopesResponse = { scopes };
         if (currentFrame.source.doesScriptHasUrl()) {
-            this._sourceMapTransformer.scopesResponse(currentFrame.source.script.url, scopesResponse);
+            this._sourceMapTransformer.scopesResponse(currentFrame.source.url, scopesResponse);
             this._lineColTransformer.scopeResponse(scopesResponse);
         }
 

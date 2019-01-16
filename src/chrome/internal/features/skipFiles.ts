@@ -112,9 +112,9 @@ export class SkipFilesLogic implements IComponent<ISkipFilesConfiguration>, ISta
 
             if (newStatus) {
                 // TODO: Verify that using targetPath works here. We need targetPath to be this.getScriptByUrl(targetPath).url
-                this.makeRegexesSkip(resolvedSource.script.runtimeSource.identifier.textRepresentation);
+                this.makeRegexesSkip(resolvedSource.url);
             } else {
-                this.makeRegexesNotSkip(resolvedSource.script.runtimeSource.identifier.textRepresentation);
+                this.makeRegexesNotSkip(resolvedSource.url);
             }
 
             this.reprocessPausedEvent();

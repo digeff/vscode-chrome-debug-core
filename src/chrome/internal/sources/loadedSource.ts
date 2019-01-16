@@ -8,8 +8,9 @@ import { IEquivalenceComparable } from '../../utils/equivalence';
  *  or a file from which the script was loaded, or a file that was compiled to generate the contents of the script
  */
 export interface ILoadedSource<TString = string> extends IEquivalenceComparable {
-    readonly script: IScript;
+    // readonly script: IScript;
     readonly identifier: IResourceIdentifier<TString>;
+    readonly url: CDTPScriptUrl;
     readonly origin: string;
     doesScriptHasUrl(): boolean; // TODO DIEGO: Figure out if we can delete this property
     isMappedSource(): boolean;
@@ -25,6 +26,10 @@ export interface ILoadedSource<TString = string> extends IEquivalenceComparable 
  */
 
 abstract class LoadedSourceWithURLCommonLogic<TSource = string> implements ILoadedSource<TSource> {
+    public get url(): CDTPScriptUrl {
+        return this.script.url;
+    }
+
     public isMappedSource(): boolean {
         return false;
     }
@@ -53,6 +58,10 @@ export class ScriptRuntimeSource extends LoadedSourceWithURLCommonLogic<CDTPScri
 export class ScriptDevelopmentSource extends LoadedSourceWithURLCommonLogic implements ILoadedSource { }
 
 export class NoURLScriptSource implements ILoadedSource<CDTPScriptUrl> {
+    public get url(): never {
+        throw Error(`Can't get the url for ${this} because it doesn't have one`);
+    }
+
     public get identifier(): IResourceIdentifier<CDTPScriptUrl> {
         return parseResourceIdentifier<CDTPScriptUrl>(`${NoURLScriptSource.EVAL_PSEUDO_PREFIX}${this.name.textRepresentation}` as any);
     }
