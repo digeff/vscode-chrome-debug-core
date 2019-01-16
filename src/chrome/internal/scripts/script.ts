@@ -15,7 +15,10 @@ import { IEquivalenceComparable } from '../../utils/equivalence';
 /** This interface represents a piece of code that is being executed in the debugee. Usually a script matches to a file or a url, but that is not always the case.
  * This interface solves the problem of finding the different loaded sources associated with a script, and being able to identify and compare both scripts and sources easily.
  */
+const ImplementsScript = Symbol();
 export interface IScript extends IEquivalenceComparable {
+    [ImplementsScript]: void;
+
     readonly executionContext: IExecutionContext;
     readonly runtimeSource: ILoadedSource<CDTPScriptUrl>; // Source in Webserver
     readonly developmentSource: ILoadedSource; // Source in Workspace
@@ -30,7 +33,13 @@ export interface IScript extends IEquivalenceComparable {
     isEquivalentTo(script: IScript): boolean;
 }
 
+export function isScript(object: unknown): object is IScript {
+    return !!(<any>object)[ImplementsScript];
+}
+
 export class Script implements IScript {
+    [ImplementsScript]: void;
+
     private readonly _runtimeSource: ILoadedSource<CDTPScriptUrl>;
     private readonly _developmentSource: ILoadedSource;
     private readonly _compiledSources: IValidatedMap<IResourceIdentifier, MappedSource>;

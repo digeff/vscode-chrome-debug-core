@@ -67,11 +67,13 @@ export class CDTPOnScriptParsedEventProvider extends CDTPEventsEmitterDiagnostic
         delete params.hash;
 
         const executionContext = this._scriptsRegistry.getExecutionContextById(params.executionContextId);
+        // const startPosition = new Position(createLineNumber(params.startLine), createColumnNumber(params.startColumn));
+        // const endPosition = new Position(createLineNumber(params.endLine), createColumnNumber(params.endColumn));
 
         const script = await this._scriptsRegistry.registerScript(params.scriptId, async () => {
             if (params.url !== undefined && params.url !== '') {
                 const runtimeSourceLocation = parseResourceIdentifier(createCDTPScriptUrl(params.url));
-                const developmentSourceLocation = await this._pathTransformer.scriptParsed(runtimeSourceLocation);
+                        const developmentSourceLocation = await this._pathTransformer.scriptParsed(runtimeSourceLocation);
                 const sourceMap = await this._sourceMapTransformer.scriptParsed(runtimeSourceLocation.canonicalized, params.sourceMapURL);
                 const sourceMapper = sourceMap
                     ? new SourcesMapper(sourceMap)

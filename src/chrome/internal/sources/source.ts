@@ -7,12 +7,21 @@ import { IEquivalenceComparable } from '../../utils/equivalence';
  * VS Code debug protocol sends breakpoint requests with a path?: string; or sourceReference?: number; Before we can use the path, we need to wait for the related script to be loaded so we can match it with a script id.
  * This set of classes will let us represent the information we get from either a path or a sourceReference, and then let us try to resolve it to a script id when possible.
  */
+const ImplementsSource = Symbol();
 export interface ISource extends IEquivalenceComparable {
+    [ImplementsSource]: void;
+
     readonly sourceIdentifier: IResourceIdentifier;
     tryResolving<R>(succesfulAction: (resolvedSource: ILoadedSource) => R, failedAction: (sourceIdentifier: IResourceIdentifier) => R): R;
 }
 
+export function isSource(object: unknown): object is ISource {
+    return !!(<any>object)[ImplementsSource];
+}
+
 abstract class SourceCommonLogic implements ISource {
+    [ImplementsSource]: void;
+
     public abstract tryResolving<R>(succesfulAction: (loadedSource: ILoadedSource) => R, failedAction: (identifier: IResourceIdentifier) => R): R;
     public abstract get sourceIdentifier(): IResourceIdentifier;
 

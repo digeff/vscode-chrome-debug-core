@@ -5,7 +5,7 @@ import { ScriptOrSourceOrURLOrURLRegexp, LocationInScript, Position } from '../l
 import { ISource } from '../sources/source';
 import { chromeUtils, logger } from '../../..';
 import { createColumnNumber, createLineNumber } from '../locations/subtypes';
-import { RangeInScript } from '../locations/rangeInScript';
+import { RangeInResource } from '../locations/rangeInScript';
 import { BreakpointsRegistry } from './breakpointsRegistry';
 import { PausedEvent } from '../../cdtpDebuggee/eventsProviders/cdtpDebuggeeExecutionEventsProvider';
 import { VoteRelevance, Vote, Abstained } from '../../communication/collaborativeDecision';
@@ -94,7 +94,7 @@ export class BPRecipieAtLoadedSourceLogic implements IBreakpointsInLoadedSource 
         if (await this.doesTargetSupportColumnBreakpointsCached) {
             const thisLineStart = new Position(location.position.lineNumber, createColumnNumber(0));
             const nextLineStart = new Position(createLineNumber(location.position.lineNumber + 1), createColumnNumber(0));
-            const thisLineRange = new RangeInScript(location.script, thisLineStart, nextLineStart);
+            const thisLineRange = new RangeInResource(location.script, thisLineStart, nextLineStart);
 
             const possibleLocations = await this._targetBreakpoints.getPossibleBreakpoints(thisLineRange);
 

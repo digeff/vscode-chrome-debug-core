@@ -110,8 +110,8 @@ export class CDTPDebuggeeBreakpoints extends CDTPEventsEmitterDiagnosticsModule<
 
     public async getPossibleBreakpoints(rangeInScript: RangeInScript): Promise<LocationInScript[]> {
         const response = await this.api.getPossibleBreakpoints({
-            start: this.toCrdpLocation(rangeInScript.startInScript),
-            end: this.toCrdpLocation(rangeInScript.endInScript)
+            start: this.toCrdpLocation(rangeInScript.start),
+            end: this.toCrdpLocation(rangeInScript.end)
         });
 
         return asyncMap(response.locations, async location => await this.toLocationInScript(location));

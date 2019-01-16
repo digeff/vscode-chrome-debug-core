@@ -1,6 +1,6 @@
 import * as Validation from '../../../validation';
-import { IScript } from '../scripts/script';
-import { ISource } from '../sources/source';
+import { IScript, isScript } from '../scripts/script';
+import { ISource, isSource } from '../sources/source';
 import { ILoadedSource } from '../sources/loadedSource';
 import { logger } from 'vscode-debugadapter';
 import { ColumnNumber, LineNumber, URLRegexp } from './subtypes';
@@ -46,6 +46,16 @@ export type Location<T extends ScriptOrSourceOrURLOrURLRegexp> =
     T extends URLRegexp ? LocationInUrlRegexp : // Used when setting a breakpoint by URL in a local file path in windows, to make it case insensitive
     T extends URL<CDTPScriptUrl> ? LocationInUrl : // Used when setting a breakpoint by URL for case-insensitive URLs
     ILocation<never>; // TODO: Figure out how to replace this by never (We run into some issues with the isEquivalentTo call if we do)
+
+export function createLocation<T extends ScriptOrSourceOrURLOrURLRegexp>(resource: T, position: Position): Location<T> {
+    if (isSource(resource)) {
+        return <Location<T>>new LocationInSource(resource, position); // TODO: Figure out how to remove this cast
+    } else if (isScript(resource)) {
+        return <Location<T>>new LocationInScript(resource, position);
+    } else {
+        throw new Error(`Support for resource ${resource} hasn't been implemented yet`);
+    }
+}
 
 abstract class LocationCommonLogic<T extends ScriptOrSourceOrURLOrURLRegexp> implements ILocation<T> {
     public isEquivalentTo(right: this): boolean {
