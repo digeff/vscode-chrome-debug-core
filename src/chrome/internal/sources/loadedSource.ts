@@ -8,7 +8,7 @@ import { IEquivalenceComparable } from '../../utils/equivalence';
  *  or a file from which the script was loaded, or a file that was compiled to generate the contents of the script
  */
 export interface ILoadedSource<TString = string> extends IEquivalenceComparable {
-    // readonly script: IScript;
+    readonly script: IScript;
     readonly identifier: IResourceIdentifier<TString>;
     readonly url: CDTPScriptUrl;
     readonly origin: string;
