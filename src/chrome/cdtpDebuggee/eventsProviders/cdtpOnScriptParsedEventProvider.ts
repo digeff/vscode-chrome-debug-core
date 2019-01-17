@@ -1,10 +1,11 @@
+import * as fs from 'fs';
 import { CDTP, parseResourceIdentifier, BasePathTransformer, BaseSourceMapTransformer } from '../../..';
 import { CDTPEventsEmitterDiagnosticsModule } from '../infrastructure/cdtpDiagnosticsModule';
 import { CDTPScriptsRegistry } from '../registries/cdtpScriptsRegistry';
 import { IScript, Script } from '../../internal/scripts/script';
-import { createCDTPScriptUrl } from '../../internal/sources/resourceIdentifierSubtypes';
+import { createCDTPScriptUrl, CDTPScriptUrl } from '../../internal/sources/resourceIdentifierSubtypes';
 import { SourcesMapper, NoSourceMapping as NoSourcesMapper } from '../../internal/scripts/sourcesMapper';
-import { ResourceName } from '../../internal/sources/resourceIdentifier';
+import { ResourceName, IResourceIdentifier } from '../../internal/sources/resourceIdentifier';
 import { TYPES } from '../../dependencyInjection.ts/types';
 import { CDTPStackTraceParser } from '../protocolParsers/cdtpStackTraceParser';
 import { inject } from 'inversify';
@@ -12,6 +13,9 @@ import { integer } from '../cdtpPrimitives';
 import { CodeFlowStackTrace } from '../../internal/stackTraces/codeFlowStackTrace';
 import { IExecutionContext } from '../../internal/scripts/executionContext';
 import { CDTPDomainsEnabler } from '../infrastructure/cdtpDomainsEnabler';
+import { LoadedSourcesRegistry } from '../registries/loadedSourcesRegistry';
+import { SourceInLocalStorage, DynamicSource } from '../../internal/sources/loadedSource';
+import { DevelopmentSource } from '../../internal/sources/loadedSourceToScriptRelationship';
 
 /**
  * A new JavaScript Script has been parsed by the debugee and it's about to be executed
@@ -57,7 +61,8 @@ export class CDTPOnScriptParsedEventProvider extends CDTPEventsEmitterDiagnostic
         @inject(TYPES.BaseSourceMapTransformer) private readonly _sourceMapTransformer: BaseSourceMapTransformer,
         @inject(TYPES.CDTPScriptsRegistry) private readonly _scriptsRegistry: CDTPScriptsRegistry,
         @inject(TYPES.IDomainsEnabler) domainsEnabler: CDTPDomainsEnabler,
-        ) {
+        private readonly _loadedSourcesRegistry: LoadedSourcesRegistry,
+    ) {
         super(domainsEnabler);
     }
 
@@ -73,13 +78,18 @@ export class CDTPOnScriptParsedEventProvider extends CDTPEventsEmitterDiagnostic
         const script = await this._scriptsRegistry.registerScript(params.scriptId, async () => {
             if (params.url !== undefined && params.url !== '') {
                 const runtimeSourceLocation = parseResourceIdentifier(createCDTPScriptUrl(params.url));
-                        const developmentSourceLocation = await this._pathTransformer.scriptParsed(runtimeSourceLocation);
+                const runtimeSource = this.obtainLoadedSource(runtimeSourceLocation);
+                const developmentSourceLocation = await this._pathTransformer.scriptParsed(runtimeSourceLocation);
+                const developmentSource = this.obtainLoadedSource(runtimeSourceLocation);
+
                 const sourceMap = await this._sourceMapTransformer.scriptParsed(runtimeSourceLocation.canonicalized, params.sourceMapURL);
                 const sourceMapper = sourceMap
                     ? new SourcesMapper(sourceMap)
                     : new NoSourcesMapper();
 
                 const runtimeScript = Script.create(executionContext, runtimeSourceLocation, developmentSourceLocation, sourceMapper);
+                this._loadedSourcesRegistry.registerRelationship(developmentSource, new DevelopmentSource(runtimeSource));
+
                 return runtimeScript;
             } else {
                 const sourceMap = await this._sourceMapTransformer.scriptParsed('', params.sourceMapURL);
@@ -92,6 +102,15 @@ export class CDTPOnScriptParsedEventProvider extends CDTPEventsEmitterDiagnostic
         });
 
         return script;
+    }
+
+    private obtainLoadedSource(sourceUrl: IResourceIdentifier<CDTPScriptUrl>) {
+        return this._loadedSourcesRegistry.getOrAdd(sourceUrl, provider => {
+            const newSource = fs.existsSync(sourceUrl.textRepresentation)
+                ? new SourceInLocalStorage(sourceUrl, provider)
+                : new DynamicSource(sourceUrl, provider);
+            return newSource;
+        });
     }
 
     private async toScriptParsedEvent(params: CDTP.Debugger.ScriptParsedEvent): Promise<ScriptParsedEvent> {

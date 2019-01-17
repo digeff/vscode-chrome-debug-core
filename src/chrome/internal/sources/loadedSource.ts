@@ -3,15 +3,20 @@ import { CDTPScriptUrl } from './resourceIdentifierSubtypes';
 import { IResourceIdentifier, parseResourceIdentifier, ResourceName } from './resourceIdentifier';
 import { determineOrderingOfStrings } from '../../collections/utilities';
 import { IEquivalenceComparable } from '../../utils/equivalence';
+import { ILoadedSourceToScriptRelationship } from './loadedSourceToScriptRelationship';
+
+export interface ICurrentScriptRelationshipsProvider {
+    currentScriptRelationships(loadedSource: ILoadedSource<unknown>): Set<ILoadedSourceToScriptRelationship>;
+}
 
 /** This interface represents a source or text that is related to a script that the debugee is executing. The text can be the contents of the script itself,
  *  or a file from which the script was loaded, or a file that was compiled to generate the contents of the script
  */
 export interface ILoadedSource<TString = string> extends IEquivalenceComparable {
-    readonly script: IScript;
+    readonly currentScriptRelationships: Set<ILoadedSourceToScriptRelationship>;
     readonly identifier: IResourceIdentifier<TString>;
     readonly url: CDTPScriptUrl;
-    readonly origin: string;
+    // readonly origin: string;
     doesScriptHasUrl(): boolean; // TODO DIEGO: Figure out if we can delete this property
     isMappedSource(): boolean;
 }
@@ -28,6 +33,10 @@ export interface ILoadedSource<TString = string> extends IEquivalenceComparable 
 abstract class LoadedSourceWithURLCommonLogic<TSource = string> implements ILoadedSource<TSource> {
     public get url(): CDTPScriptUrl {
         return this.script.url;
+    }
+
+    public get currentScriptRelationships(): Set<ILoadedSourceToScriptRelationship> {
+        return this._currentScriptRelationshipsProvider.currentScriptRelationships(this);
     }
 
     public isMappedSource(): boolean {
@@ -47,15 +56,12 @@ abstract class LoadedSourceWithURLCommonLogic<TSource = string> implements ILoad
     }
 
     constructor(
-        public readonly script: IScript,
         public readonly identifier: IResourceIdentifier<TSource>,
-        public readonly origin: string) { }
+        private readonly _currentScriptRelationshipsProvider: ICurrentScriptRelationshipsProvider) { }
 }
 
-export class ScriptRunFromLocalStorage extends LoadedSourceWithURLCommonLogic<CDTPScriptUrl> implements ILoadedSource<CDTPScriptUrl> { }
-export class DynamicScript extends LoadedSourceWithURLCommonLogic<CDTPScriptUrl> implements ILoadedSource<CDTPScriptUrl> { }
-export class ScriptRuntimeSource extends LoadedSourceWithURLCommonLogic<CDTPScriptUrl> implements ILoadedSource<CDTPScriptUrl> { }
-export class ScriptDevelopmentSource extends LoadedSourceWithURLCommonLogic implements ILoadedSource { }
+export class SourceInLocalStorage extends LoadedSourceWithURLCommonLogic<CDTPScriptUrl> implements ILoadedSource<CDTPScriptUrl> { }
+export class DynamicSource extends LoadedSourceWithURLCommonLogic<CDTPScriptUrl> implements ILoadedSource<CDTPScriptUrl> { }
 
 export class NoURLScriptSource implements ILoadedSource<CDTPScriptUrl> {
     public get url(): never {
@@ -99,6 +105,9 @@ export class MappedSource extends LoadedSourceWithURLCommonLogic implements ILoa
         return true;
     }
 }
+
+export class ScriptRuntimeSource extends LoadedSourceWithURLCommonLogic<CDTPScriptUrl> implements ILoadedSource<CDTPScriptUrl> { }
+export class ScriptDevelopmentSource extends LoadedSourceWithURLCommonLogic implements ILoadedSource { }
 
 export interface ILoadedSourceTreeNode {
     readonly mainSource: ILoadedSource;

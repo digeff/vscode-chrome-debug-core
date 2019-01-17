@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import {
-    ILoadedSource, MappedSource, ScriptRunFromLocalStorage, DynamicScript,
+    ILoadedSource, MappedSource, SourceInLocalStorage, DynamicSource,
     ScriptRuntimeSource, ScriptDevelopmentSource, NoURLScriptSource
 } from '../sources/loadedSource';
 import { CDTPScriptUrl } from '../sources/resourceIdentifierSubtypes';
@@ -29,6 +29,9 @@ import { IEquivalenceComparable } from '../../utils/equivalence';
  * DevelopmentSource(LoadedSource) N ... M MappedSource(LoadedSource)
  * DevelopmentSource(LoadedSource) can be associated with multiple MappedSource(LoadedSource) if files were bundled or compiled with TypeScript bundling option
  * MappedSource(LoadedSource) can be associated with multiple DevelopmentSource(LoadedSource) if the same typescript file gets bundled into different javascript files
+ *
+ * Additional notes:
+ * It's extremelly unlikely, but it's possible for a .js file to be the MappedSource of a Script A, the RuntimeSource of a different script B, and the DevelopmentSource for a different script C
  */
 
 /** This interface represents a piece of code that is being executed in the debugee. Usually a script matches to a file or a url, but that is not always the case.
@@ -83,10 +86,10 @@ export class Script implements IScript {
         if (locationInDevelopmentEnvinronment.isEquivalentTo(locationInRuntimeEnvironment) || locationInDevelopmentEnvinronment.textRepresentation === '') {
             if (fs.existsSync(locationInRuntimeEnvironment.textRepresentation)) {
                 developmentSource = runtimeSource = new Lazy1((script: IScript) => // Using Lazy1 will ensure both calls return the same instance
-                    new ScriptRunFromLocalStorage(script, locationInRuntimeEnvironment, 'TODO DIEGO')).function;
+                    new SourceInLocalStorage(script, locationInRuntimeEnvironment, 'TODO DIEGO')).function;
             } else {
                 developmentSource = runtimeSource = new Lazy1((script: IScript) => // Using Lazy1 will ensure both calls return the same instance
-                    new DynamicScript(script, locationInRuntimeEnvironment, 'TODO DIEGO')).function;
+                    new DynamicSource(script, locationInRuntimeEnvironment, 'TODO DIEGO')).function;
             }
         } else {
             // The script is served from one location, and it's on the workspace on a different location

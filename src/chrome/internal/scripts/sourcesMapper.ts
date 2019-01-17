@@ -1,10 +1,13 @@
 import { LineNumber, ColumnNumber, createColumnNumber, createLineNumber } from '../locations/subtypes';
 import { SourceMap } from '../../../sourceMaps/sourceMap';
 
-export interface ISourcesMapper {
+export interface ISourceToScriptMapper {
+    getPositionInScript(positionInSource: IPositionInSource): IPositionInScript | null;
+}
+
+export interface ISourcesMapper extends ISourceToScriptMapper {
     readonly sources: string[];
     getPositionInSource(positionInScript: IPositionInScript): IPositionInSource | null;
-    getPositionInScript(positionInSource: IPositionInSource): IPositionInScript | null;
 }
 
 interface IPositionInSource {
