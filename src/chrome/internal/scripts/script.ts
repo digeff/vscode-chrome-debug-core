@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import {
     ILoadedSource, MappedSource, SourceInLocalStorage, DynamicSource,
-    ScriptRuntimeSource, ScriptDevelopmentSource, NoURLScriptSource
+    ScriptRuntimeSource, ScriptDevelopmentSource, UnidentifiedLoadedSource
 } from '../sources/loadedSource';
 import { CDTPScriptUrl } from '../sources/resourceIdentifierSubtypes';
 import { IValidatedMap } from '../../collections/validatedMap';
@@ -101,7 +101,7 @@ export class Script implements IScript {
 
     public static createEval(executionContext: IExecutionContext, name: ResourceName<CDTPScriptUrl>, sourcesMapper: ISourcesMapper): Script {
         // Using Lazy1 will ensure both calls return the same instance
-        let getNoURLScript = new Lazy1((script: IScript) => new NoURLScriptSource(script, name, 'TODO DIEGO'));
+        let getNoURLScript = new Lazy1((script: IScript) => new UnidentifiedLoadedSource(script, name, 'TODO DIEGO'));
         return new Script(executionContext, getNoURLScript.function, getNoURLScript.function, _ => new Map<IResourceIdentifier, MappedSource>(), sourcesMapper);
     }
 

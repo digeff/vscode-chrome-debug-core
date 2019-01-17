@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import { CDTP, parseResourceIdentifier, BasePathTransformer, BaseSourceMapTransformer } from '../../..';
 import { CDTPEventsEmitterDiagnosticsModule } from '../infrastructure/cdtpDiagnosticsModule';
 import { CDTPScriptsRegistry } from '../registries/cdtpScriptsRegistry';
@@ -14,7 +13,7 @@ import { CodeFlowStackTrace } from '../../internal/stackTraces/codeFlowStackTrac
 import { IExecutionContext } from '../../internal/scripts/executionContext';
 import { CDTPDomainsEnabler } from '../infrastructure/cdtpDomainsEnabler';
 import { LoadedSourcesRegistry } from '../registries/loadedSourcesRegistry';
-import { SourceInLocalStorage, DynamicSource } from '../../internal/sources/loadedSource';
+import { LoadedSource } from '../../internal/sources/loadedSource';
 import { DevelopmentSource } from '../../internal/sources/loadedSourceToScriptRelationship';
 
 /**
@@ -106,9 +105,7 @@ export class CDTPOnScriptParsedEventProvider extends CDTPEventsEmitterDiagnostic
 
     private obtainLoadedSource(sourceUrl: IResourceIdentifier<CDTPScriptUrl>) {
         return this._loadedSourcesRegistry.getOrAdd(sourceUrl, provider => {
-            const newSource = fs.existsSync(sourceUrl.textRepresentation)
-                ? new SourceInLocalStorage(sourceUrl, provider)
-                : new DynamicSource(sourceUrl, provider);
+            return new LoadedSource(sourceUrl, provider);
             return newSource;
         });
     }
