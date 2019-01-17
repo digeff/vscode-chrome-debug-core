@@ -12,6 +12,25 @@ import { IExecutionContext } from './executionContext';
 import { Lazy1 } from '../../utils/lazy';
 import { IEquivalenceComparable } from '../../utils/equivalence';
 
+/**
+ * Multiplicity:
+ *   Scripts N [HTMLFile or MultipleTimesLoaded] ... 1 RuntimeSource(LoadedSource)(URLs)
+ *   RuntimeSource(LoadedSource)(URLs) N ... 1 DevelopmentSource(LoadedSource)
+ *   DevelopmentSource(LoadedSource) N ... M MappedSource(LoadedSource)
+ *
+ * --- Details ---
+ * Scripts N [HTMLFile or MultipleTimesLoaded] ... 1 RuntimeSource(LoadedSource)(URLs)
+ *   RuntimeSource(LoadedSource)(URLs) can have N Scripts if it's an .html file with multiple scripts or multiple event handlers
+ *   RuntimeSource(LoadedSource)(URLs) can have N Scripts if the same script was loaded multiple times (We've seen this happen in Node when the require cache is deleted)
+ *
+ * RuntimeSource(LoadedSource)(URLs) N ... 1 DevelopmentSource(LoadedSource)
+ * DevelopmentSource(LoadedSource) can be associated with multiple RuntimeSource(LoadedSource)(URLs) if the web-server severs the same file from multiple URLs
+ *
+ * DevelopmentSource(LoadedSource) N ... M MappedSource(LoadedSource)
+ * DevelopmentSource(LoadedSource) can be associated with multiple MappedSource(LoadedSource) if files were bundled or compiled with TypeScript bundling option
+ * MappedSource(LoadedSource) can be associated with multiple DevelopmentSource(LoadedSource) if the same typescript file gets bundled into different javascript files
+ */
+
 /** This interface represents a piece of code that is being executed in the debugee. Usually a script matches to a file or a url, but that is not always the case.
  * This interface solves the problem of finding the different loaded sources associated with a script, and being able to identify and compare both scripts and sources easily.
  */
