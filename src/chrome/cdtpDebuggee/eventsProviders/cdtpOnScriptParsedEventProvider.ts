@@ -2,9 +2,9 @@ import { CDTP, parseResourceIdentifier, BasePathTransformer, BaseSourceMapTransf
 import { CDTPEventsEmitterDiagnosticsModule } from '../infrastructure/cdtpDiagnosticsModule';
 import { CDTPScriptsRegistry } from '../registries/cdtpScriptsRegistry';
 import { IScript, Script } from '../../internal/scripts/script';
-import { createCDTPScriptUrl, CDTPScriptUrl } from '../../internal/sources/resourceIdentifierSubtypes';
+import { createCDTPScriptUrl } from '../../internal/sources/resourceIdentifierSubtypes';
 import { SourcesMapper, NoSourceMapping as NoSourcesMapper } from '../../internal/scripts/sourcesMapper';
-import { ResourceName, IResourceIdentifier } from '../../internal/sources/resourceIdentifier';
+import { IResourceIdentifier } from '../../internal/sources/resourceIdentifier';
 import { TYPES } from '../../dependencyInjection.ts/types';
 import { CDTPStackTraceParser } from '../protocolParsers/cdtpStackTraceParser';
 import { inject } from 'inversify';
@@ -13,7 +13,7 @@ import { CodeFlowStackTrace } from '../../internal/stackTraces/codeFlowStackTrac
 import { IExecutionContext } from '../../internal/scripts/executionContext';
 import { CDTPDomainsEnabler } from '../infrastructure/cdtpDomainsEnabler';
 import { LoadedSourcesRegistry } from '../registries/loadedSourcesRegistry';
-import { LoadedSource } from '../../internal/sources/loadedSource';
+import { IdentifiedLoadedSource, UnidentifiedLoadedSource } from '../../internal/sources/loadedSource';
 import { DevelopmentSource } from '../../internal/sources/loadedSourceToScriptRelationship';
 
 /**
@@ -75,38 +75,38 @@ export class CDTPOnScriptParsedEventProvider extends CDTPEventsEmitterDiagnostic
         // const endPosition = new Position(createLineNumber(params.endLine), createColumnNumber(params.endColumn));
 
         const script = await this._scriptsRegistry.registerScript(params.scriptId, async () => {
+            let runtimeSource;
+            let runtimeSourceLocation;
+            let developmentSource;
             if (params.url !== undefined && params.url !== '') {
-                const runtimeSourceLocation = parseResourceIdentifier(createCDTPScriptUrl(params.url));
-                const runtimeSource = this.obtainLoadedSource(runtimeSourceLocation);
+                runtimeSourceLocation = parseResourceIdentifier(createCDTPScriptUrl(params.url));
+                runtimeSource = this.obtainLoadedSource(runtimeSourceLocation);
                 const developmentSourceLocation = await this._pathTransformer.scriptParsed(runtimeSourceLocation);
-                const developmentSource = this.obtainLoadedSource(runtimeSourceLocation);
-
-                const sourceMap = await this._sourceMapTransformer.scriptParsed(runtimeSourceLocation.canonicalized, params.sourceMapURL);
-                const sourceMapper = sourceMap
-                    ? new SourcesMapper(sourceMap)
-                    : new NoSourcesMapper();
-
-                const runtimeScript = Script.create(executionContext, runtimeSourceLocation, developmentSourceLocation, sourceMapper);
-                this._loadedSourcesRegistry.registerRelationship(developmentSource, new DevelopmentSource(runtimeSource));
-
-                return runtimeScript;
+                developmentSource = this.obtainLoadedSource(developmentSourceLocation);
             } else {
-                const sourceMap = await this._sourceMapTransformer.scriptParsed('', params.sourceMapURL);
-                const sourceMapper = sourceMap
-                    ? new SourcesMapper(sourceMap)
-                    : new NoSourcesMapper();
-                const runtimeScript = Script.createEval(executionContext, new ResourceName(createCDTPScriptUrl(params.scriptId)), sourceMapper);
-                return runtimeScript;
+                runtimeSourceLocation = parseResourceIdentifier('');
+                runtimeSource = developmentSource = new UnidentifiedLoadedSource(script, name, 'TODO DIEGO');
             }
+
+            const sourceMap = await this._sourceMapTransformer.scriptParsed(runtimeSourceLocation.canonicalized, params.sourceMapURL);
+            const sourceMapper = sourceMap
+                ? new SourcesMapper(sourceMap)
+                : new NoSourcesMapper();
+
+            const mappedSources = sourceMapper.sources.map((path: string) => this.obtainLoadedSource(parseResourceIdentifier(path)));
+
+            const runtimeScript = Script.create(executionContext, runtimeSource, developmentSource, sourceMapper, mappedSources);
+            this._loadedSourcesRegistry.registerRelationship(developmentSource, new DevelopmentSource(runtimeSource));
+
+            return runtimeScript;
         });
 
         return script;
     }
 
-    private obtainLoadedSource(sourceUrl: IResourceIdentifier<CDTPScriptUrl>) {
+    private obtainLoadedSource<TString extends string>(sourceUrl: IResourceIdentifier<TString>): IdentifiedLoadedSource<TString> {
         return this._loadedSourcesRegistry.getOrAdd(sourceUrl, provider => {
-            return new LoadedSource(sourceUrl, provider);
-            return newSource;
+            return IdentifiedLoadedSource.create(sourceUrl, provider);
         });
     }
 
