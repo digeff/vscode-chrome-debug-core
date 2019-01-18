@@ -14,7 +14,10 @@ import { IExecutionContext } from '../../internal/scripts/executionContext';
 import { CDTPDomainsEnabler } from '../infrastructure/cdtpDomainsEnabler';
 import { LoadedSourcesRegistry } from '../registries/loadedSourcesRegistry';
 import { IdentifiedLoadedSource, UnidentifiedLoadedSource } from '../../internal/sources/loadedSource';
-import { DevelopmentSource } from '../../internal/sources/loadedSourceToScriptRelationship';
+import { DevelopmentSource, RuntimeSource } from '../../internal/sources/loadedSourceToScriptRelationship';
+import { Position } from '../../internal/locations/location';
+import { createLineNumber, createColumnNumber } from '../../internal/locations/subtypes';
+import { RangeInResource } from '../../internal/locations/rangeInScript';
 
 /**
  * A new JavaScript Script has been parsed by the debugee and it's about to be executed
@@ -71,8 +74,8 @@ export class CDTPOnScriptParsedEventProvider extends CDTPEventsEmitterDiagnostic
         delete params.hash;
 
         const executionContext = this._scriptsRegistry.getExecutionContextById(params.executionContextId);
-        // const startPosition = new Position(createLineNumber(params.startLine), createColumnNumber(params.startColumn));
-        // const endPosition = new Position(createLineNumber(params.endLine), createColumnNumber(params.endColumn));
+        const startPosition = new Position(createLineNumber(params.startLine), createColumnNumber(params.startColumn));
+        const endPosition = new Position(createLineNumber(params.endLine), createColumnNumber(params.endColumn));
 
         const script = await this._scriptsRegistry.registerScript(params.scriptId, async () => {
             let runtimeSource;
@@ -83,6 +86,8 @@ export class CDTPOnScriptParsedEventProvider extends CDTPEventsEmitterDiagnostic
                 runtimeSource = this.obtainLoadedSource(runtimeSourceLocation);
                 const developmentSourceLocation = await this._pathTransformer.scriptParsed(runtimeSourceLocation);
                 developmentSource = this.obtainLoadedSource(developmentSourceLocation);
+                const scriptRange = new RangeInResource(runtimeSource, startPosition, endPosition);
+                this._loadedSourcesRegistry.registerRelationship(runtimeSource, new RuntimeSource(script, scriptRange));
             } else {
                 runtimeSourceLocation = parseResourceIdentifier('');
                 runtimeSource = developmentSource = new UnidentifiedLoadedSource(script, name, 'TODO DIEGO');

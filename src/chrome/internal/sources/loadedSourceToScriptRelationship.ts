@@ -1,6 +1,7 @@
 import { IScript } from '../scripts/script';
 import { ISourceToScriptMapper } from '../scripts/sourcesMapper';
 import { ILoadedSource } from './loadedSource';
+import { RangeInResource } from '../locations/rangeInScript';
 
 export interface ILoadedSourceToScriptRelationship {
     readonly scripts: IScript[];
@@ -16,7 +17,7 @@ export class RuntimeSource extends BaseLoadedSourceToScriptRelationship {
         return [this.script];
     }
 
-    constructor(public readonly script: IScript) {
+    constructor(public readonly script: IScript, public readonly rangeInSource: RangeInResource<ILoadedSource>) {
         super();
     }
 }
