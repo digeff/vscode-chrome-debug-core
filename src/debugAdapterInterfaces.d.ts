@@ -193,6 +193,8 @@ export interface IConnectedDebugAdapter {
 
     setFunctionBreakpoints(args: DebugProtocol.SetFunctionBreakpointsArguments, telemetryPropertyCollector?: ITelemetryPropertyCollector, requestSeq?: number): PromiseOrNot<DebugProtocol.SetFunctionBreakpointsResponse>;
     setVariable(args: DebugProtocol.SetVariableArguments, telemetryPropertyCollector?: ITelemetryPropertyCollector, requestSeq?: number): PromiseOrNot<DebugProtocol.SetVariableResponse>;
+
+    toggleSmartStep(): Promise<void>;
 }
 
 export type IDebugAdapter = IConnectedDebugAdapter & IUnconnectedDebugAdapter & IUninitializedDebugAdapter;

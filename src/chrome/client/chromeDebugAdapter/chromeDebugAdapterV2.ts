@@ -127,4 +127,8 @@ export class ChromeDebugAdapter implements IDebugAdapter {
     public async exceptionInfo(args: DebugProtocol.ExceptionInfoArguments): Promise<IExceptionInfoResponseBody> {
         return this._state.exceptionInfo(args);
     }
+
+    public async toggleSmartStep(): Promise<void> {
+        return this._state.toggleSmartStep();
+    }
 }

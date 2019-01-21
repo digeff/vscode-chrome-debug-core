@@ -205,6 +205,10 @@ export class ConnectedCDA implements IDebugAdapterState {
         return this._internalToVsCode.toExceptionInfo(await this._pauseOnException.latestExceptionInfo());
     }
 
+    public async toggleSmartStep(): Promise<void> {
+        this._smartStepLogic.toggleSmartStep();
+    }
+
     public launch(_args: ILaunchRequestArgs, _telemetryPropertyCollector?: ITelemetryPropertyCollector, _requestSeq?: number): never {
         throw new Error("Can't launch to a new target while connected to a previous target");
     }
