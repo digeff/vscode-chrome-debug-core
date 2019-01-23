@@ -55,7 +55,7 @@ export class NoSourceMapping implements ISourcesMapper {
         return null;
     }
 
-    public get sources(): [] {
+    public get sources(): string[] {
         return [];
     }
 }

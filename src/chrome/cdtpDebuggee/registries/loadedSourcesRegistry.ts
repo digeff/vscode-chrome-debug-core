@@ -10,15 +10,11 @@ export class LoadedSourcesRegistry implements ICurrentScriptRelationshipsProvide
 
     private readonly _loadedSourceToCurrentScriptRelationships = new ValidatedMultiMap<IdentifiedLoadedSource, ILoadedSourceToScriptRelationship>();
 
-    public getOrAdd(url: IResourceIdentifier<CDTPScriptUrl>,
-        obtainValueToAdd: (provider: ICurrentScriptRelationshipsProvider) => IdentifiedLoadedSource<CDTPScriptUrl>): IdentifiedLoadedSource<CDTPScriptUrl>;
-    public getOrAdd(path: IResourceIdentifier,
-        obtainValueToAdd: (provider: ICurrentScriptRelationshipsProvider) => IdentifiedLoadedSource): IdentifiedLoadedSource;
-    public getOrAdd<TString extends string>(pathOrUrl: IResourceIdentifier<TString>,
-        obtainValueToAdd: (provider: ICurrentScriptRelationshipsProvider) => IdentifiedLoadedSource<TString>): IdentifiedLoadedSource<TString> {
+    public getOrAdd(pathOrUrl: IResourceIdentifier,
+        obtainValueToAdd: (provider: ICurrentScriptRelationshipsProvider) => IdentifiedLoadedSource): IdentifiedLoadedSource {
         // TODO: The casts in this method are actually false sometimes (Although they won't cause any issues at runtime). Figure out a way of doing this with type safety
         const url = <IResourceIdentifier<CDTPScriptUrl>><unknown>pathOrUrl;
-        return <IdentifiedLoadedSource<TString>>this._loadedSourceByPath.getOrAdd(url, () => obtainValueToAdd(this));
+        return <IdentifiedLoadedSource>this._loadedSourceByPath.getOrAdd(url, () => obtainValueToAdd(this));
     }
 
     public registerRelationship(loadedSource: IdentifiedLoadedSource, relationship: ILoadedSourceToScriptRelationship) {

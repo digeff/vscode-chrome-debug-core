@@ -2,7 +2,7 @@ import { CDTP, parseResourceIdentifier, BasePathTransformer, BaseSourceMapTransf
 import { CDTPEventsEmitterDiagnosticsModule } from '../infrastructure/cdtpDiagnosticsModule';
 import { CDTPScriptsRegistry } from '../registries/cdtpScriptsRegistry';
 import { IScript, Script } from '../../internal/scripts/script';
-import { createCDTPScriptUrl } from '../../internal/sources/resourceIdentifierSubtypes';
+import { createCDTPScriptUrl, CDTPScriptUrl } from '../../internal/sources/resourceIdentifierSubtypes';
 import { SourcesMapper, NoSourceMapping as NoSourcesMapper } from '../../internal/scripts/sourcesMapper';
 import { IResourceIdentifier } from '../../internal/sources/resourceIdentifier';
 import { TYPES } from '../../dependencyInjection.ts/types';
@@ -13,7 +13,7 @@ import { CodeFlowStackTrace } from '../../internal/stackTraces/codeFlowStackTrac
 import { IExecutionContext } from '../../internal/scripts/executionContext';
 import { CDTPDomainsEnabler } from '../infrastructure/cdtpDomainsEnabler';
 import { LoadedSourcesRegistry } from '../registries/loadedSourcesRegistry';
-import { IdentifiedLoadedSource, UnidentifiedLoadedSource } from '../../internal/sources/loadedSource';
+import { IdentifiedLoadedSource, UnidentifiedLoadedSource, ILoadedSource } from '../../internal/sources/loadedSource';
 import { DevelopmentSource, RuntimeSource } from '../../internal/sources/loadedSourceToScriptRelationship';
 import { Position } from '../../internal/locations/location';
 import { createLineNumber, createColumnNumber } from '../../internal/locations/subtypes';
@@ -78,16 +78,19 @@ export class CDTPOnScriptParsedEventProvider extends CDTPEventsEmitterDiagnostic
         const endPosition = new Position(createLineNumber(params.endLine), createColumnNumber(params.endColumn));
 
         const script = await this._scriptsRegistry.registerScript(params.scriptId, async () => {
-            let runtimeSource;
+            let runtimeSource: ILoadedSource<CDTPScriptUrl>;
             let runtimeSourceLocation;
             let developmentSource;
             if (params.url !== undefined && params.url !== '') {
                 runtimeSourceLocation = parseResourceIdentifier(createCDTPScriptUrl(params.url));
-                runtimeSource = this.obtainLoadedSource(runtimeSourceLocation);
+                // TODO: Figure out a way to remove the cast in next line
+                const identifiedRuntimeSource = <IdentifiedLoadedSource<CDTPScriptUrl>><unknown>this.obtainLoadedSource(runtimeSourceLocation);
+                runtimeSource = identifiedRuntimeSource;
                 const developmentSourceLocation = await this._pathTransformer.scriptParsed(runtimeSourceLocation);
                 developmentSource = this.obtainLoadedSource(developmentSourceLocation);
                 const scriptRange = new RangeInResource(runtimeSource, startPosition, endPosition);
-                this._loadedSourcesRegistry.registerRelationship(runtimeSource, new RuntimeSource(script, scriptRange));
+                this._loadedSourcesRegistry.registerRelationship(identifiedRuntimeSource, new RuntimeSource(script, scriptRange));
+                this._loadedSourcesRegistry.registerRelationship(developmentSource, new DevelopmentSource(runtimeSource));
             } else {
                 runtimeSourceLocation = parseResourceIdentifier('');
                 runtimeSource = developmentSource = new UnidentifiedLoadedSource(script, name, 'TODO DIEGO');
@@ -101,7 +104,6 @@ export class CDTPOnScriptParsedEventProvider extends CDTPEventsEmitterDiagnostic
             const mappedSources = sourceMapper.sources.map((path: string) => this.obtainLoadedSource(parseResourceIdentifier(path)));
 
             const runtimeScript = Script.create(executionContext, runtimeSource, developmentSource, sourceMapper, mappedSources);
-            this._loadedSourcesRegistry.registerRelationship(developmentSource, new DevelopmentSource(runtimeSource));
 
             return runtimeScript;
         });
@@ -109,7 +111,7 @@ export class CDTPOnScriptParsedEventProvider extends CDTPEventsEmitterDiagnostic
         return script;
     }
 
-    private obtainLoadedSource<TString extends string>(sourceUrl: IResourceIdentifier<TString>): IdentifiedLoadedSource<TString> {
+    private obtainLoadedSource(sourceUrl: IResourceIdentifier): IdentifiedLoadedSource {
         return this._loadedSourcesRegistry.getOrAdd(sourceUrl, provider => {
             return IdentifiedLoadedSource.create(sourceUrl, provider);
         });
