@@ -1,5 +1,6 @@
 import { newResourceIdentifierMap, IResourceIdentifier } from '../../internal/sources/resourceIdentifier';
-import { ICurrentScriptRelationshipsProvider, IdentifiedLoadedSource, ICurrentScriptRelationships, CurrentScriptRelationships } from '../../internal/sources/loadedSource';
+import { ICurrentScriptRelationshipsProvider, ICurrentScriptRelationships, CurrentScriptRelationships } from '../../internal/sources/loadedSource';
+import { IdentifiedLoadedSource } from "../../internal/sources/identifiedLoadedSource";
 import { CDTPScriptUrl } from '../../internal/sources/resourceIdentifierSubtypes';
 import { ValidatedMultiMap } from '../../collections/validatedMultiMap';
 import { ILoadedSourceToScriptRelationship } from '../../internal/sources/loadedSourceToScriptRelationship';

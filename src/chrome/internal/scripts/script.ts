@@ -1,4 +1,6 @@
-import { ILoadedSource, UnidentifiedLoadedSource, IdentifiedLoadedSource } from '../sources/loadedSource';
+import { ILoadedSource } from '../sources/loadedSource';
+import { IdentifiedLoadedSource } from "../sources/identifiedLoadedSource";
+import { UnidentifiedLoadedSource } from "../sources/unidentifiedLoadedSource";
 import { CDTPScriptUrl } from '../sources/resourceIdentifierSubtypes';
 import { IValidatedMap } from '../../collections/validatedMap';
 import { printArray } from '../../collections/printing';

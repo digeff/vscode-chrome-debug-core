@@ -13,7 +13,9 @@ import { CodeFlowStackTrace } from '../../internal/stackTraces/codeFlowStackTrac
 import { IExecutionContext } from '../../internal/scripts/executionContext';
 import { CDTPDomainsEnabler } from '../infrastructure/cdtpDomainsEnabler';
 import { LoadedSourcesRegistry } from '../registries/loadedSourcesRegistry';
-import { IdentifiedLoadedSource, UnidentifiedLoadedSource, ILoadedSource } from '../../internal/sources/loadedSource';
+import { ILoadedSource } from '../../internal/sources/loadedSource';
+import { IdentifiedLoadedSource } from "../../internal/sources/identifiedLoadedSource";
+import { UnidentifiedLoadedSource } from '../../internal/sources/unidentifiedLoadedSource';
 import { DevelopmentSource, RuntimeSource } from '../../internal/sources/loadedSourceToScriptRelationship';
 import { Position } from '../../internal/locations/location';
 import { createLineNumber, createColumnNumber } from '../../internal/locations/subtypes';
