@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import { IScript } from '../scripts/script';
 import { CDTPScriptUrl } from './resourceIdentifierSubtypes';
 import { IResourceIdentifier } from './resourceIdentifier';
@@ -14,11 +13,6 @@ export interface ICurrentScriptRelationshipsProvider {
 export interface ICurrentScriptRelationships {
     readonly scripts: IScript[];
     readonly relationships: ILoadedSourceToScriptRelationship[];
-}
-
-export class CurrentScriptRelationships implements ICurrentScriptRelationships {
-    scripts: IScript[];
-    constructor(public readonly relationships: ILoadedSourceToScriptRelationship[]) { }
 }
 
 /** This interface represents a source or text that is related to a script that the debugee is executing. The text can be the contents of the script itself,

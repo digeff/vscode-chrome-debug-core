@@ -2,6 +2,7 @@ import { IScript } from '../scripts/script';
 import { CDTPScriptUrl } from './resourceIdentifierSubtypes';
 import { IResourceIdentifier } from './resourceIdentifier';
 import { ILoadedSource, ICurrentScriptRelationships, ICurrentScriptRelationshipsProvider, ContentsLocation } from './loadedSource';
+import { ILoadedSourceToScriptRelationship } from './loadedSourceToScriptRelationship';
 
 /**
  * Loaded Source classification:
@@ -44,4 +45,9 @@ export class IdentifiedLoadedSource<TSource extends string = string> implements 
         const contentsLocation = fs.existsSync(identifier.textRepresentation) ? ContentsLocation.PersistentStorage : ContentsLocation.DynamicMemory;
         return new IdentifiedLoadedSource<TString>(identifier, currentScriptRelationshipsProvider, contentsLocation);
     }
+}
+
+export class CurrentScriptRelationships implements ICurrentScriptRelationships {
+    scripts: IScript[];
+    constructor(public readonly relationships: ILoadedSourceToScriptRelationship[]) { }
 }
