@@ -47,6 +47,7 @@ export class MappedSourceOf extends BaseLoadedSourceToScriptRelationship {
     }
 
     public get scripts(): IScript[] {
+        // this hangs if there are cycles
         return this.developmentSource.currentScriptRelationships().scripts;
     }
 
