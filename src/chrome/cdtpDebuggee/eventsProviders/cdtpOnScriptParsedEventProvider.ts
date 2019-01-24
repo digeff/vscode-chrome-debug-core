@@ -15,7 +15,7 @@ import { CDTPDomainsEnabler } from '../infrastructure/cdtpDomainsEnabler';
 import { LoadedSourcesRegistry } from '../registries/loadedSourcesRegistry';
 import { ILoadedSource, SourceScriptRelationship } from '../../internal/sources/loadedSource';
 import { IdentifiedLoadedSource } from '../../internal/sources/identifiedLoadedSource';
-import { DevelopmentSource, RuntimeSource, MappedSource } from '../../internal/sources/loadedSourceToScriptRelationship';
+import { DevelopmentSourceOf, RuntimeSourceOf, MappedSourceOf } from '../../internal/sources/loadedSourceToScriptRelationship';
 import { Position } from '../../internal/locations/location';
 import { createLineNumber, createColumnNumber } from '../../internal/locations/subtypes';
 import { RangeInResource } from '../../internal/locations/rangeInScript';
@@ -118,7 +118,7 @@ abstract class ScriptCreator {
         });
 
         script.mappedSources.forEach(source =>
-            this._loadedSourcesRegistry.registerRelationship(source, new MappedSource(script.developmentSource, script)));
+            this._loadedSourcesRegistry.registerRelationship(source, new MappedSourceOf(script.developmentSource, script)));
 
         await this.registerRuntimeAndDevelopmentSourcesRelationships(script);
 
@@ -181,9 +181,9 @@ class IdentifiedScriptCreator extends ScriptCreator {
     }
 
     protected async registerRuntimeAndDevelopmentSourcesRelationships(script: IScript): Promise<void> {
-        this._loadedSourcesRegistry.registerRelationship(await this.developmentSource(), new DevelopmentSource(this.runtimeSource()));
+        this._loadedSourcesRegistry.registerRelationship(await this.developmentSource(), new DevelopmentSourceOf(this.runtimeSource()));
 
-        this._loadedSourcesRegistry.registerRelationship(this.runtimeSource(), new RuntimeSource(script));
+        this._loadedSourcesRegistry.registerRelationship(this.runtimeSource(), new RuntimeSourceOf(script));
     }
 }
 

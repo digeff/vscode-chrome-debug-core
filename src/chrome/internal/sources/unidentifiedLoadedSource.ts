@@ -2,7 +2,7 @@ import { IScript } from '../scripts/script';
 import { CDTPScriptUrl } from './resourceIdentifierSubtypes';
 import { IResourceIdentifier, parseResourceIdentifier, ResourceName } from './resourceIdentifier';
 import { ILoadedSource, ICurrentScriptRelationships, SourceScriptRelationship } from './loadedSource';
-import { ILoadedSourceToScriptRelationship, DevelopmentSource, RuntimeSource } from './loadedSourceToScriptRelationship';
+import { ILoadedSourceToScriptRelationship, DevelopmentSourceOf, RuntimeSourceOf } from './loadedSourceToScriptRelationship';
 
 const IsUnidentifiedLoadedSource = Symbol();
 export class UnidentifiedLoadedSource implements ILoadedSource<CDTPScriptUrl> {
@@ -48,7 +48,7 @@ export class UnidentifiedLoadedSource implements ILoadedSource<CDTPScriptUrl> {
 
 export class CurrentUnidentifiedSourceScriptRelationships implements ICurrentScriptRelationships {
     public get relationships(): ILoadedSourceToScriptRelationship[] {
-        return [new DevelopmentSource(this._source), new RuntimeSource(this._source.script)];
+        return [new DevelopmentSourceOf(this._source), new RuntimeSourceOf(this._source.script)];
     }
 
     public get scripts(): IScript[] {

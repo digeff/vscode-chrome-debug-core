@@ -11,34 +11,42 @@ abstract class BaseLoadedSourceToScriptRelationship implements ILoadedSourceToSc
 }
 
 /// Script was created from this source
-export class RuntimeSource extends BaseLoadedSourceToScriptRelationship {
+export class RuntimeSourceOf extends BaseLoadedSourceToScriptRelationship {
     public get scripts(): IScript[] {
         return [this.script];
     }
 
-    constructor(public readonly script: IScript) {
+    constructor(public readonly runtimeSource: ILoadedSource, public readonly script: IScript) {
         super();
     }
 }
 
 /// The runtime source was generated from this source in the user's workspace
-export class DevelopmentSource extends BaseLoadedSourceToScriptRelationship {
+export class DevelopmentSourceOf extends BaseLoadedSourceToScriptRelationship {
     public get scripts(): IScript[] {
         return this.runtimeSource.currentScriptRelationships().scripts;
     }
 
-    constructor(public readonly runtimeSource: ILoadedSource) {
+    constructor(public readonly developmentSource: ILoadedSource, public readonly runtimeSource: ILoadedSource) {
         super();
+    }
+
+    public toString(): string {
+        return `${this.runtimeSource}`;
     }
 }
 
 /// A sourcemap indicated that this mapped source was used to generate the DevelopmentSource
-export class MappedSource extends BaseLoadedSourceToScriptRelationship {
+export class MappedSourceOf extends BaseLoadedSourceToScriptRelationship {
+    constructor(public readonly mappedSource: ILoadedSource, public readonly developmentSource: ILoadedSource, public readonly script: IScript) {
+        super();
+    }
+
     public get scripts(): IScript[] {
         return this.developmentSource.currentScriptRelationships().scripts;
     }
 
-    constructor(public readonly developmentSource: ILoadedSource, public readonly script: IScript) {
-        super();
+    public toString(): string {
+        return `${this.developmentSource}${this.script}`;
     }
 }
