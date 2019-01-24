@@ -17,7 +17,11 @@ export class LoadedSourcesRegistry implements ICurrentScriptRelationshipsProvide
         obtainValueToAdd: (provider: ICurrentScriptRelationshipsProvider) => IdentifiedLoadedSource): IdentifiedLoadedSource {
         // TODO: The casts in this method are actually false sometimes (Although they won't cause any issues at runtime). Figure out a way of doing this with type safety
         const url = <IResourceIdentifier<CDTPScriptUrl>><unknown>pathOrUrl;
-        return <IdentifiedLoadedSource>this._loadedSourceByPath.getOrAdd(url, () => obtainValueToAdd(this));
+        return <IdentifiedLoadedSource>this._loadedSourceByPath.getOrAdd(url, () => {
+            const newLoadedSource = obtainValueToAdd(this);
+            this._loadedSourceToCurrentScriptRelationships.addKeyIfNotExistant(newLoadedSource);
+            return newLoadedSource;
+        });
     }
 
     public registerRelationship(loadedSource: IdentifiedLoadedSource, relationship: ILoadedSourceToScriptRelationship) {
@@ -26,5 +30,9 @@ export class LoadedSourcesRegistry implements ICurrentScriptRelationshipsProvide
 
     public currentScriptRelationships(loadedSource: IdentifiedLoadedSource<string>): ICurrentScriptRelationships {
         return new CurrentIdentifiedSourceScriptRelationships(Array.from(this._loadedSourceToCurrentScriptRelationships.get(loadedSource)));
+    }
+
+    public toString(): string {
+        return `Loaded sources: ${this._loadedSourceByPath}\nRelationships:\n${this._loadedSourceToCurrentScriptRelationships}`;
     }
 }

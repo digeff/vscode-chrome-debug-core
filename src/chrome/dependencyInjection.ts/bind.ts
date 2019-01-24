@@ -40,6 +40,7 @@ import { CDTPDebugeeSteppingController } from '../cdtpDebuggee/features/CDTPDebu
 import { CDTPDebugeeRuntimeVersionProvider } from '../cdtpDebuggee/features/cdtpDebugeeRuntimeVersionProvider';
 import { CDTPBlackboxPatternsConfigurer } from '../cdtpDebuggee/features/cdtpBlackboxPatternsConfigurer';
 import { CDTPDomainsEnabler } from '../cdtpDebuggee/infrastructure/cdtpDomainsEnabler';
+import { LoadedSourcesRegistry } from '../cdtpDebuggee/registries/loadedSourcesRegistry';
 
 export function bindAll(di: Container) {
     bind<IDOMInstrumentationBreakpoints>(di, TYPES.IDOMInstrumentationBreakpoints, CDTPDOMDebugger);
@@ -88,6 +89,7 @@ export function bindAll(di: Container) {
     bind(di, TYPES.IDebugeeSteppingController, CDTPDebugeeSteppingController);
     bind(di, TYPES.IBlackboxPatternsConfigurer, CDTPBlackboxPatternsConfigurer);
     bind(di, TYPES.IDomainsEnabler, CDTPDomainsEnabler);
+    bind(di, LoadedSourcesRegistry, LoadedSourcesRegistry);
 }
 
 function bind<T extends object>(container: Container, serviceIdentifier: interfaces.ServiceIdentifier<T>, newable: interfaces.Newable<T>): void {

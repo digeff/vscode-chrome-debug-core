@@ -35,10 +35,10 @@ export class DevelopmentSource extends BaseLoadedSourceToScriptRelationship {
 /// A sourcemap indicated that this mapped source was used to generate the DevelopmentSource
 export class MappedSource extends BaseLoadedSourceToScriptRelationship {
     public get scripts(): IScript[] {
-        return this.developmentSource.scripts;
+        return this.developmentSource.currentScriptRelationships().scripts;
     }
 
-    constructor(public readonly developmentSource: DevelopmentSource, public readonly sourceMapper: ISourceToScriptMapper) {
+    constructor(public readonly developmentSource: ILoadedSource, public readonly script: IScript) {
         super();
     }
 }
