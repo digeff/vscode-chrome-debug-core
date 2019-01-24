@@ -10,11 +10,11 @@ const ImplementsCallFrameDescriptionFormatter = Symbol();
 export interface ICallFrameDescriptionFormatter {
     readonly description: string;
 
-    [ImplementsCallFrameDescriptionFormatter]: void;
+    [ImplementsCallFrameDescriptionFormatter]: string;
 }
 
 export class CustomCallFrameDescriptionFormatter implements ICallFrameDescriptionFormatter {
-    [ImplementsCallFrameDescriptionFormatter]: void;
+    [ImplementsCallFrameDescriptionFormatter]: 'CustomCallFrameDescriptionFormatter';
 
     public get description(): string {
         const locationInLoadedSource = this._callFrame.location.mappedToSource();

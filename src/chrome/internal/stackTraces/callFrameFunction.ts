@@ -6,23 +6,23 @@ import { IScript } from '../scripts/script';
 const ImplementsCallFrameFunction = Symbol();
 export interface ICallFrameFunction {
     readonly description: string;
-    [ImplementsCallFrameFunction]: void;
+    [ImplementsCallFrameFunction]: string;
 }
 
 class CallFrameForNamedFunction implements ICallFrameFunction {
-    [ImplementsCallFrameFunction]: void;
+    [ImplementsCallFrameFunction]: 'ICallFrameFunction';
 
     constructor(public readonly description: string) { }
 }
 
 class CallFrameForUnamedFunctionInUnnamedScript implements ICallFrameFunction {
-    [ImplementsCallFrameFunction]: void;
+    [ImplementsCallFrameFunction]: 'ICallFrameFunction';
 
     public readonly description = '(eval code)';
 }
 
 class CallFrameForUnamedFunctionInNamedScript implements ICallFrameFunction {
-    [ImplementsCallFrameFunction]: void;
+    [ImplementsCallFrameFunction]: 'ICallFrameFunction';
 
     public readonly description = '(anonymous function)';
 }

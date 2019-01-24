@@ -9,7 +9,7 @@ import { IEquivalenceComparable } from '../../utils/equivalence';
  */
 const ImplementsSource = Symbol();
 export interface ISource extends IEquivalenceComparable {
-    [ImplementsSource]: void;
+    [ImplementsSource]: string;
 
     readonly sourceIdentifier: IResourceIdentifier;
     tryResolving<R>(succesfulAction: (resolvedSource: ILoadedSource) => R, failedAction: (sourceIdentifier: IResourceIdentifier) => R): R;
@@ -20,7 +20,7 @@ export function isSource(object: unknown): object is ISource {
 }
 
 abstract class SourceCommonLogic implements ISource {
-    [ImplementsSource]: void;
+    [ImplementsSource]: 'ISource';
 
     public abstract tryResolving<R>(succesfulAction: (loadedSource: ILoadedSource) => R, failedAction: (identifier: IResourceIdentifier) => R): R;
     public abstract get sourceIdentifier(): IResourceIdentifier;
