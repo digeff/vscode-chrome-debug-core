@@ -89,39 +89,39 @@ export class SkipFilesLogic implements IComponent<ISkipFilesConfiguration>, ISta
         }
     */
     public async toggleSkipFileStatus(clientArgs: IToggleSkipFileStatusArgs): Promise<void> {
-        const args = this._clientToInternal.toSource(clientArgs);
-        await args.tryResolving(async resolvedSource => {
-            if (!await this.isInCurrentStack(clientArgs)) {
-                // Only valid for files that are in the current stack
-                const logName = resolvedSource;
-                logger.log(`Can't toggle the skipFile status for ${logName} - it's not in the current stack.`);
-                return;
-            }
+        // const args = this._clientToInternal.toSource(clientArgs);
+        // await args.tryResolving(async resolvedSource => {
+        //     if (!await this.isInCurrentStack(clientArgs)) {
+        //         // Only valid for files that are in the current stack
+        //         const logName = resolvedSource;
+        //         logger.log(`Can't toggle the skipFile status for ${logName} - it's not in the current stack.`);
+        //         return;
+        //     }
 
-            if (resolvedSource === resolvedSource.script.developmentSource && resolvedSource.script.mappedSources.length < 0) {
-                // Ignore toggling skip status for generated scripts with sources
-                logger.log(`Can't toggle skipFile status for ${resolvedSource} - it's a script with a sourcemap`);
-                return;
-            }
+        //     if (resolvedSource === resolvedSource.script.developmentSource && resolvedSource.script.mappedSources.length < 0) {
+        //         // Ignore toggling skip status for generated scripts with sources
+        //         logger.log(`Can't toggle skipFile status for ${resolvedSource} - it's a script with a sourcemap`);
+        //         return;
+        //     }
 
-            const newStatus = !this.shouldSkipSource(resolvedSource.identifier);
-            logger.log(`Setting the skip file status for: ${resolvedSource} to ${newStatus}`);
-            this._skipFileStatuses.set(resolvedSource.identifier, newStatus);
+        //     const newStatus = !this.shouldSkipSource(resolvedSource.identifier);
+        //     logger.log(`Setting the skip file status for: ${resolvedSource} to ${newStatus}`);
+        //     this._skipFileStatuses.set(resolvedSource.identifier, newStatus);
 
-            await this.resolveSkipFiles(resolvedSource, resolvedSource.script.developmentSource.identifier,
-                resolvedSource.script.mappedSources.map(s => s.identifier), /*toggling=*/true);
+        //     await this.resolveSkipFiles(resolvedSource, resolvedSource.script.developmentSource.identifier,
+        //         resolvedSource.script.mappedSources.map(s => s.identifier), /*toggling=*/true);
 
-            if (newStatus) {
-                // TODO: Verify that using targetPath works here. We need targetPath to be this.getScriptByUrl(targetPath).url
-                this.makeRegexesSkip(resolvedSource.url);
-            } else {
-                this.makeRegexesNotSkip(resolvedSource.url);
-            }
+        //     if (newStatus) {
+        //         // TODO: Verify that using targetPath works here. We need targetPath to be this.getScriptByUrl(targetPath).url
+        //         this.makeRegexesSkip(resolvedSource.url);
+        //     } else {
+        //         this.makeRegexesNotSkip(resolvedSource.url);
+        //     }
 
-            this.reprocessPausedEvent();
-        }, async sourceIdentifier => {
-            logger.log(`Can't toggle the skipFile status for: ${sourceIdentifier} - haven't seen it yet.`);
-        });
+        //     this.reprocessPausedEvent();
+        // }, async sourceIdentifier => {
+        //     logger.log(`Can't toggle the skipFile status for: ${sourceIdentifier} - haven't seen it yet.`);
+        // });
     }
 
     private makeRegexesSkip(skipPath: string): void {
@@ -177,63 +177,64 @@ export class SkipFilesLogic implements IComponent<ISkipFilesConfiguration>, ISta
     }
 
     public async resolveSkipFiles(source: ILoadedSource, mappedUrl: IResourceIdentifier, sources: IResourceIdentifier[], toggling?: boolean): Promise<void> {
-        if (sources && sources.length) {
-            const parentIsSkipped = this.shouldSkipSource(source.identifier);
-            const libPositions: CDTP.Debugger.ScriptPosition[] = [];
+        // if (sources && sources.length) {
+        //     const parentIsSkipped = this.shouldSkipSource(source.identifier);
+        //     const libPositions: CDTP.Debugger.ScriptPosition[] = [];
 
-            // Figure out skip/noskip transitions within script
-            let inLibRange = parentIsSkipped;
-            for (let s of sources) {
-                let isSkippedFile = this.shouldSkipSource(s);
-                if (typeof isSkippedFile !== 'boolean') {
-                    // Inherit the parent's status
-                    isSkippedFile = parentIsSkipped;
-                }
+        //     // Figure out skip/noskip transitions within script
+        //     let inLibRange = parentIsSkipped;
+        //     for (let s of sources) {
+        //         let isSkippedFile = this.shouldSkipSource(s);
+        //         if (typeof isSkippedFile !== 'boolean') {
+        //             // Inherit the parent's status
+        //             isSkippedFile = parentIsSkipped;
+        //         }
 
-                this._skipFileStatuses.set(s, isSkippedFile);
+        //         this._skipFileStatuses.set(s, isSkippedFile);
 
-                if ((isSkippedFile && !inLibRange) || (!isSkippedFile && inLibRange)) {
-                    const details = await this.sourceMapTransformer.allSourcePathDetails(mappedUrl.canonicalized);
-                    const detail = details.find(d => parseResourceIdentifier(d.inferredPath).isEquivalentTo(s));
-                    libPositions.push({
-                        lineNumber: detail.startPosition.line,
-                        columnNumber: detail.startPosition.column
-                    });
-                    inLibRange = !inLibRange;
-                }
-            }
+        //         if ((isSkippedFile && !inLibRange) || (!isSkippedFile && inLibRange)) {
+        //             const details = await this.sourceMapTransformer.allSourcePathDetails(mappedUrl.canonicalized);
+        //             const detail = details.find(d => parseResourceIdentifier(d.inferredPath).isEquivalentTo(s));
+        //             libPositions.push({
+        //                 lineNumber: detail.startPosition.line,
+        //                 columnNumber: detail.startPosition.column
+        //             });
+        //             inLibRange = !inLibRange;
+        //         }
+        //     }
 
-            // If there's any change from the default, set proper blackboxed ranges
-            if (libPositions.length || toggling) {
-                if (parentIsSkipped) {
-                    libPositions.splice(0, 0, { lineNumber: 0, columnNumber: 0 });
-                }
+        //     // If there's any change from the default, set proper blackboxed ranges
+        //     if (libPositions.length || toggling) {
+        //         if (parentIsSkipped) {
+        //             libPositions.splice(0, 0, { lineNumber: 0, columnNumber: 0 });
+        //         }
 
-                if (libPositions[0].lineNumber !== 0 || libPositions[0].columnNumber !== 0) {
-                    // The list of blackboxed ranges must start with 0,0 for some reason.
-                    // https://github.com/Microsoft/vscode-chrome-debug/issues/667
-                    libPositions[0] = {
-                        lineNumber: 0,
-                        columnNumber: 0
-                    };
-                }
+        //         if (libPositions[0].lineNumber !== 0 || libPositions[0].columnNumber !== 0) {
+        //             // The list of blackboxed ranges must start with 0,0 for some reason.
+        //             // https://github.com/Microsoft/vscode-chrome-debug/issues/667
+        //             libPositions[0] = {
+        //                 lineNumber: 0,
+        //                 columnNumber: 0
+        //             };
+        //         }
 
-                await asyncMap(source.currentScriptRelationships().scripts, script =>
-                    this._blackboxPatternsConfigurer.setBlackboxedRanges(script, []).catch(() => this.warnNoSkipFiles()));
+        //         await asyncMap(source.currentScriptRelationships().scripts, script =>
+        //             this._blackboxPatternsConfigurer.setBlackboxedRanges(script, []).catch(() => this.warnNoSkipFiles()));
 
-                if (libPositions.length) {
-                    await asyncMap(source.currentScriptRelationships().scripts, script =>
-                        this._blackboxPatternsConfigurer.setBlackboxedRanges(script, libPositions).catch(() => this.warnNoSkipFiles()));
-                }
-            }
-        } else {
-            const status = await this.getSkipStatus(mappedUrl);
-            const skippedByPattern = this.matchesSkipFilesPatterns(mappedUrl);
-            if (typeof status === 'boolean' && status !== skippedByPattern) {
-                const positions = status ? [{ lineNumber: 0, columnNumber: 0 }] : [];
-                this._blackboxPatternsConfigurer.setBlackboxedRanges(script, positions).catch(() => this.warnNoSkipFiles());
-            }
-        }
+        //         if (libPositions.length) {
+        //             await asyncMap(source.currentScriptRelationships().scripts, script =>
+        //                 this._blackboxPatternsConfigurer.setBlackboxedRanges(script, libPositions).catch(() => this.warnNoSkipFiles()));
+        //         }
+        //     }
+        // } else {
+        //     const status = await this.getSkipStatus(mappedUrl);
+        //     const skippedByPattern = this.matchesSkipFilesPatterns(mappedUrl);
+        //     if (typeof status === 'boolean' && status !== skippedByPattern) {
+        //         const positions = status ? [{ lineNumber: 0, columnNumber: 0 }] : [];
+        //         this._blackboxPatternsConfigurer.setBlackboxedRanges(script, positions).catch(() => this.warnNoSkipFiles());
+        //     }
+        // }
+
     }
 
     private warnNoSkipFiles(): void {
@@ -243,7 +244,7 @@ export class SkipFilesLogic implements IComponent<ISkipFilesConfiguration>, ISta
     private async onScriptParsed(scriptEvent: ScriptParsedEvent): Promise<void> {
         const script = scriptEvent.script;
         const sources = script.mappedSources;
-        await this.resolveSkipFiles(script, script.developmentSource.identifier, sources.map(source => source.identifier));
+        await this.resolveSkipFiles(script.runtimeSource, script.developmentSource.identifier, sources.map(source => source.identifier));
     }
 
     public install(): this {
