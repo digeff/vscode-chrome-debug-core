@@ -7,6 +7,7 @@ import { ColumnNumber, LineNumber, URLRegexp } from './subtypes';
 import { CDTPScriptUrl } from '../sources/resourceIdentifierSubtypes';
 import { IResourceIdentifier, parseResourceIdentifier, URL } from '../sources/resourceIdentifier';
 import { IEquivalenceComparable } from '../../utils/equivalence';
+import { printArray } from '../../collections/printing';
 
 export type integer = number;
 
@@ -141,16 +142,19 @@ export class LocationInLoadedSource extends LocationCommonLogic<ILoadedSource> {
         return this.resource;
     }
 
-    public mappedToScript(): LocationInScript {
-        const mapped = this.source.script.sourcesMapper.getPositionInScript({
-            source: this.source.identifier.textRepresentation,
-            line: this.position.lineNumber,
-            column: this.position.columnNumber
-        });
-        if (mapped) {
-            const result = new LocationInScript(this.source.script, new Position(mapped.line, mapped.column));
-            logger.verbose(`SourceMap: ${this} to ${result}`);
-            return result;
+    public mappedToScript(): LocationInScript[] {
+        const mappedLocations = this.source.currentScriptRelationships().scripts.map(script => {
+            const positionInScript = script.sourcesMapper.getPositionInScript({
+                source: this.source.identifier.textRepresentation,
+                line: this.position.lineNumber,
+                column: this.position.columnNumber
+            });
+            const locationInScript = !positionInScript ? new LocationInScript(script, new Position(positionInScript.line, positionInScript.column)) : null;
+            return locationInScript;
+        }).filter(position => !!position);
+        if (mappedLocations.length) {
+            logger.verbose(printArray(`SourceMap: ${this} to `, mappedLocations));
+            return mappedLocations;
         } else {
             throw new Error(`Couldn't map the location (${this.position}) in the source $(${this.source}) to a script file`);
         }

@@ -13,7 +13,7 @@ import { CodeFlowStackTrace } from '../../internal/stackTraces/codeFlowStackTrac
 import { IExecutionContext } from '../../internal/scripts/executionContext';
 import { CDTPDomainsEnabler } from '../infrastructure/cdtpDomainsEnabler';
 import { LoadedSourcesRegistry } from '../registries/loadedSourcesRegistry';
-import { ILoadedSource } from '../../internal/sources/loadedSource';
+import { ILoadedSource, SourceScriptRelationship } from '../../internal/sources/loadedSource';
 import { IdentifiedLoadedSource } from '../../internal/sources/identifiedLoadedSource';
 import { DevelopmentSource, RuntimeSource } from '../../internal/sources/loadedSourceToScriptRelationship';
 import { Position } from '../../internal/locations/location';

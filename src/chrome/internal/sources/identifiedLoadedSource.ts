@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import { IScript } from '../scripts/script';
-import { CDTPScriptUrl } from './resourceIdentifierSubtypes';
 import { IResourceIdentifier } from './resourceIdentifier';
 import { ILoadedSource, ICurrentScriptRelationships, ICurrentScriptRelationshipsProvider, ContentsLocation, SourceScriptRelationship } from './loadedSource';
 import { ILoadedSourceToScriptRelationship } from './loadedSourceToScriptRelationship';
@@ -15,17 +14,17 @@ import _ = require('lodash');
  *  2. Two: We assume one path is from the webserver, and the other path is in the workspace: RuntimeScriptWithSourceOnWorkspace
  */
 const IsIdentifiedLoadedSource = Symbol();
-export class IdentifiedLoadedSource<TSource extends string = string> implements ILoadedSource<TSource> {
+export class IdentifiedLoadedSource<TString extends string = string> implements ILoadedSource<TString> {
     [IsIdentifiedLoadedSource]: void;
 
     private constructor(
-        public readonly identifier: IResourceIdentifier<TSource>,
+        public readonly identifier: IResourceIdentifier<TString>,
         public readonly sourceScriptRelationship: SourceScriptRelationship,
         private readonly _currentScriptRelationshipsProvider: ICurrentScriptRelationshipsProvider,
         public readonly contentsLocation: ContentsLocation) { }
 
-    public get url(): CDTPScriptUrl {
-        return this.script.url;
+    public get url(): TString {
+        return this.identifier.textRepresentation;
     }
 
     public currentScriptRelationships(): ICurrentScriptRelationships {
@@ -40,7 +39,7 @@ export class IdentifiedLoadedSource<TSource extends string = string> implements 
         return true;
     }
 
-    public isEquivalentTo(source: ILoadedSource<TSource>): boolean {
+    public isEquivalentTo(source: ILoadedSource<TString>): boolean {
         return this === source;
     }
 

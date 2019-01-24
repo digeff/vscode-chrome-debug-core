@@ -1,5 +1,4 @@
 import { IScript } from '../scripts/script';
-import { CDTPScriptUrl } from './resourceIdentifierSubtypes';
 import { IResourceIdentifier } from './resourceIdentifier';
 import { determineOrderingOfStrings } from '../../collections/utilities';
 import { IEquivalenceComparable } from '../../utils/equivalence';
@@ -26,7 +25,7 @@ export enum SourceScriptRelationship {
  */
 export interface ILoadedSource<TString = string> extends IEquivalenceComparable {
     readonly identifier: IResourceIdentifier<TString>;
-    readonly url: CDTPScriptUrl;
+    readonly url: TString;
     readonly sourceScriptRelationship: SourceScriptRelationship;
 
     // readonly origin: string;
