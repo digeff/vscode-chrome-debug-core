@@ -11,15 +11,19 @@
         ],
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
-        // "noUnusedLocals": true,
         "noImplicitThis": true,
         "noFallthroughCasesInSwitch": true,
         "noImplicitReturns": true,
-        // "noUnusedParameters": true,
         "strictFunctionTypes": true,
         "noImplicitAny": true,
         "strictNullChecks": false,
         "strictPropertyInitialization": false,
+
+
+        "noUnusedLocals": false,
+        "noUnusedParameters": false,
+
+
         "lib": [
             "es6",
             "dom"
