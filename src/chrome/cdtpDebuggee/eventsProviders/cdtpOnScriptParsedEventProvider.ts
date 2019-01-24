@@ -118,7 +118,7 @@ abstract class ScriptCreator {
         });
 
         script.mappedSources.forEach(source =>
-            this._loadedSourcesRegistry.registerRelationship(source, new MappedSourceOf(script.developmentSource, script)));
+            this._loadedSourcesRegistry.registerRelationship(source, new MappedSourceOf(source, script.developmentSource, script)));
 
         await this.registerRuntimeAndDevelopmentSourcesRelationships(script);
 
@@ -181,9 +181,11 @@ class IdentifiedScriptCreator extends ScriptCreator {
     }
 
     protected async registerRuntimeAndDevelopmentSourcesRelationships(script: IScript): Promise<void> {
-        this._loadedSourcesRegistry.registerRelationship(await this.developmentSource(), new DevelopmentSourceOf(this.runtimeSource()));
+        const developmentSource = await this.developmentSource();
+        this._loadedSourcesRegistry.registerRelationship(developmentSource, new DevelopmentSourceOf(developmentSource, this.runtimeSource()));
 
-        this._loadedSourcesRegistry.registerRelationship(this.runtimeSource(), new RuntimeSourceOf(script));
+        const runtimeSource = await this.runtimeSource();
+        this._loadedSourcesRegistry.registerRelationship(runtimeSource, new RuntimeSourceOf(runtimeSource, script));
     }
 }
 

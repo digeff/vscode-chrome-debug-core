@@ -48,7 +48,7 @@ export class UnidentifiedLoadedSource implements ILoadedSource<CDTPScriptUrl> {
 
 export class CurrentUnidentifiedSourceScriptRelationships implements ICurrentScriptRelationships {
     public get relationships(): ILoadedSourceToScriptRelationship[] {
-        return [new DevelopmentSourceOf(this._source), new RuntimeSourceOf(this._source.script)];
+        return [new DevelopmentSourceOf(this._source, this._source), new RuntimeSourceOf(this._source, this._source.script)];
     }
 
     public get scripts(): IScript[] {
