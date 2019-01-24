@@ -1,10 +1,11 @@
-import { ILoadedSource } from './loadedSource';
+import { ILoadedSource, SourceScriptRelationship } from './loadedSource';
 import { ValidatedMap } from '../../collections/validatedMap';
 import { printIterable } from '../../collections/printting';
 import { IComponent } from '../features/feature';
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../../dependencyInjection.ts/types';
 import { IScriptSourcesRetriever } from '../../cdtpDebuggee/features/CDTPScriptSourcesRetriever';
+import { singleOne } from '../../collections/utilities';
 
 @injectable()
 export class SourceTextLogic implements IComponent {
@@ -14,7 +15,13 @@ export class SourceTextLogic implements IComponent {
         let text = this._sourceToText.tryGetting(loadedSource);
 
         if (text !== null) {
-            text = await this._scriptSources.getScriptSource(loadedSource.script);
+            if (loadedSource.sourceScriptRelationship === SourceScriptRelationship.SourceIsSingleScript) {
+                text = await this._scriptSources.getScriptSource(singleOne(loadedSource.currentScriptRelationships().scripts));
+            } else {
+                // TODO: Implement this, by using Page.getResourceContent for SourceScriptRelationship.SourceIsMoreThanAScript
+                // We'll need to figure out what is the right thing to do for SourceScriptRelationship.Unknown
+                throw new Error(`Support for getting the text from dynamic sources that aren't just script hasn't been implemented yet`);
+            }
             this._sourceToText.set(loadedSource, text);
         }
 

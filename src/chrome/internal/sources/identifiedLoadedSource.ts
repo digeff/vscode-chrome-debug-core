@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import { IScript } from '../scripts/script';
 import { CDTPScriptUrl } from './resourceIdentifierSubtypes';
 import { IResourceIdentifier } from './resourceIdentifier';
-import { ILoadedSource, ICurrentScriptRelationships, ICurrentScriptRelationshipsProvider, ContentsLocation } from './loadedSource';
+import { ILoadedSource, ICurrentScriptRelationships, ICurrentScriptRelationshipsProvider, ContentsLocation, SourceScriptRelationship } from './loadedSource';
 import { ILoadedSourceToScriptRelationship } from './loadedSourceToScriptRelationship';
 import _ = require('lodash');
 
@@ -18,7 +18,11 @@ const IsIdentifiedLoadedSource = Symbol();
 export class IdentifiedLoadedSource<TSource extends string = string> implements ILoadedSource<TSource> {
     [IsIdentifiedLoadedSource]: void;
 
-    private constructor(public readonly identifier: IResourceIdentifier<TSource>, private readonly _currentScriptRelationshipsProvider: ICurrentScriptRelationshipsProvider, public readonly contentsLocation: ContentsLocation) { }
+    private constructor(
+        public readonly identifier: IResourceIdentifier<TSource>,
+        public readonly sourceScriptRelationship: SourceScriptRelationship,
+        private readonly _currentScriptRelationshipsProvider: ICurrentScriptRelationshipsProvider,
+        public readonly contentsLocation: ContentsLocation) { }
 
     public get url(): CDTPScriptUrl {
         return this.script.url;
@@ -44,9 +48,11 @@ export class IdentifiedLoadedSource<TSource extends string = string> implements 
         return `src:${this.identifier}`;
     }
 
-    public static create<TString extends string>(identifier: IResourceIdentifier<TString>, currentScriptRelationshipsProvider: ICurrentScriptRelationshipsProvider): IdentifiedLoadedSource<TString> {
+    public static create<TString extends string>(identifier: IResourceIdentifier<TString>, sourceScriptRelationship: SourceScriptRelationship,
+        currentScriptRelationshipsProvider: ICurrentScriptRelationshipsProvider): IdentifiedLoadedSource<TString> {
+
         const contentsLocation = fs.existsSync(identifier.textRepresentation) ? ContentsLocation.PersistentStorage : ContentsLocation.DynamicMemory;
-        return new IdentifiedLoadedSource<TString>(identifier, currentScriptRelationshipsProvider, contentsLocation);
+        return new IdentifiedLoadedSource<TString>(identifier, sourceScriptRelationship, currentScriptRelationshipsProvider, contentsLocation);
     }
 }
 

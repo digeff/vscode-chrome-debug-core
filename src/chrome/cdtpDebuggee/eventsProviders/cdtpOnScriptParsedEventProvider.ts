@@ -106,7 +106,7 @@ abstract class ScriptCreator {
         protected readonly _loadedSourcesRegistry: LoadedSourcesRegistry,
         protected readonly _pathTransformer: BasePathTransformer,
         private readonly _sourceMapTransformer: BaseSourceMapTransformer,
-        private readonly _scriptParsedEvent: CDTP.Debugger.ScriptParsedEvent,
+        protected readonly _scriptParsedEvent: CDTP.Debugger.ScriptParsedEvent,
     ) { }
 
     public async createAndRegisterScript(): Promise<IScript> {
@@ -127,7 +127,7 @@ abstract class ScriptCreator {
     protected abstract registerSourcesRelationships(script: IScript): Promise<void>;
 
     private mappedSources(sourceMapper: SourcesMapper | NoSourcesMapper) {
-        return sourceMapper.sources.map((path: string) => this.obtainLoadedSource(parseResourceIdentifier(path)));
+        return sourceMapper.sources.map((path: string) => this.obtainLoadedSource(parseResourceIdentifier(path), SourceScriptRelationship.Unknown));
     }
 
     private async sourceMapper() {
@@ -145,9 +145,9 @@ abstract class ScriptCreator {
         return scriptRange;
     }
 
-    protected obtainLoadedSource(sourceUrl: IResourceIdentifier): IdentifiedLoadedSource {
+    protected obtainLoadedSource(sourceUrl: IResourceIdentifier, sourceScriptRelationship: SourceScriptRelationship): IdentifiedLoadedSource {
         return this._loadedSourcesRegistry.getOrAdd(sourceUrl, provider => {
-            return IdentifiedLoadedSource.create(sourceUrl, provider);
+            return IdentifiedLoadedSource.create(sourceUrl, sourceScriptRelationship, provider);
         });
     }
 }
@@ -161,13 +161,20 @@ class IdentifiedScriptCreator extends ScriptCreator {
     }
 
     private obtainRuntimeSource(): IdentifiedLoadedSource<CDTPScriptUrl> {
+        // This is an heuristic. I think that if the script starts on (0, 0) then that means the file is a script file, and not an .html file or something which is a script and something else
+        // I cannot think of any case where this would be false, but we've been surprised before...
+        const isSingleScript = this._scriptParsedEvent.startLine === 0 && this._scriptParsedEvent.startColumn === 0;
+        const sourceScriptRelationship = isSingleScript ? SourceScriptRelationship.SourceIsSingleScript : SourceScriptRelationship.SourceIsMoreThanAScript;
+
         // TODO: Figure out a way to remove the cast in next line
-        return <IdentifiedLoadedSource<CDTPScriptUrl>><unknown>this.obtainLoadedSource(this.runtimeSourcePath);
+        return <IdentifiedLoadedSource<CDTPScriptUrl>><unknown>this.obtainLoadedSource(this.runtimeSourcePath, sourceScriptRelationship);
     }
 
     private async obtainDevelopmentSource(): Promise<IdentifiedLoadedSource> {
         const developmentSourceLocation = await this._pathTransformer.scriptParsed(this.runtimeSourcePath);
-        return this.obtainLoadedSource(developmentSourceLocation);
+
+        // The development file should have the same contents, so it should have the same source script relationship as the runtime file
+        return this.obtainLoadedSource(developmentSourceLocation, this.runtimeSource().sourceScriptRelationship);
     }
 
     protected async registerSourcesRelationships(script: IScript): Promise<void> {

@@ -1,12 +1,14 @@
 import { IScript } from '../scripts/script';
 import { CDTPScriptUrl } from './resourceIdentifierSubtypes';
 import { IResourceIdentifier, parseResourceIdentifier, ResourceName } from './resourceIdentifier';
-import { ILoadedSource, ICurrentScriptRelationships } from './loadedSource';
+import { ILoadedSource, ICurrentScriptRelationships, SourceScriptRelationship } from './loadedSource';
 import { ILoadedSourceToScriptRelationship, DevelopmentSource, RuntimeSource } from './loadedSourceToScriptRelationship';
 
 const IsUnidentifiedLoadedSource = Symbol();
 export class UnidentifiedLoadedSource implements ILoadedSource<CDTPScriptUrl> {
     [IsUnidentifiedLoadedSource]: void;
+
+    public readonly sourceScriptRelationship = SourceScriptRelationship.SourceIsSingleScript;
 
     // TODO DIEGO: Move these two properties to the client layer
     public static EVAL_FILENAME_PREFIX = 'VM';

@@ -15,12 +15,20 @@ export interface ICurrentScriptRelationships {
     readonly relationships: ILoadedSourceToScriptRelationship[];
 }
 
+export enum SourceScriptRelationship {
+    SourceIsSingleScript,
+    SourceIsMoreThanAScript,
+    Unknown
+}
+
 /** This interface represents a source or text that is related to a script that the debugee is executing. The text can be the contents of the script itself,
  *  or a file from which the script was loaded, or a file that was compiled to generate the contents of the script
  */
 export interface ILoadedSource<TString = string> extends IEquivalenceComparable {
     readonly identifier: IResourceIdentifier<TString>;
     readonly url: CDTPScriptUrl;
+    readonly sourceScriptRelationship: SourceScriptRelationship;
+
     // readonly origin: string;
     doesScriptHasUrl(): boolean; // TODO DIEGO: Figure out if we can delete this property
     isMappedSource(): boolean;
