@@ -18,6 +18,8 @@ import { IEventsToClientReporter } from '../../client/eventSender';
 import { ReasonType } from '../../stoppedEvent';
 import { CDTPBreakpoint } from '../../cdtpDebuggee/cdtpPrimitives';
 import { CDTPBPRecipiesRegistry } from './registries/bpRecipieRegistry';
+import { asyncMap } from '../../collections/async';
+import _ = require('lodash');
 
 export type Dummy = VoteRelevance; // If we don't do this the .d.ts doesn't include VoteRelevance and the compilation fails. Remove this when the issue disappears...
 
@@ -56,32 +58,36 @@ export class BPRecipieAtLoadedSourceLogic implements IBreakpointsInLoadedSource 
     }
 
     public async addBreakpointAtLoadedSource(bpRecipie: BPRecipieInLoadedSource<ConditionalBreak | AlwaysBreak>): Promise<IBreakpoint<ScriptOrSourceOrURLOrURLRegexp>[]> {
-        const bpInScriptRecipie = bpRecipie.mappedToScript();
-        const bestLocation = await this.considerColumnAndSelectBestBPLocation(bpInScriptRecipie.location);
-        const bpRecipieInBestLocation = bpInScriptRecipie.withLocationReplaced(bestLocation);
-
-        const runtimeSource = bpInScriptRecipie.location.script.runtimeSource;
+        const bpsInScriptRecipie = bpRecipie.mappedToScript();
         this._breakpointRegistry.registerBPRecipie(bpRecipie.unmappedBPRecipie);
 
-        let breakpoints: CDTPBreakpoint[];
-        if (!runtimeSource.doesScriptHasUrl()) {
-            breakpoints = [await this._targetBreakpoints.setBreakpoint(bpRecipieInBestLocation)];
-        } else if (runtimeSource.identifier.isLocalFilePath()) {
-            breakpoints = await this._targetBreakpoints.setBreakpointByUrlRegexp(bpRecipieInBestLocation.mappedToUrlRegexp());
-        } else {
-            /**
-             * The script has a URL and it's not a local file path, so we could leave it as-is.
-             * We transform it into a regexp to add a GUID to it, so CDTP will let us add the same breakpoint/recipie two times (using different guids).
-             * That way we can always add the new breakpoints for a file, before removing the old ones (except if the script doesn't have an URL)
-             */
-            breakpoints = await this._targetBreakpoints.setBreakpointByUrlRegexp(bpRecipieInBestLocation.mappedToUrlRegexp());
-        }
+        const breakpoints = _.flatten(await asyncMap(bpsInScriptRecipie, async bpInScriptRecipie => {
+            const bestLocation = await this.considerColumnAndSelectBestBPLocation(bpInScriptRecipie.location);
+            const bpRecipieInBestLocation = bpInScriptRecipie.withLocationReplaced(bestLocation);
 
-        breakpoints.forEach(breakpoint => {
-            this._breakpointRegistry.registerBreakpointAsBinded(breakpoint);
-            this._bpRecipiesRegistry.register(bpRecipie.unmappedBPRecipie, breakpoint.recipie);
-        });
+            const runtimeSource = bpInScriptRecipie.location.script.runtimeSource;
 
+            let breakpoints: CDTPBreakpoint[];
+            if (!runtimeSource.doesScriptHasUrl()) {
+                breakpoints = [await this._targetBreakpoints.setBreakpoint(bpRecipieInBestLocation)];
+            } else if (runtimeSource.identifier.isLocalFilePath()) {
+                breakpoints = await this._targetBreakpoints.setBreakpointByUrlRegexp(bpRecipieInBestLocation.mappedToUrlRegexp());
+            } else {
+                /**
+                 * The script has a URL and it's not a local file path, so we could leave it as-is.
+                 * We transform it into a regexp to add a GUID to it, so CDTP will let us add the same breakpoint/recipie two times (using different guids).
+                 * That way we can always add the new breakpoints for a file, before removing the old ones (except if the script doesn't have an URL)
+                 */
+                breakpoints = await this._targetBreakpoints.setBreakpointByUrlRegexp(bpRecipieInBestLocation.mappedToUrlRegexp());
+            }
+
+            breakpoints.forEach(breakpoint => {
+                this._breakpointRegistry.registerBreakpointAsBinded(breakpoint);
+                this._bpRecipiesRegistry.register(bpRecipie.unmappedBPRecipie, breakpoint.recipie);
+            });
+
+            return breakpoints;
+        }));
         return breakpoints;
     }
 

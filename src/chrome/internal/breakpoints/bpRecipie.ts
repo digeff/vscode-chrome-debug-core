@@ -95,8 +95,8 @@ export class BPRecipieInSource<TBPActionWhenHit extends IBPActionWhenHit = IBPAc
 export class BPRecipieInLoadedSource<TBPActionWhenHit extends IBPActionWhenHit = IBPActionWhenHit>
     extends MappedBPRecipieCommonLogic<ILoadedSource, TBPActionWhenHit> implements IBPRecipie<ILoadedSource, TBPActionWhenHit> {
 
-    public mappedToScript(): BPRecipieInScript<TBPActionWhenHit> {
-        return new BPRecipieInScript<TBPActionWhenHit>(this.unmappedBPRecipie, this.location.mappedToScript());
+    public mappedToScript(): BPRecipieInScript<TBPActionWhenHit>[] {
+        return this.location.mappedToScript().map(location => new BPRecipieInScript<TBPActionWhenHit>(this.unmappedBPRecipie, location));
     }
 }
 
