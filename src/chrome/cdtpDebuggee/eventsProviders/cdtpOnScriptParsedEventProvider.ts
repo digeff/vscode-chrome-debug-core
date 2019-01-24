@@ -3,7 +3,7 @@ import { CDTPEventsEmitterDiagnosticsModule } from '../infrastructure/cdtpDiagno
 import { CDTPScriptsRegistry } from '../registries/cdtpScriptsRegistry';
 import { IScript, Script } from '../../internal/scripts/script';
 import { createCDTPScriptUrl, CDTPScriptUrl } from '../../internal/sources/resourceIdentifierSubtypes';
-import { SourcesMapper, NoSourceMapping as NoSourcesMapper } from '../../internal/scripts/sourcesMapper';
+import { SourcesMapper, NoSourceMapping as NoSourcesMapper, ISourcesMapper } from '../../internal/scripts/sourcesMapper';
 import { IResourceIdentifier } from '../../internal/sources/resourceIdentifier';
 import { TYPES } from '../../dependencyInjection.ts/types';
 import { CDTPStackTraceParser } from '../protocolParsers/cdtpStackTraceParser';
@@ -14,12 +14,12 @@ import { IExecutionContext } from '../../internal/scripts/executionContext';
 import { CDTPDomainsEnabler } from '../infrastructure/cdtpDomainsEnabler';
 import { LoadedSourcesRegistry } from '../registries/loadedSourcesRegistry';
 import { ILoadedSource } from '../../internal/sources/loadedSource';
-import { IdentifiedLoadedSource } from "../../internal/sources/identifiedLoadedSource";
-import { UnidentifiedLoadedSource } from '../../internal/sources/unidentifiedLoadedSource';
+import { IdentifiedLoadedSource } from '../../internal/sources/identifiedLoadedSource';
 import { DevelopmentSource, RuntimeSource } from '../../internal/sources/loadedSourceToScriptRelationship';
 import { Position } from '../../internal/locations/location';
 import { createLineNumber, createColumnNumber } from '../../internal/locations/subtypes';
 import { RangeInResource } from '../../internal/locations/rangeInScript';
+import _ = require('lodash');
 
 /**
  * A new JavaScript Script has been parsed by the debugee and it's about to be executed
@@ -54,7 +54,12 @@ export class CDTPOnScriptParsedEventProvider extends CDTPEventsEmitterDiagnostic
     private readonly _stackTraceParser = new CDTPStackTraceParser(this._scriptsRegistry);
 
     public onScriptParsed = this.addApiListener('scriptParsed', async (params: CDTP.Debugger.ScriptParsedEvent) => {
-        await this.createAndRegisterScript(params);
+        // The stack trace and hash can be large and the DA doesn't need it.
+        delete params.stackTrace;
+        delete params.hash;
+
+        const creator = !!params.url ? IdentifiedScriptCreator : UnidentifiedScriptCreator;
+        await new creator(this._scriptsRegistry, this._loadedSourcesRegistry, this._pathTransformer, this._sourceMapTransformer, params).createAndRegisterScript();
 
         return await this.toScriptParsedEvent(params);
     });
@@ -68,55 +73,6 @@ export class CDTPOnScriptParsedEventProvider extends CDTPEventsEmitterDiagnostic
         private readonly _loadedSourcesRegistry: LoadedSourcesRegistry,
     ) {
         super(domainsEnabler);
-    }
-
-    private async createAndRegisterScript(params: CDTP.Debugger.ScriptParsedEvent): Promise<IScript> {
-        // The stack trace and hash can be large and the DA doesn't need it.
-        delete params.stackTrace;
-        delete params.hash;
-
-        const executionContext = this._scriptsRegistry.getExecutionContextById(params.executionContextId);
-        const startPosition = new Position(createLineNumber(params.startLine), createColumnNumber(params.startColumn));
-        const endPosition = new Position(createLineNumber(params.endLine), createColumnNumber(params.endColumn));
-
-        const script = await this._scriptsRegistry.registerScript(params.scriptId, async () => {
-            let runtimeSource: ILoadedSource<CDTPScriptUrl>;
-            let runtimeSourceLocation;
-            let developmentSource;
-            if (params.url !== undefined && params.url !== '') {
-                runtimeSourceLocation = parseResourceIdentifier(createCDTPScriptUrl(params.url));
-                // TODO: Figure out a way to remove the cast in next line
-                const identifiedRuntimeSource = <IdentifiedLoadedSource<CDTPScriptUrl>><unknown>this.obtainLoadedSource(runtimeSourceLocation);
-                runtimeSource = identifiedRuntimeSource;
-                const developmentSourceLocation = await this._pathTransformer.scriptParsed(runtimeSourceLocation);
-                developmentSource = this.obtainLoadedSource(developmentSourceLocation);
-                const scriptRange = new RangeInResource(runtimeSource, startPosition, endPosition);
-                this._loadedSourcesRegistry.registerRelationship(identifiedRuntimeSource, new RuntimeSource(script, scriptRange));
-                this._loadedSourcesRegistry.registerRelationship(developmentSource, new DevelopmentSource(runtimeSource));
-            } else {
-                runtimeSourceLocation = parseResourceIdentifier('');
-                runtimeSource = developmentSource = new UnidentifiedLoadedSource(script, name, 'TODO DIEGO');
-            }
-
-            const sourceMap = await this._sourceMapTransformer.scriptParsed(runtimeSourceLocation.canonicalized, params.sourceMapURL);
-            const sourceMapper = sourceMap
-                ? new SourcesMapper(sourceMap)
-                : new NoSourcesMapper();
-
-            const mappedSources = sourceMapper.sources.map((path: string) => this.obtainLoadedSource(parseResourceIdentifier(path)));
-
-            const runtimeScript = Script.create(executionContext, runtimeSource, developmentSource, sourceMapper, mappedSources);
-
-            return runtimeScript;
-        });
-
-        return script;
-    }
-
-    private obtainLoadedSource(sourceUrl: IResourceIdentifier): IdentifiedLoadedSource {
-        return this._loadedSourcesRegistry.getOrAdd(sourceUrl, provider => {
-            return IdentifiedLoadedSource.create(sourceUrl, provider);
-        });
     }
 
     private async toScriptParsedEvent(params: CDTP.Debugger.ScriptParsedEvent): Promise<ScriptParsedEvent> {
@@ -140,4 +96,91 @@ export class CDTPOnScriptParsedEventProvider extends CDTPEventsEmitterDiagnostic
             stackTrace: params.stackTrace && await this._stackTraceParser.toStackTraceCodeFlow(params.stackTrace)
         };
     }
+}
+
+abstract class ScriptCreator {
+    protected readonly runtimeSourcePath = parseResourceIdentifier(createCDTPScriptUrl(this._scriptParsedEvent.url || ''));
+
+    constructor(
+        private readonly _scriptsRegistry: CDTPScriptsRegistry,
+        protected readonly _loadedSourcesRegistry: LoadedSourcesRegistry,
+        protected readonly _pathTransformer: BasePathTransformer,
+        private readonly _sourceMapTransformer: BaseSourceMapTransformer,
+        private readonly _scriptParsedEvent: CDTP.Debugger.ScriptParsedEvent,
+    ) { }
+
+    public async createAndRegisterScript(): Promise<IScript> {
+        const executionContext = this._scriptsRegistry.getExecutionContextById(this._scriptParsedEvent.executionContextId);
+
+        const script = await this._scriptsRegistry.registerScript(this._scriptParsedEvent.scriptId, async () => {
+            const sourceMapper = await this.sourceMapper();
+            return this.createScript(executionContext, sourceMapper, this.mappedSources(sourceMapper));
+        });
+
+        await this.registerSourcesRelationships(script);
+
+        return script;
+    }
+
+    protected abstract createScript(executionContext: IExecutionContext, sourceMapper: ISourcesMapper, mappedSources: IdentifiedLoadedSource<string>[]): Promise<IScript>;
+
+    protected abstract registerSourcesRelationships(script: IScript): Promise<void>;
+
+    private mappedSources(sourceMapper: SourcesMapper | NoSourcesMapper) {
+        return sourceMapper.sources.map((path: string) => this.obtainLoadedSource(parseResourceIdentifier(path)));
+    }
+
+    private async sourceMapper() {
+        const sourceMap = await this._sourceMapTransformer.scriptParsed(this.runtimeSourcePath.canonicalized, this._scriptParsedEvent.sourceMapURL);
+        const sourceMapper = sourceMap
+            ? new SourcesMapper(sourceMap)
+            : new NoSourcesMapper();
+        return sourceMapper;
+    }
+
+    protected scriptRange(runtimeSource: ILoadedSource<CDTPScriptUrl>) {
+        const startPosition = new Position(createLineNumber(this._scriptParsedEvent.startLine), createColumnNumber(this._scriptParsedEvent.startColumn));
+        const endPosition = new Position(createLineNumber(this._scriptParsedEvent.endLine), createColumnNumber(this._scriptParsedEvent.endColumn));
+        const scriptRange = new RangeInResource(runtimeSource, startPosition, endPosition);
+        return scriptRange;
+    }
+
+    protected obtainLoadedSource(sourceUrl: IResourceIdentifier): IdentifiedLoadedSource {
+        return this._loadedSourcesRegistry.getOrAdd(sourceUrl, provider => {
+            return IdentifiedLoadedSource.create(sourceUrl, provider);
+        });
+    }
+}
+
+class IdentifiedScriptCreator extends ScriptCreator {
+    private readonly runtimeSource = _.memoize(() => this.obtainRuntimeSource());
+    private readonly developmentSource = _.memoize(() => this.obtainDevelopmentSource());
+
+    protected async createScript(executionContext: IExecutionContext, sourceMapper: ISourcesMapper, mappedSources: IdentifiedLoadedSource<string>[]): Promise<IScript> {
+        return Script.create(executionContext, this.runtimeSource(), await this.developmentSource(), sourceMapper, mappedSources, this.scriptRange(this.runtimeSource()));
+    }
+
+    private obtainRuntimeSource(): IdentifiedLoadedSource<CDTPScriptUrl> {
+        // TODO: Figure out a way to remove the cast in next line
+        return <IdentifiedLoadedSource<CDTPScriptUrl>><unknown>this.obtainLoadedSource(this.runtimeSourcePath);
+    }
+
+    private async obtainDevelopmentSource(): Promise<IdentifiedLoadedSource> {
+        const developmentSourceLocation = await this._pathTransformer.scriptParsed(this.runtimeSourcePath);
+        return this.obtainLoadedSource(developmentSourceLocation);
+    }
+
+    protected async registerSourcesRelationships(script: IScript): Promise<void> {
+        this._loadedSourcesRegistry.registerRelationship(await this.developmentSource(), new DevelopmentSource(this.runtimeSource()));
+
+        this._loadedSourcesRegistry.registerRelationship(this.runtimeSource(), new RuntimeSource(script));
+    }
+}
+
+class UnidentifiedScriptCreator extends ScriptCreator {
+    protected async createScript(executionContext: IExecutionContext, sourceMapper: ISourcesMapper, mappedSources: IdentifiedLoadedSource<string>[]): Promise<IScript> {
+        return Script.createWithUnidentifiedSource(executionContext, sourceMapper, mappedSources, (runtimeSource: ILoadedSource<CDTPScriptUrl>) => this.scriptRange(runtimeSource));
+    }
+
+    protected async registerSourcesRelationships(_script: IScript): Promise<void> { }
 }

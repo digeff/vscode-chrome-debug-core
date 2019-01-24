@@ -1,9 +1,13 @@
 import { IScript } from '../scripts/script';
 import { CDTPScriptUrl } from './resourceIdentifierSubtypes';
 import { IResourceIdentifier, parseResourceIdentifier, ResourceName } from './resourceIdentifier';
-import { ILoadedSource } from './loadedSource';
+import { ILoadedSource, ICurrentScriptRelationships } from './loadedSource';
+import { ILoadedSourceToScriptRelationship, DevelopmentSource, RuntimeSource } from './loadedSourceToScriptRelationship';
 
+const IsUnidentifiedLoadedSource = Symbol();
 export class UnidentifiedLoadedSource implements ILoadedSource<CDTPScriptUrl> {
+    [IsUnidentifiedLoadedSource]: void;
+
     // TODO DIEGO: Move these two properties to the client layer
     public static EVAL_FILENAME_PREFIX = 'VM';
     public static EVAL_PSEUDO_FOLDER = '<eval>';
@@ -27,6 +31,10 @@ export class UnidentifiedLoadedSource implements ILoadedSource<CDTPScriptUrl> {
         return false;
     }
 
+    public currentScriptRelationships(): ICurrentScriptRelationships {
+        return new CurrentUnidentifiedSourceScriptRelationships(this);
+    }
+
     public isEquivalentTo(source: UnidentifiedLoadedSource): boolean {
         return this === source;
     }
@@ -34,4 +42,16 @@ export class UnidentifiedLoadedSource implements ILoadedSource<CDTPScriptUrl> {
     public toString(): string {
         return `No URL script source with id: ${this.name}`;
     }
+}
+
+export class CurrentUnidentifiedSourceScriptRelationships implements ICurrentScriptRelationships {
+    public get relationships(): ILoadedSourceToScriptRelationship[] {
+        return [new DevelopmentSource(this._source), new RuntimeSource(this._source.script)];
+    }
+
+    public get scripts(): IScript[] {
+        return [this._source.script];
+    }
+
+    constructor(private readonly _source: UnidentifiedLoadedSource) { }
 }

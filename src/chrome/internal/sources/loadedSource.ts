@@ -25,6 +25,8 @@ export interface ILoadedSource<TString = string> extends IEquivalenceComparable 
     // readonly origin: string;
     doesScriptHasUrl(): boolean; // TODO DIEGO: Figure out if we can delete this property
     isMappedSource(): boolean;
+
+    currentScriptRelationships(): ICurrentScriptRelationships;
 }
 
 export enum ContentsLocation {

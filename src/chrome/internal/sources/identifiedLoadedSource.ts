@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import { IScript } from '../scripts/script';
 import { CDTPScriptUrl } from './resourceIdentifierSubtypes';
 import { IResourceIdentifier } from './resourceIdentifier';
@@ -12,7 +13,10 @@ import { ILoadedSourceToScriptRelationship } from './loadedSourceToScriptRelatio
  *      Single path not on storage: DynamicRuntimeScript
  *  2. Two: We assume one path is from the webserver, and the other path is in the workspace: RuntimeScriptWithSourceOnWorkspace
  */
+const IsIdentifiedLoadedSource = Symbol();
 export class IdentifiedLoadedSource<TSource extends string = string> implements ILoadedSource<TSource> {
+    [IsIdentifiedLoadedSource]: void;
+
     readonly script: IScript; // TODO DIEGO: Remove this
 
     private constructor(public readonly identifier: IResourceIdentifier<TSource>, private readonly _currentScriptRelationshipsProvider: ICurrentScriptRelationshipsProvider, public readonly contentsLocation: ContentsLocation) { }
@@ -21,7 +25,7 @@ export class IdentifiedLoadedSource<TSource extends string = string> implements 
         return this.script.url;
     }
 
-    public get currentScriptRelationships(): ICurrentScriptRelationships {
+    public currentScriptRelationships(): ICurrentScriptRelationships {
         return this._currentScriptRelationshipsProvider.currentScriptRelationships(this);
     }
 
@@ -47,7 +51,7 @@ export class IdentifiedLoadedSource<TSource extends string = string> implements 
     }
 }
 
-export class CurrentScriptRelationships implements ICurrentScriptRelationships {
+export class CurrentIdentifiedSourceScriptRelationships implements ICurrentScriptRelationships {
     scripts: IScript[];
     constructor(public readonly relationships: ILoadedSourceToScriptRelationship[]) { }
 }
