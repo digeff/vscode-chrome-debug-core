@@ -4,7 +4,7 @@ import { CDTPScriptsRegistry } from '../registries/cdtpScriptsRegistry';
 import { IScript, Script } from '../../internal/scripts/script';
 import { createCDTPScriptUrl, CDTPScriptUrl } from '../../internal/sources/resourceIdentifierSubtypes';
 import { SourcesMapper, NoSourceMapping as NoSourcesMapper, ISourcesMapper } from '../../internal/scripts/sourcesMapper';
-import { IResourceIdentifier } from '../../internal/sources/resourceIdentifier';
+import { IResourceIdentifier, ResourceName } from '../../internal/sources/resourceIdentifier';
 import { TYPES } from '../../dependencyInjection.ts/types';
 import { CDTPStackTraceParser } from '../protocolParsers/cdtpStackTraceParser';
 import { inject } from 'inversify';
@@ -191,7 +191,8 @@ class IdentifiedScriptCreator extends ScriptCreator {
 
 class UnidentifiedScriptCreator extends ScriptCreator {
     protected async createScript(executionContext: IExecutionContext, sourceMapper: ISourcesMapper, mappedSources: IdentifiedLoadedSource<string>[]): Promise<IScript> {
-        return Script.createWithUnidentifiedSource(executionContext, sourceMapper, mappedSources, (runtimeSource: ILoadedSource<CDTPScriptUrl>) => this.scriptRange(runtimeSource));
+        return Script.createWithUnidentifiedSource(new ResourceName(createCDTPScriptUrl(`${this._scriptParsedEvent.scriptId}`)),
+            executionContext, sourceMapper, mappedSources, (runtimeSource: ILoadedSource<CDTPScriptUrl>) => this.scriptRange(runtimeSource));
     }
 
     protected async registerRuntimeAndDevelopmentSourcesRelationships(_script: IScript): Promise<void> { }

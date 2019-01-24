@@ -5,7 +5,7 @@ import { CDTPScriptUrl } from '../sources/resourceIdentifierSubtypes';
 import { IValidatedMap } from '../../collections/validatedMap';
 import { printArray } from '../../collections/printing';
 import { ISourcesMapper } from './sourcesMapper';
-import { IResourceIdentifier, newResourceIdentifierMap } from '../sources/resourceIdentifier';
+import { IResourceIdentifier, newResourceIdentifierMap, ResourceName } from '../sources/resourceIdentifier';
 import { IExecutionContext } from './executionContext';
 import { IEquivalenceComparable } from '../../utils/equivalence';
 import { Lazy1 } from '../../utils/lazy';
@@ -73,9 +73,11 @@ export class Script implements IScript {
         return new Script(executionContext, () => runtimeSource, () => developmentSource, mappedSources, sourcesMapper, () => rangeInSource);
     }
 
-    public static createWithUnidentifiedSource(executionContext: IExecutionContext, sourcesMapper: ISourcesMapper, mappedSources: IdentifiedLoadedSource[],
+    public static createWithUnidentifiedSource(name: ResourceName<CDTPScriptUrl>, executionContext: IExecutionContext, sourcesMapper: ISourcesMapper, mappedSources: IdentifiedLoadedSource[],
         rangeInSource: (runtimeSource: ILoadedSource<CDTPScriptUrl>) => RangeInResource<ILoadedSource<CDTPScriptUrl>>): Script {
         const sourceProvider = new Lazy1((script: IScript) => new UnidentifiedLoadedSource(script, name, "source for the script from the debugging engine, because the script doesn't have an url")).function;
+        let lala = name + '';
+        lala = lala.length + lala.length + '';
         return new Script(executionContext, sourceProvider, sourceProvider, mappedSources, sourcesMapper, rangeInSource);
     }
 
