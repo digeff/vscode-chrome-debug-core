@@ -4,6 +4,7 @@ import { CDTPScriptUrl } from './resourceIdentifierSubtypes';
 import { IResourceIdentifier } from './resourceIdentifier';
 import { ILoadedSource, ICurrentScriptRelationships, ICurrentScriptRelationshipsProvider, ContentsLocation } from './loadedSource';
 import { ILoadedSourceToScriptRelationship } from './loadedSourceToScriptRelationship';
+import _ = require('lodash');
 
 /**
  * Loaded Source classification:
@@ -16,8 +17,6 @@ import { ILoadedSourceToScriptRelationship } from './loadedSourceToScriptRelatio
 const IsIdentifiedLoadedSource = Symbol();
 export class IdentifiedLoadedSource<TSource extends string = string> implements ILoadedSource<TSource> {
     [IsIdentifiedLoadedSource]: void;
-
-    readonly script: IScript; // TODO DIEGO: Remove this
 
     private constructor(public readonly identifier: IResourceIdentifier<TSource>, private readonly _currentScriptRelationshipsProvider: ICurrentScriptRelationshipsProvider, public readonly contentsLocation: ContentsLocation) { }
 
@@ -52,6 +51,9 @@ export class IdentifiedLoadedSource<TSource extends string = string> implements 
 }
 
 export class CurrentIdentifiedSourceScriptRelationships implements ICurrentScriptRelationships {
-    scripts: IScript[];
+    public get scripts(): IScript[] {
+        return _.flatten(this.relationships.map(relationship => relationship.scripts));
+    }
+
     constructor(public readonly relationships: ILoadedSourceToScriptRelationship[]) { }
 }

@@ -4,7 +4,9 @@ import { IdentifiedLoadedSource, CurrentIdentifiedSourceScriptRelationships } fr
 import { CDTPScriptUrl } from '../../internal/sources/resourceIdentifierSubtypes';
 import { ValidatedMultiMap } from '../../collections/validatedMultiMap';
 import { ILoadedSourceToScriptRelationship } from '../../internal/sources/loadedSourceToScriptRelationship';
+import { injectable } from 'inversify';
 
+@injectable()
 export class LoadedSourcesRegistry implements ICurrentScriptRelationshipsProvider {
     // TODO: Figure out a way to store IdentifiedLoadedSource<CDTPScriptUrl> and IdentifiedLoadedSource<string> in a single map while preserving type safety
     private readonly _loadedSourceByPath = newResourceIdentifierMap<IdentifiedLoadedSource>();

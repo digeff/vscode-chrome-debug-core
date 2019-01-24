@@ -70,7 +70,7 @@ export class CDTPOnScriptParsedEventProvider extends CDTPEventsEmitterDiagnostic
         @inject(TYPES.BaseSourceMapTransformer) private readonly _sourceMapTransformer: BaseSourceMapTransformer,
         @inject(TYPES.CDTPScriptsRegistry) private readonly _scriptsRegistry: CDTPScriptsRegistry,
         @inject(TYPES.IDomainsEnabler) domainsEnabler: CDTPDomainsEnabler,
-        private readonly _loadedSourcesRegistry: LoadedSourcesRegistry,
+        @inject(LoadedSourcesRegistry) private readonly _loadedSourcesRegistry: LoadedSourcesRegistry,
     ) {
         super(domainsEnabler);
     }

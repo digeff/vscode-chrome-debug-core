@@ -19,7 +19,6 @@ export interface ICurrentScriptRelationships {
  *  or a file from which the script was loaded, or a file that was compiled to generate the contents of the script
  */
 export interface ILoadedSource<TString = string> extends IEquivalenceComparable {
-    readonly script: IScript; // TODO DIEGO: Remove this
     readonly identifier: IResourceIdentifier<TString>;
     readonly url: CDTPScriptUrl;
     // readonly origin: string;
