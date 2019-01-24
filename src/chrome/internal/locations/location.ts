@@ -149,7 +149,7 @@ export class LocationInLoadedSource extends LocationCommonLogic<ILoadedSource> {
                 line: this.position.lineNumber,
                 column: this.position.columnNumber
             });
-            const locationInScript = !positionInScript ? new LocationInScript(script, new Position(positionInScript.line, positionInScript.column)) : null;
+            const locationInScript = positionInScript ? new LocationInScript(script, new Position(positionInScript.line, positionInScript.column)) : null;
             return locationInScript;
         }).filter(position => !!position);
         if (mappedLocations.length) {

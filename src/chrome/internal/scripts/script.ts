@@ -38,7 +38,7 @@ import { RangeInResource } from '../locations/rangeInScript';
  */
 const ImplementsScript = Symbol();
 export interface IScript extends IEquivalenceComparable {
-    [ImplementsScript]: void;
+    [ImplementsScript]: '';
 
     readonly executionContext: IExecutionContext;
     readonly runtimeSource: ILoadedSource<CDTPScriptUrl>; // Source in Webserver
@@ -61,7 +61,8 @@ export function isScript(object: unknown): object is IScript {
 }
 
 export class Script implements IScript {
-    [ImplementsScript]: void;
+    public [ImplementsScript] = '';
+
     private readonly _compiledSources: IValidatedMap<IResourceIdentifier, IdentifiedLoadedSource>;
     public readonly runtimeSource: ILoadedSource<CDTPScriptUrl>;
     public readonly rangeInSource: RangeInResource<ILoadedSource<CDTPScriptUrl>>;
