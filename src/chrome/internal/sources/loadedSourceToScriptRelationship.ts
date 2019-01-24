@@ -19,20 +19,24 @@ export class RuntimeSourceOf extends BaseLoadedSourceToScriptRelationship {
     constructor(public readonly runtimeSource: ILoadedSource, public readonly script: IScript) {
         super();
     }
+
+    public toString(): string {
+        return `${this.runtimeSource} is runtime source of ${this.script}`;
+    }
 }
 
 /// The runtime source was generated from this source in the user's workspace
 export class DevelopmentSourceOf extends BaseLoadedSourceToScriptRelationship {
-    public get scripts(): IScript[] {
-        return this.runtimeSource.currentScriptRelationships().scripts;
-    }
-
     constructor(public readonly developmentSource: ILoadedSource, public readonly runtimeSource: ILoadedSource) {
         super();
     }
 
+    public get scripts(): IScript[] {
+        return this.runtimeSource.currentScriptRelationships().scripts;
+    }
+
     public toString(): string {
-        return `${this.runtimeSource}`;
+        return `${this.developmentSource} is development source of ${this.runtimeSource}`;
     }
 }
 
@@ -47,6 +51,6 @@ export class MappedSourceOf extends BaseLoadedSourceToScriptRelationship {
     }
 
     public toString(): string {
-        return `${this.developmentSource}${this.script}`;
+        return `${this.mappedSource} is a mapped source of ${this.developmentSource}/${this.script}`;
     }
 }
