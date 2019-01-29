@@ -3,7 +3,6 @@ import { Location, ScriptOrSourceOrURLOrURLRegexp, LocationInUrl, LocationInUrlR
 import { ILoadedSource } from '../sources/loadedSource';
 import { IScript } from '../scripts/script';
 import { IBPActionWhenHit, AlwaysBreak } from './bpActionWhenHit';
-import { utils } from '../../..';
 import { CDTPScriptUrl } from '../sources/resourceIdentifierSubtypes';
 import { IResourceIdentifier, URL } from '../sources/resourceIdentifier';
 import { URLRegexp, createURLRegexp } from '../locations/subtypes';
@@ -120,9 +119,7 @@ export class BPRecipieInScript<TBPActionWhenHit extends IBPActionWhenHit = IBPAc
     }
 
     public mappedToUrlRegexp(): BPRecipieInUrlRegexp<TBPActionWhenHit> {
-        const urlRegexp = createURLRegexp(utils.pathToRegex(this.location.script.url, `${Math.random() * 100000000000000}`));
-        return new BPRecipieInUrlRegexp<TBPActionWhenHit>(this.unmappedBPRecipie,
-            new LocationInUrlRegexp(urlRegexp, this.location.position));
+        return new BPRecipieInUrlRegexp<TBPActionWhenHit>(this.unmappedBPRecipie, this.location.mappedToUrlRegexp());
     }
 
     public mappedToUrl(): BPRecipieInUrl<TBPActionWhenHit> {

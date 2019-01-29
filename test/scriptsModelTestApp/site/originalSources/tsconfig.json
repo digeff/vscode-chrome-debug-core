@@ -6,6 +6,7 @@
     },
     "include": [
         "shared-ts-lib.ts",
-        "shared-js-lib.ts"
+        "shared-js-lib.ts",
+        "run-ts-lib.ts"
     ]
 }

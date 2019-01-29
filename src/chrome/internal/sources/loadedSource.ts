@@ -23,7 +23,10 @@ export enum SourceScriptRelationship {
 /** This interface represents a source or text that is related to a script that the debugee is executing. The text can be the contents of the script itself,
  *  or a file from which the script was loaded, or a file that was compiled to generate the contents of the script
  */
+export const ImplementsLoadedSource = Symbol();
 export interface ILoadedSource<TString = string> extends IEquivalenceComparable {
+    [ImplementsLoadedSource]: string;
+
     readonly identifier: IResourceIdentifier<TString>;
     readonly url: TString;
     readonly sourceScriptRelationship: SourceScriptRelationship;
@@ -33,6 +36,10 @@ export interface ILoadedSource<TString = string> extends IEquivalenceComparable 
     isMappedSource(): boolean;
 
     currentScriptRelationships(): ICurrentScriptRelationships;
+}
+
+export function isLoadedSource(object: unknown): object is ILoadedSource {
+    return !!(<any> object)[ImplementsLoadedSource];
 }
 
 export enum ContentsLocation {

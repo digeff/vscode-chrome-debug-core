@@ -62,4 +62,6 @@ define("shared-ts-lib", ["require", "exports"], function (require, exports) {
     }
     addButton();
 })();
+var define;
+define(["shared-ts-lib"], function (sharedTsLib) { });
 //# sourceMappingURL=both-shared-libs-combined.js.map

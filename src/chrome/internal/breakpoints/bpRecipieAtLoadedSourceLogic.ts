@@ -92,8 +92,8 @@ export class BPRecipieAtLoadedSourceLogic implements IBreakpointsInLoadedSource 
     }
 
     public async removeBreakpoint(clientBPRecipie: BPRecipie<ISource>): Promise<void> {
-        const debuggeeBPRecipie = this._bpRecipiesRegistry.getDebuggeeBPRecipie(clientBPRecipie);
-        this._targetBreakpoints.removeBreakpoint(debuggeeBPRecipie);
+        const debuggeeBPRecipies = this._bpRecipiesRegistry.getDebuggeeBPRecipie(clientBPRecipie);
+        await asyncMap(debuggeeBPRecipies, bpr => this._targetBreakpoints.removeBreakpoint(bpr));
     }
 
     private async considerColumnAndSelectBestBPLocation(location: LocationInScript): Promise<LocationInScript> {

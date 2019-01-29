@@ -24,7 +24,7 @@ export abstract class NotifyStoppedCommonLogic extends VoteCommonLogic<void> {
     protected readonly abstract _publishGoingToPauseClient: () => void;
 
     public async execute(): Promise<void> {
-        this._publishGoingToPauseClient();
+        // this._publishGoingToPauseClient();
         this._eventsToClientReporter.sendDebugeeIsStopped({ reason: this.reason, exception: this.exception });
     }
 }

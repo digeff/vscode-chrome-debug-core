@@ -76,8 +76,6 @@ export class Script implements IScript {
     public static createWithUnidentifiedSource(name: ResourceName<CDTPScriptUrl>, executionContext: IExecutionContext, sourcesMapper: ISourcesMapper, mappedSources: IdentifiedLoadedSource[],
         rangeInSource: (runtimeSource: ILoadedSource<CDTPScriptUrl>) => RangeInResource<ILoadedSource<CDTPScriptUrl>>): Script {
         const sourceProvider = new Lazy1((script: IScript) => new UnidentifiedLoadedSource(script, name, "source for the script from the debugging engine, because the script doesn't have an url")).function;
-        let lala = name + '';
-        lala = lala.length + lala.length + '';
         return new Script(executionContext, sourceProvider, sourceProvider, mappedSources, sourcesMapper, rangeInSource);
     }
 

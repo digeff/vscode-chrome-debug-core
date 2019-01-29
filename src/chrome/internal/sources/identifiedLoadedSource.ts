@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import { IScript } from '../scripts/script';
 import { IResourceIdentifier } from './resourceIdentifier';
-import { ILoadedSource, ICurrentScriptRelationships, ICurrentScriptRelationshipsProvider, ContentsLocation, SourceScriptRelationship } from './loadedSource';
+import { ILoadedSource, ICurrentScriptRelationships, ICurrentScriptRelationshipsProvider, ContentsLocation, SourceScriptRelationship, ImplementsLoadedSource } from './loadedSource';
 import { ILoadedSourceToScriptRelationship } from './loadedSourceToScriptRelationship';
 import _ = require('lodash');
 
@@ -13,9 +13,8 @@ import _ = require('lodash');
  *      Single path not on storage: DynamicRuntimeScript
  *  2. Two: We assume one path is from the webserver, and the other path is in the workspace: RuntimeScriptWithSourceOnWorkspace
  */
-const IsIdentifiedLoadedSource = Symbol();
 export class IdentifiedLoadedSource<TString extends string = string> implements ILoadedSource<TString> {
-    [IsIdentifiedLoadedSource]: void;
+    public [ImplementsLoadedSource] = 'ILoadedSource';
 
     private constructor(
         public readonly identifier: IResourceIdentifier<TString>,

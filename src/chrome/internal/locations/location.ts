@@ -1,13 +1,15 @@
 import * as Validation from '../../../validation';
+import * as utils from '../../../utils';
 import { IScript, isScript } from '../scripts/script';
 import { ISource, isSource } from '../sources/source';
-import { ILoadedSource } from '../sources/loadedSource';
+import { ILoadedSource, isLoadedSource } from '../sources/loadedSource';
 import { logger } from 'vscode-debugadapter';
-import { ColumnNumber, LineNumber, URLRegexp } from './subtypes';
+import { ColumnNumber, LineNumber, URLRegexp, createURLRegexp, createLineNumber, createColumnNumber } from './subtypes';
 import { CDTPScriptUrl } from '../sources/resourceIdentifierSubtypes';
 import { IResourceIdentifier, parseResourceIdentifier, URL } from '../sources/resourceIdentifier';
 import { IEquivalenceComparable } from '../../utils/equivalence';
 import { printArray } from '../../collections/printing';
+import { breakWhileDebugging } from '../../../validation';
 
 export type integer = number;
 
@@ -53,7 +55,10 @@ export function createLocation<T extends ScriptOrSourceOrURLOrURLRegexp>(resourc
         return <Location<T>>new LocationInSource(resource, position); // TODO: Figure out how to remove this cast
     } else if (isScript(resource)) {
         return <Location<T>>new LocationInScript(resource, position);
+    } else if (isLoadedSource(resource)) {
+        return <Location<T>>new LocationInLoadedSource(resource, position);
     } else {
+        Validation.breakWhileDebugging();
         throw new Error(`Support for resource ${resource} hasn't been implemented yet`);
     }
 }
@@ -103,6 +108,12 @@ export class LocationInSource extends LocationCommonLogic<ISource> implements IL
 }
 
 export class LocationInScript extends LocationCommonLogic<IScript> {
+    public mappedToUrlRegexp(): LocationInUrlRegexp {
+        // DIEGO TODO: Use a better regexp id
+        const urlRegexp = createURLRegexp(utils.pathToRegex(this.script.url, `${Math.random() * 100000000000000}`));
+        return new LocationInUrlRegexp(urlRegexp, this.script.rangeInSource.start.position);
+    }
+
     public get script(): IScript {
         return this.resource;
     }
@@ -116,14 +127,6 @@ export class LocationInScript extends LocationCommonLogic<IScript> {
             return result;
         } else {
             return new LocationInLoadedSource(this.script.developmentSource, this.position);
-        }
-    }
-
-    public mappedToUrl(): LocationInUrl {
-        if (this.script.runtimeSource.doesScriptHasUrl()) {
-            return new LocationInUrl(this.script.runtimeSource.identifier, this.position);
-        } else {
-            throw new Error(`Can't convert a location in a script without an URL (${this}) into a location in an URL`);
         }
     }
 
@@ -144,18 +147,28 @@ export class LocationInLoadedSource extends LocationCommonLogic<ILoadedSource> {
 
     public mappedToScript(): LocationInScript[] {
         const mappedLocations = this.source.currentScriptRelationships().scripts.map(script => {
-            const positionInScript = script.sourcesMapper.getPositionInScript({
+            const positionInScriptRelativeToScript = script.sourcesMapper.getPositionInScript({
                 source: this.source.identifier.textRepresentation,
                 line: this.position.lineNumber,
                 column: this.position.columnNumber
             });
-            const locationInScript = positionInScript ? new LocationInScript(script, new Position(positionInScript.line, positionInScript.column)) : null;
+
+            const scriptPositionInResource = script.rangeInSource.start.position;
+
+            // All the lines need to be adjusted by the relative position of the script in the resource (in an .html if the script starts in line 20, the first line is 20 rather than 0)
+            const lineNumberRelativeToEntireResource = createLineNumber(positionInScriptRelativeToScript.line + scriptPositionInResource.lineNumber);
+
+            // The columns on the first line need to be adjusted. Columns on all other lines don't need any adjustment.
+            const columnNumberRelativeToEntireResource = createColumnNumber((positionInScriptRelativeToScript.line === 0 ? scriptPositionInResource.columnNumber : 0) + positionInScriptRelativeToScript.column);
+
+            const locationInScript = positionInScriptRelativeToScript ? new LocationInScript(script, new Position(lineNumberRelativeToEntireResource, columnNumberRelativeToEntireResource)) : null;
             return locationInScript;
         }).filter(position => !!position);
         if (mappedLocations.length) {
             logger.verbose(printArray(`SourceMap: ${this} to `, mappedLocations));
             return mappedLocations;
         } else {
+            breakWhileDebugging();
             throw new Error(`Couldn't map the location (${this.position}) in the source $(${this.source}) to a script file`);
         }
     }
