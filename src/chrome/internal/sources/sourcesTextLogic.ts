@@ -16,7 +16,8 @@ export class SourceTextLogic implements IComponent {
 
         if (text !== null) {
             if (loadedSource.sourceScriptRelationship === SourceScriptRelationship.SourceIsSingleScript) {
-                text = await this._scriptSources.getScriptSource(singleOne(loadedSource.currentScriptRelationships().scripts));
+                throw new Error(`Not implemented yet`);
+                // text = await this._scriptSources.getScriptSource(singleOne(loadedSource.scriptMapper().scripts));
             } else {
                 // TODO: Implement this, by using Page.getResourceContent for SourceScriptRelationship.SourceIsMoreThanAScript
                 // We'll need to figure out what is the right thing to do for SourceScriptRelationship.Unknown

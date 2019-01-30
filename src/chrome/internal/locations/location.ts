@@ -2,7 +2,7 @@ import * as Validation from '../../../validation';
 import * as utils from '../../../utils';
 import { IScript, isScript } from '../scripts/script';
 import { ISource, isSource } from '../sources/source';
-import { ILoadedSource, isLoadedSource } from '../sources/loadedSource';
+import { ILoadedSource, isLoadedSource, ScriptAndSourceMapper } from '../sources/loadedSource';
 import { logger } from 'vscode-debugadapter';
 import { ColumnNumber, LineNumber, URLRegexp, createURLRegexp, createLineNumber, createColumnNumber } from './subtypes';
 import { CDTPScriptUrl } from '../sources/resourceIdentifierSubtypes';
@@ -107,11 +107,15 @@ export class LocationInSource extends LocationCommonLogic<ISource> implements IL
     }
 }
 
+/**
+ * The position of the location in a script is always relative to the resource that contains the script. If the resource is just a script, then both positions will be the same.
+ * If the script is an inline script in an .html file, and it starts on line 10, then the first line of the script will be line 10.
+ */
 export class LocationInScript extends LocationCommonLogic<IScript> {
     public mappedToUrlRegexp(): LocationInUrlRegexp {
         // DIEGO TODO: Use a better regexp id
         const urlRegexp = createURLRegexp(utils.pathToRegex(this.script.url, `${Math.random() * 100000000000000}`));
-        return new LocationInUrlRegexp(urlRegexp, this.script.rangeInSource.start.position);
+        return new LocationInUrlRegexp(urlRegexp, this.position);
     }
 
     public get script(): IScript {
@@ -119,15 +123,7 @@ export class LocationInScript extends LocationCommonLogic<IScript> {
     }
 
     public mappedToSource(): LocationInLoadedSource {
-        const mapped = this.script.sourcesMapper.getPositionInSource({ line: this.position.lineNumber, column: this.position.columnNumber });
-        if (mapped) {
-            const loadedSource = this.script.getSource(parseResourceIdentifier(mapped.source));
-            const result = new LocationInLoadedSource(loadedSource, new Position(mapped.line, mapped.column));
-            logger.verbose(`SourceMap: ${this} to ${result}`);
-            return result;
-        } else {
-            return new LocationInLoadedSource(this.script.developmentSource, this.position);
-        }
+        return this.script.sourceMapper.getPositionInSource(this);
     }
 
     public isSameAs(locationInScript: LocationInScript): boolean {
@@ -146,31 +142,7 @@ export class LocationInLoadedSource extends LocationCommonLogic<ILoadedSource> {
     }
 
     public mappedToScript(): LocationInScript[] {
-        const mappedLocations = this.source.currentScriptRelationships().scripts.map(script => {
-            const positionInScriptRelativeToScript = script.sourcesMapper.getPositionInScript({
-                source: this.source.identifier.textRepresentation,
-                line: this.position.lineNumber,
-                column: this.position.columnNumber
-            });
-
-            const scriptPositionInResource = script.rangeInSource.start.position;
-
-            // All the lines need to be adjusted by the relative position of the script in the resource (in an .html if the script starts in line 20, the first line is 20 rather than 0)
-            const lineNumberRelativeToEntireResource = createLineNumber(positionInScriptRelativeToScript.line + scriptPositionInResource.lineNumber);
-
-            // The columns on the first line need to be adjusted. Columns on all other lines don't need any adjustment.
-            const columnNumberRelativeToEntireResource = createColumnNumber((positionInScriptRelativeToScript.line === 0 ? scriptPositionInResource.columnNumber : 0) + positionInScriptRelativeToScript.column);
-
-            const locationInScript = positionInScriptRelativeToScript ? new LocationInScript(script, new Position(lineNumberRelativeToEntireResource, columnNumberRelativeToEntireResource)) : null;
-            return locationInScript;
-        }).filter(position => !!position);
-        if (mappedLocations.length) {
-            logger.verbose(printArray(`SourceMap: ${this} to `, mappedLocations));
-            return mappedLocations;
-        } else {
-            breakWhileDebugging();
-            throw new Error(`Couldn't map the location (${this.position}) in the source $(${this.source}) to a script file`);
-        }
+        return this.source.scriptMapper().mapToScripts(this);
     }
 }
 

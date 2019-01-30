@@ -4,7 +4,7 @@ import { UnidentifiedLoadedSource } from '../sources/unidentifiedLoadedSource';
 import { CDTPScriptUrl } from '../sources/resourceIdentifierSubtypes';
 import { IValidatedMap } from '../../collections/validatedMap';
 import { printArray } from '../../collections/printing';
-import { ISourcesMapper } from './sourcesMapper';
+import { IMappedSourcesMapper, ISourceMapper } from './sourcesMapper';
 import { IResourceIdentifier, newResourceIdentifierMap, ResourceName } from '../sources/resourceIdentifier';
 import { IExecutionContext } from './executionContext';
 import { IEquivalenceComparable } from '../../utils/equivalence';
@@ -49,7 +49,7 @@ export interface IScript extends IEquivalenceComparable {
     readonly allSources: ILoadedSource[]; // runtimeSource + developmentSource + mappedSources
     readonly url: CDTPScriptUrl;
 
-    readonly sourcesMapper: ISourcesMapper; // TODO DIEGO: See if we can delete this property
+    readonly sourceMapper: ISourceMapper;
 
     getSource(sourceIdentifier: IResourceIdentifier): ILoadedSource;
 
@@ -67,24 +67,27 @@ export class Script implements IScript {
     public readonly runtimeSource: ILoadedSource<CDTPScriptUrl>;
     public readonly rangeInSource: RangeInResource<ILoadedSource<CDTPScriptUrl>>;
     public readonly developmentSource: ILoadedSource;
+    public readonly sourceMapper: ISourceMapper;
 
     public static create(executionContext: IExecutionContext, runtimeSource: ILoadedSource<CDTPScriptUrl>, developmentSource: ILoadedSource,
-        sourcesMapper: ISourcesMapper, mappedSources: IdentifiedLoadedSource[], rangeInSource: RangeInResource<ILoadedSource<CDTPScriptUrl>>): Script {
-        return new Script(executionContext, () => runtimeSource, () => developmentSource, mappedSources, sourcesMapper, () => rangeInSource);
+        sourcesMapperProvider: (script: IScript) => ISourceMapper, mappedSourcesProvider: (script: IScript) => IdentifiedLoadedSource[], rangeInSource: RangeInResource<ILoadedSource<CDTPScriptUrl>>): Script {
+        return new Script(executionContext, () => runtimeSource, () => developmentSource, mappedSourcesProvider, sourcesMapperProvider, () => rangeInSource);
     }
 
-    public static createWithUnidentifiedSource(name: ResourceName<CDTPScriptUrl>, executionContext: IExecutionContext, sourcesMapper: ISourcesMapper, mappedSources: IdentifiedLoadedSource[],
-        rangeInSource: (runtimeSource: ILoadedSource<CDTPScriptUrl>) => RangeInResource<ILoadedSource<CDTPScriptUrl>>): Script {
+    public static createWithUnidentifiedSource(name: ResourceName<CDTPScriptUrl>, executionContext: IExecutionContext, sourcesMapperProvider: (script: IScript) => ISourceMapper,
+        mappedSourcesProvider: (script: IScript) => IdentifiedLoadedSource[], rangeInSource: (runtimeSource: ILoadedSource<CDTPScriptUrl>) => RangeInResource<ILoadedSource<CDTPScriptUrl>>): Script {
         const sourceProvider = new Lazy1((script: IScript) => new UnidentifiedLoadedSource(script, name, "source for the script from the debugging engine, because the script doesn't have an url")).function;
-        return new Script(executionContext, sourceProvider, sourceProvider, mappedSources, sourcesMapper, rangeInSource);
+        return new Script(executionContext, sourceProvider, sourceProvider, mappedSourcesProvider, sourcesMapperProvider, rangeInSource);
     }
 
     constructor(public readonly executionContext: IExecutionContext, runtimeSourceProvider: (script: IScript) => ILoadedSource<CDTPScriptUrl>, developmentSourceProvider: (script: IScript) => ILoadedSource,
-        mappedSources: IdentifiedLoadedSource[], public readonly sourcesMapper: ISourcesMapper, rangeInSourceProvider: (runtimeSource: ILoadedSource<CDTPScriptUrl>) => RangeInResource<ILoadedSource<CDTPScriptUrl>>) {
+        mappedSourcesProvider: (script: IScript) => IdentifiedLoadedSource[], sourceMapperProvider: (script: IScript) => ISourceMapper,
+        rangeInSourceProvider: (runtimeSource: ILoadedSource<CDTPScriptUrl>) => RangeInResource<ILoadedSource<CDTPScriptUrl>>) {
         this.runtimeSource = runtimeSourceProvider(this);
         this.developmentSource = developmentSourceProvider(this);
         this.rangeInSource = rangeInSourceProvider(this.runtimeSource);
-        const pathsAndMappedSources = mappedSources.map(mappedSource => [mappedSource.identifier, mappedSource] as [IResourceIdentifier, IdentifiedLoadedSource]);
+        this.sourceMapper = sourceMapperProvider(this);
+        const pathsAndMappedSources = mappedSourcesProvider(this).map(mappedSource => [mappedSource.identifier, mappedSource] as [IResourceIdentifier, IdentifiedLoadedSource]);
         this._compiledSources = newResourceIdentifierMap(pathsAndMappedSources);
     }
 
@@ -114,7 +117,6 @@ export class Script implements IScript {
     }
 
     public toString(): string {
-        return `Script:\n  Runtime source: ${this.runtimeSource}\n  Development source: ${this.developmentSource}\n`
-            + printArray('  Sources of compiledsource', this.mappedSources);
+        return `Script(${this.runtimeSource} or ${this.developmentSource}) ${printArray(' --> ', this.mappedSources)}`;
     }
 }

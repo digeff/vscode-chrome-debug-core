@@ -1,61 +1,95 @@
-import { LineNumber, ColumnNumber, createColumnNumber, createLineNumber } from '../locations/subtypes';
+import { createColumnNumber, createLineNumber } from '../locations/subtypes';
 import { SourceMap } from '../../../sourceMaps/sourceMap';
+import { IScript } from './script';
+import { ILoadedSource } from '../sources/loadedSource';
+import { LocationInScript, LocationInLoadedSource, Position } from '../locations/location';
+import { parseResourceIdentifier } from '../sources/resourceIdentifier';
 
 export interface ISourceToScriptMapper {
-    getPositionInScript(positionInSource: IPositionInSource): IPositionInScript | null;
+    getPositionInScript(positionInSource: LocationInLoadedSource): LocationInScript | null;
 }
 
-export interface ISourcesMapper extends ISourceToScriptMapper {
+export interface IScriptToSourceMapper {
+    getPositionInSource(positionInScript: LocationInScript): LocationInLoadedSource | null;
+}
+
+export interface ISourceMapper extends ISourceToScriptMapper, IScriptToSourceMapper { }
+
+export interface IMappedSourcesMapper extends ISourceMapper {
     readonly sources: string[];
-    getPositionInSource(positionInScript: IPositionInScript): IPositionInSource | null;
-}
-
-interface IPositionInSource {
-    readonly source: string;
-    readonly line: LineNumber;
-    readonly column?: ColumnNumber;
-}
-
-interface IPositionInScript {
-    readonly line: LineNumber;
-    readonly column?: ColumnNumber;
 }
 
 /** This class maps locations from a script into the sources form which it was compiled, and back. */
-export class SourcesMapper implements ISourcesMapper {
-    public getPositionInSource(positionInScript: IPositionInScript): IPositionInSource | null {
-        const mappedPosition = this._sourceMap.authoredPositionFor(positionInScript.line, positionInScript.column || 0);
-        return mappedPosition && mappedPosition.source && mappedPosition.line
-            ? { source: mappedPosition.source, line: createLineNumber(mappedPosition.line), column: createColumnNumber(mappedPosition.column) }
-            : null;
+export class MappedSourcesMapper implements IMappedSourcesMapper {
+    public getPositionInSource(positionInScript: LocationInScript): LocationInLoadedSource | null {
+        const scriptPositionInResource = this._script.rangeInSource.start.position;
+
+        // All the lines need to be adjusted by the relative position of the script in the resource (in an .html if the script starts in line 20, the first line is 20 rather than 0)
+        const lineNumberRelativeToScript = positionInScript.position.lineNumber - scriptPositionInResource.lineNumber;
+
+        // The columns on the first line need to be adjusted. Columns on all other lines don't need any adjustment.
+        const columnNumberRelativeToScript = (lineNumberRelativeToScript === 0 ? scriptPositionInResource.columnNumber : 0) + (positionInScript.position.columnNumber || 0);
+
+        const mappedPosition = this._sourceMap.authoredPositionFor(lineNumberRelativeToScript, columnNumberRelativeToScript);
+
+        if (mappedPosition && mappedPosition.source && mappedPosition.line) {
+            const position = new Position(createLineNumber(mappedPosition.line), createColumnNumber(mappedPosition.column));
+            return new LocationInLoadedSource(positionInScript.script.getSource(parseResourceIdentifier(mappedPosition.source)), position);
+        } else {
+            return null;
+        }
     }
 
-    public getPositionInScript(positionInSource: IPositionInSource): IPositionInScript | null {
-        const mappedPosition = this._sourceMap.generatedPositionFor(positionInSource.source,
-            positionInSource.line, positionInSource.column || 0);
-        return mappedPosition && mappedPosition.line
-            ? { line: createLineNumber(mappedPosition.line), column: createColumnNumber(mappedPosition.column) }
-            : null;
+    public getPositionInScript(positionInSource: LocationInLoadedSource): LocationInScript | null {
+        const mappedPositionRelativeToScript = this._sourceMap.generatedPositionFor(positionInSource.source.identifier.textRepresentation,
+            positionInSource.position.lineNumber, positionInSource.position.columnNumber || 0);
+
+        if (mappedPositionRelativeToScript && mappedPositionRelativeToScript.line) {
+
+            const scriptPositionInResource = this._script.rangeInSource.start.position;
+
+            // All the lines need to be adjusted by the relative position of the script in the resource (in an .html if the script starts in line 20, the first line is 20 rather than 0)
+            const lineNumberRelativeToEntireResource = createLineNumber(mappedPositionRelativeToScript.line + scriptPositionInResource.lineNumber);
+
+            // The columns on the first line need to be adjusted. Columns on all other lines don't need any adjustment.
+            const columnNumberRelativeToEntireResource = createColumnNumber((mappedPositionRelativeToScript.line === 0 ? scriptPositionInResource.columnNumber : 0) + mappedPositionRelativeToScript.column);
+
+            const position = new Position(createLineNumber(lineNumberRelativeToEntireResource), createColumnNumber(columnNumberRelativeToEntireResource));
+            return new LocationInScript(this._script, position);
+        } else {
+            return null;
+        }
     }
 
     public get sources(): string[] {
         return this._sourceMap.authoredSources || [];
     }
 
-    constructor(private readonly _sourceMap: SourceMap) { }
-
+    constructor(private readonly _script: IScript, private readonly _sourceMap: SourceMap) { }
 }
 
-export class NoSourceMapping implements ISourcesMapper {
-    public getPositionInSource(_: IPositionInScript): null {
-        return null;
+export class NoMappedSourcesMapper implements IMappedSourcesMapper {
+    public getPositionInSource(positionInScript: LocationInScript): LocationInLoadedSource {
+        throw new Error(`You can't get a position in source when the script has no source map`);
     }
 
-    public getPositionInScript(_: IPositionInSource): null {
-        return null;
+    public getPositionInScript(positionInSource: LocationInLoadedSource): LocationInScript {
+        throw new Error(`You can't get a position in script when the script has no source map`);
     }
 
     public get sources(): string[] {
         return [];
     }
+}
+
+export class UnmappedSourceMapper implements ISourceMapper {
+    public getPositionInSource(positionInScript: LocationInScript): LocationInLoadedSource {
+        return new LocationInLoadedSource(this._source, positionInScript.position);
+    }
+
+    public getPositionInScript(positionInSource: LocationInLoadedSource): LocationInScript {
+        return new LocationInScript(this._script, positionInSource.position);
+    }
+
+    constructor(private readonly _script: IScript, private readonly _source: ILoadedSource) { }
 }

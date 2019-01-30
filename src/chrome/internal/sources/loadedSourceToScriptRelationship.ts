@@ -1,23 +1,25 @@
 import { IScript } from '../scripts/script';
-import { ISourceToScriptMapper } from '../scripts/sourcesMapper';
-import { ILoadedSource } from './loadedSource';
+import { ISourceToScriptMapper, UnmappedSourceMapper } from '../scripts/sourcesMapper';
+import { ILoadedSource, ScriptAndSourceMapper } from './loadedSource';
 
 export interface ILoadedSourceToScriptRelationship {
-    readonly scripts: IScript[];
+    readonly scriptAndSourceMapper: ScriptAndSourceMapper;
+    readonly script: IScript;
 }
 
 abstract class BaseLoadedSourceToScriptRelationship implements ILoadedSourceToScriptRelationship {
-    abstract get scripts(): IScript[];
+    abstract get scriptAndSourceMapper(): ScriptAndSourceMapper;
+    abstract get script(): IScript;
 }
 
 /// Script was created from this source
 export class RuntimeSourceOf extends BaseLoadedSourceToScriptRelationship {
-    public get scripts(): IScript[] {
-        return [this.script];
-    }
-
     constructor(public readonly runtimeSource: ILoadedSource, public readonly script: IScript) {
         super();
+    }
+
+    public get scriptAndSourceMapper(): ScriptAndSourceMapper {
+        return new ScriptAndSourceMapper(this.script, new UnmappedSourceMapper(this.script, this.runtimeSource));
     }
 
     public toString(): string {
@@ -27,12 +29,12 @@ export class RuntimeSourceOf extends BaseLoadedSourceToScriptRelationship {
 
 /// The runtime source was generated from this source in the user's workspace
 export class DevelopmentSourceOf extends BaseLoadedSourceToScriptRelationship {
-    constructor(public readonly developmentSource: ILoadedSource, public readonly runtimeSource: ILoadedSource) {
+    constructor(public readonly developmentSource: ILoadedSource, public readonly runtimeSource: ILoadedSource, public readonly script: IScript) {
         super();
     }
 
-    public get scripts(): IScript[] {
-        return this.runtimeSource.currentScriptRelationships().scripts;
+    public get scriptAndSourceMapper(): ScriptAndSourceMapper {
+        return new ScriptAndSourceMapper(this.script, new UnmappedSourceMapper(this.script, this.developmentSource));
     }
 
     public toString(): string {
@@ -42,16 +44,15 @@ export class DevelopmentSourceOf extends BaseLoadedSourceToScriptRelationship {
 
 /// A sourcemap indicated that this mapped source was used to generate the DevelopmentSource
 export class MappedSourceOf extends BaseLoadedSourceToScriptRelationship {
-    constructor(public readonly mappedSource: ILoadedSource, public readonly developmentSource: ILoadedSource, public readonly script: IScript) {
+    constructor(public readonly mappedSource: ILoadedSource, public readonly script: IScript) {
         super();
     }
 
-    public get scripts(): IScript[] {
-        // this hangs if there are cycles
-        return this.developmentSource.currentScriptRelationships().scripts;
+    public get scriptAndSourceMapper(): ScriptAndSourceMapper {
+        return new ScriptAndSourceMapper(this.script, this.script.sourceMapper);
     }
 
     public toString(): string {
-        return `${this.mappedSource} is a mapped source of ${this.developmentSource}/${this.script}`;
+        return `${this.mappedSource} is a mapped source of ${this.script.developmentSource}/${this.script}`;
     }
 }

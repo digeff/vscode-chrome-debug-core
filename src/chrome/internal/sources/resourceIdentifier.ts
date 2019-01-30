@@ -96,11 +96,7 @@ export class LocalFileURL<TString extends string = string> extends IsEquivalentC
 }
 
 // Any URL that is not a 'file:///' url
-export class NonLocalFileURL<TString extends string = string> extends IsEquivalentAndConstructorCommonLogic<TString> implements URL<TString> {
-    public toString(): string {
-        return path.basename(this.textRepresentation);
-    }
-}
+export class NonLocalFileURL<TString extends string = string> extends IsEquivalentAndConstructorCommonLogic<TString> implements URL<TString> {}
 
 // A local resource location is any string that identifies the resource in the local computer, and also tell us how to find it's contents
 // e.g.: /home/user/proj/myfile.js

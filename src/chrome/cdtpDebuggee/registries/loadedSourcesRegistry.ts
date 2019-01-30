@@ -1,6 +1,6 @@
 import { newResourceIdentifierMap, IResourceIdentifier } from '../../internal/sources/resourceIdentifier';
-import { ICurrentScriptRelationshipsProvider, ICurrentScriptRelationships } from '../../internal/sources/loadedSource';
-import { IdentifiedLoadedSource, CurrentIdentifiedSourceScriptRelationships } from '../../internal/sources/identifiedLoadedSource';
+import { ICurrentScriptRelationshipsProvider, IScriptMapper } from '../../internal/sources/loadedSource';
+import { IdentifiedLoadedSource, ScriptMapper } from '../../internal/sources/identifiedLoadedSource';
 import { CDTPScriptUrl } from '../../internal/sources/resourceIdentifierSubtypes';
 import { ValidatedMultiMap } from '../../collections/validatedMultiMap';
 import { ILoadedSourceToScriptRelationship } from '../../internal/sources/loadedSourceToScriptRelationship';
@@ -28,8 +28,8 @@ export class LoadedSourcesRegistry implements ICurrentScriptRelationshipsProvide
         this._loadedSourceToCurrentScriptRelationships.add(loadedSource, relationship);
     }
 
-    public currentScriptRelationships(loadedSource: IdentifiedLoadedSource<string>): ICurrentScriptRelationships {
-        return new CurrentIdentifiedSourceScriptRelationships(Array.from(this._loadedSourceToCurrentScriptRelationships.get(loadedSource)));
+    public scriptMapper(loadedSource: IdentifiedLoadedSource<string>): IScriptMapper {
+        return new ScriptMapper(Array.from(this._loadedSourceToCurrentScriptRelationships.get(loadedSource)));
     }
 
     public toString(): string {

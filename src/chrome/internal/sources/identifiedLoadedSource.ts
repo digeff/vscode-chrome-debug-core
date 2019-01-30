@@ -1,9 +1,11 @@
 import * as fs from 'fs';
 import { IScript } from '../scripts/script';
 import { IResourceIdentifier } from './resourceIdentifier';
-import { ILoadedSource, ICurrentScriptRelationships, ICurrentScriptRelationshipsProvider, ContentsLocation, SourceScriptRelationship, ImplementsLoadedSource } from './loadedSource';
+import { ILoadedSource, IScriptMapper, ICurrentScriptRelationshipsProvider as IScriptMapperProvider, ContentsLocation, SourceScriptRelationship, ImplementsLoadedSource, ScriptAndSourceMapper } from './loadedSource';
 import { ILoadedSourceToScriptRelationship } from './loadedSourceToScriptRelationship';
 import _ = require('lodash');
+import { printArray } from '../../collections/printing';
+import { LocationInScript, LocationInLoadedSource } from '../locations/location';
 
 /**
  * Loaded Source classification:
@@ -19,15 +21,15 @@ export class IdentifiedLoadedSource<TString extends string = string> implements 
     private constructor(
         public readonly identifier: IResourceIdentifier<TString>,
         public readonly sourceScriptRelationship: SourceScriptRelationship,
-        private readonly _currentScriptRelationshipsProvider: ICurrentScriptRelationshipsProvider,
+        private readonly _scriptMapperProvider: IScriptMapperProvider,
         public readonly contentsLocation: ContentsLocation) { }
 
     public get url(): TString {
         return this.identifier.textRepresentation;
     }
 
-    public currentScriptRelationships(): ICurrentScriptRelationships {
-        return this._currentScriptRelationshipsProvider.currentScriptRelationships(this);
+    public scriptMapper(): IScriptMapper {
+        return this._scriptMapperProvider.scriptMapper(this);
     }
 
     public isMappedSource(): boolean {
@@ -47,17 +49,29 @@ export class IdentifiedLoadedSource<TString extends string = string> implements 
     }
 
     public static create<TString extends string>(identifier: IResourceIdentifier<TString>, sourceScriptRelationship: SourceScriptRelationship,
-        currentScriptRelationshipsProvider: ICurrentScriptRelationshipsProvider): IdentifiedLoadedSource<TString> {
+        currentScriptRelationshipsProvider: IScriptMapperProvider): IdentifiedLoadedSource<TString> {
 
         const contentsLocation = fs.existsSync(identifier.textRepresentation) ? ContentsLocation.PersistentStorage : ContentsLocation.DynamicMemory;
         return new IdentifiedLoadedSource<TString>(identifier, sourceScriptRelationship, currentScriptRelationshipsProvider, contentsLocation);
     }
 }
 
-export class CurrentIdentifiedSourceScriptRelationships implements ICurrentScriptRelationships {
-    public get scripts(): IScript[] {
-        return _.flatten(this.relationships.map(relationship => relationship.scripts));
+export class ScriptMapper implements IScriptMapper {
+    public mapToScripts(locationToMap: LocationInLoadedSource): LocationInScript[] {
+        return this.relationships.map(relationship => relationship.scriptAndSourceMapper.sourcesMapper.getPositionInScript(locationToMap));
     }
 
     constructor(public readonly relationships: ILoadedSourceToScriptRelationship[]) { }
+
+    public get scripts(): IScript[] {
+        return _.uniq(_.flatten(this.relationships.map(relationship => relationship.script)));
+    }
+
+    public get scriptsAndSourceMappers(): ScriptAndSourceMapper[] {
+        return _.flatten(this.relationships.map(relationship => relationship.scriptAndSourceMapper));
+    }
+
+    public toString(): string {
+        return printArray('relationships', this.relationships);
+    }
 }

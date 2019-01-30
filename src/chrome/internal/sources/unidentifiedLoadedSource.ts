@@ -1,8 +1,10 @@
 import { IScript } from '../scripts/script';
 import { CDTPScriptUrl } from './resourceIdentifierSubtypes';
 import { IResourceIdentifier, parseResourceIdentifier, ResourceName } from './resourceIdentifier';
-import { ILoadedSource, ICurrentScriptRelationships, SourceScriptRelationship, ImplementsLoadedSource } from './loadedSource';
+import { ILoadedSource, IScriptMapper, SourceScriptRelationship, ImplementsLoadedSource, ScriptAndSourceMapper } from './loadedSource';
 import { ILoadedSourceToScriptRelationship, DevelopmentSourceOf, RuntimeSourceOf } from './loadedSourceToScriptRelationship';
+import { UnmappedSourceMapper } from '../scripts/sourcesMapper';
+import { LocationInLoadedSource, LocationInScript } from '../locations/location';
 
 export class UnidentifiedLoadedSource implements ILoadedSource<CDTPScriptUrl> {
     public [ImplementsLoadedSource] = 'ILoadedSource';
@@ -32,8 +34,8 @@ export class UnidentifiedLoadedSource implements ILoadedSource<CDTPScriptUrl> {
         return false;
     }
 
-    public currentScriptRelationships(): ICurrentScriptRelationships {
-        return new CurrentUnidentifiedSourceScriptRelationships(this);
+    public scriptMapper(): IScriptMapper {
+        return new CurrentUnidentifiedSourceScriptRelationships(this, this.script);
     }
 
     public isEquivalentTo(source: UnidentifiedLoadedSource): boolean {
@@ -45,14 +47,26 @@ export class UnidentifiedLoadedSource implements ILoadedSource<CDTPScriptUrl> {
     }
 }
 
-export class CurrentUnidentifiedSourceScriptRelationships implements ICurrentScriptRelationships {
+export class CurrentUnidentifiedSourceScriptRelationships implements IScriptMapper {
+    public mapToScripts(position: LocationInLoadedSource): LocationInScript[] {
+        return [new LocationInScript(this._script, position.position)];
+    }
+
     public get relationships(): ILoadedSourceToScriptRelationship[] {
-        return [new DevelopmentSourceOf(this._source, this._source), new RuntimeSourceOf(this._source, this._source.script)];
+        return [new DevelopmentSourceOf(this._source, this._source, this._source.script), new RuntimeSourceOf(this._source, this._source.script)];
+    }
+
+    public get scriptsAndSourceMappers(): ScriptAndSourceMapper[] {
+        return [new ScriptAndSourceMapper(this._source.script, new UnmappedSourceMapper(this._source.script, this._source))];
     }
 
     public get scripts(): IScript[] {
         return [this._source.script];
     }
 
-    constructor(private readonly _source: UnidentifiedLoadedSource) { }
+    public toString(): string {
+        return `This unidentified source is it's own runtime and development script`;
+    }
+
+    constructor(private readonly _source: UnidentifiedLoadedSource, private readonly _script: IScript) { }
 }
