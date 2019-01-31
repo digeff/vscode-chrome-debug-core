@@ -116,7 +116,11 @@ export class Script implements IScript {
         return this === script;
     }
 
-    public toString(): string {
+    public toDetailedString(): string {
         return `Script(${this.runtimeSource} or ${this.developmentSource}) ${printArray(' --> ', this.mappedSources)}`;
+    }
+
+    public toString(): string {
+        return `${this.runtimeSource}`;
     }
 }
