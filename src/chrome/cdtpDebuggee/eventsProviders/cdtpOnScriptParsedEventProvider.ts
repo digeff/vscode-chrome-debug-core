@@ -129,7 +129,7 @@ abstract class ScriptCreator {
         return script;
     }
 
-    private sourceMap() {
+    private sourceMap(): Promise<SourceMap> {
         return this._sourceMapTransformer.scriptParsed(this.runtimeSourcePath.canonicalized, this._scriptParsedEvent.sourceMapURL);
     }
 

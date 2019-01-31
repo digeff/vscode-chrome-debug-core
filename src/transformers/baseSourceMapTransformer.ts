@@ -122,6 +122,8 @@ export class BaseSourceMapTransformer implements IComponent {
             const sources = this._sourceMaps.allMappedSources(pathToGenerated);
             if (sources) {
                 logger.log(`SourceMaps.scriptParsed: ${pathToGenerated} was just loaded and has mapped sources: ${JSON.stringify(sources) }`);
+            } else {
+                logger.log(`No SourceMaps.scriptParsed: ${pathToGenerated} was just loaded and doesn't have any mapped sources at url: ${sourceMapURL}`);
             }
 
             return processNewSourceMapP;

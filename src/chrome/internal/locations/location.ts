@@ -28,6 +28,10 @@ export class Position implements IEquivalenceComparable {
             && this.columnNumber === location.columnNumber;
     }
 
+    public isOrigin(): boolean {
+        return this.lineNumber === 0 && (this.columnNumber === undefined || this.columnNumber === 0);
+    }
+
     public toString(): string {
         return this.columnNumber !== undefined
             ? `${this.lineNumber}:${this.columnNumber}`

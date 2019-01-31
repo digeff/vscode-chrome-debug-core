@@ -121,6 +121,6 @@ export class Script implements IScript {
     }
 
     public toString(): string {
-        return `${this.runtimeSource}`;
+        return `${this.runtimeSource}` + (!this.rangeInSource.start.position.isOrigin() ? `<${this.rangeInSource.start.position}>` : ``);
     }
 }
