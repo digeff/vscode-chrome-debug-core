@@ -145,7 +145,7 @@ abstract class ScriptCreator {
     private sourceMapper(script: IScript, sourceMap: SourceMap): IMappedSourcesMapper {
         const sourceMapper = sourceMap
             ? new MappedSourcesMapper(script, sourceMap)
-            : new NoMappedSourcesMapper();
+            : new NoMappedSourcesMapper(script);
         return sourceMapper;
     }
 

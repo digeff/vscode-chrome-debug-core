@@ -69,12 +69,20 @@ export class MappedSourcesMapper implements IMappedSourcesMapper {
 }
 
 export class NoMappedSourcesMapper implements IMappedSourcesMapper {
+    constructor(private readonly _script: IScript) {
+
+    }
+
     public getPositionInSource(positionInScript: LocationInScript): LocationInLoadedSource {
-        throw new Error(`You can't get a position in source when the script has no source map`);
+        return new LocationInLoadedSource(this._script.developmentSource, positionInScript.position);
     }
 
     public getPositionInScript(positionInSource: LocationInLoadedSource): LocationInScript {
-        throw new Error(`You can't get a position in script when the script has no source map`);
+        if (positionInSource.resource === this._script.developmentSource || positionInSource.resource === this._script.runtimeSource) {
+            return new LocationInScript(this._script, positionInSource.position);
+        } else {
+            throw new Error(`This source mapper can only map locations from the runtime or development scripts of ${this._script} yet the location provided was ${positionInSource}`);
+        }
     }
 
     public get sources(): string[] {
