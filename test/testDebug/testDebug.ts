@@ -20,7 +20,7 @@ ChromeDebugSession.run(ChromeDebugSession.getSession(
     {
         adapter: TestDebugAdapter,
         extensionName: EXTENSION_NAME,
-        extensibilityPoints: new OnlyProvideCustomLauncherExtensibilityPoints(TestDebugeeLauncher, TestDebugeeRunner, logFilePath),
+        extensibilityPoints: new OnlyProvideCustomLauncherExtensibilityPoints(logFilePath, TestDebugeeLauncher, TestDebugeeRunner, (context, component) => component),
         logFilePath: logFilePath,
         // targetFilter: defaultTargetFilter,
 
