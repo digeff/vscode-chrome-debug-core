@@ -1,11 +1,13 @@
 import { printMap } from './printing';
 import { breakWhileDebugging } from '../../validation';
 
+export type ValueComparerFunction<V> = (left: V, right: V) => boolean;
+
 export interface IValidatedMap<K, V> extends Map<K, V> {
     tryGetting(key: K): V | undefined;
     getOrAdd(key: K, obtainValueToAdd: () => V): V;
     setAndReplaceIfExist(key: K, value: V): this;
-    setAndIgnoreDuplicates(key: K, value: V): this;
+    setAndIgnoreDuplicates(key: K, value: V, comparer?: ValueComparerFunction<V>): this;
 }
 
 /** A map that throws exceptions instead of returning error codes. */

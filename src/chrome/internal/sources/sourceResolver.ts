@@ -42,7 +42,7 @@ export class SourceResolver implements IComponent {
         this._dependencies.onScriptParsed(async params => {
             params.script.allSources.forEach(source => {
                 // The same file can be loaded as a script twice, and different scripts can share the same mapped source, so we ignore exact duplicates
-                this._pathToSource.setAndIgnoreDuplicates(source.identifier, source);
+                this._pathToSource.setAndIgnoreDuplicates(source.identifier, source, (left, right) => left.isEquivalentTo(right));
             });
         });
 

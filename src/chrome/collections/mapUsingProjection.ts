@@ -1,4 +1,4 @@
-import { ValidatedMap, IValidatedMap } from './validatedMap';
+import { ValidatedMap, IValidatedMap, ValueComparerFunction } from './validatedMap';
 import { IProjection } from './setUsingProjection';
 import { printMap } from './printing';
 
@@ -65,7 +65,7 @@ export class MapUsingProjection<K, V, P> implements IValidatedMap<K, V> {
         return this;
     }
 
-    public setAndIgnoreDuplicates(key: K, value: V) {
+    public setAndIgnoreDuplicates(key: K, value: V, valueComparer: ValueComparerFunction<V> = (left, right) => left === right) {
         this._projectionToKeyAndvalue.setAndIgnoreDuplicates(this._projection(key), new KeyAndValue(key, value));
         return this;
     }
