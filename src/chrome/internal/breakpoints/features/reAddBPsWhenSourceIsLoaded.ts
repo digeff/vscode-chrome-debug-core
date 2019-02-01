@@ -9,6 +9,7 @@ import { IComponent } from '../../features/feature';
 import { injectable, inject } from 'inversify';
 import { IBreakpointsInLoadedSource } from '../bpRecipieAtLoadedSourceLogic';
 import { TYPES } from '../../../dependencyInjection.ts/types';
+import { ValidatedSet } from '../../../collections/validatedSet';
 
 export interface EventsConsumedByReAddBPsWhenSourceIsLoaded {
     onLoadedSourceIsAvailable(listener: (source: ILoadedSource) => Promise<void>): void;
@@ -49,7 +50,7 @@ export class ReAddBPsWhenSourceIsLoaded implements IComponent {
             // We remove it first in sync just to avoid race conditions (If we get multiple refreshes fast, we could get events for the same source path severla times)
             const defer = this.getBPsAreSetDefer(source.identifier);
             this._sourcePathToBPRecipies.delete(source.identifier);
-            const remainingBPRecipies = new Set(unbindBPRecipies.breakpoints);
+            const remainingBPRecipies = new ValidatedSet(unbindBPRecipies.breakpoints);
             await asyncMap(unbindBPRecipies.breakpoints, async bpRecipie => {
                 try {
                     const bpStatus = await this._breakpointsInLoadedSource.addBreakpointAtLoadedSource(bpRecipie.resolvedWithLoadedSource(source));

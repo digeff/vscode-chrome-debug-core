@@ -1,6 +1,7 @@
 import { WrappedSessionCommonLogic } from './session';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { utils } from '../..';
+import { ValidatedSet } from '../collections/validatedSet';
 
 const steppingRequests = {
     continue: true,
@@ -12,7 +13,7 @@ const steppingRequests = {
 };
 
 export class DoNotPauseWhileSteppingSession extends WrappedSessionCommonLogic {
-    private readonly _onFlightSteppingRequests = new Set<Promise<void>>();
+    private readonly _onFlightSteppingRequests = new ValidatedSet<Promise<void>>();
 
     public async dispatchRequest(request: DebugProtocol.Request): Promise<void> {
         const response = this._wrappedSession.dispatchRequest(request);

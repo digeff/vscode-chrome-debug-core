@@ -5,6 +5,7 @@ import { ILoadedSource } from '../sources/loadedSource';
 import { IBPActionWhenHit } from './bpActionWhenHit';
 import { SetUsingProjection } from '../../collections/setUsingProjection';
 import assert = require('assert');
+import { ValidatedSet } from '../../collections/validatedSet';
 
 function canonicalizeBPLocation(breakpoint: BPRecipieInSource): string {
     return `${breakpoint.location.position.lineNumber}:${breakpoint.location.position.columnNumber}[${breakpoint.bpActionWhenHit}]`;
@@ -43,7 +44,7 @@ export class BPRsDeltaCalculator {
             match.matchesForRequested.push(matchingBreakpoint);
         });
 
-        const setOfExistingToLeaveAsIs = new Set(match.existingToLeaveAsIs);
+        const setOfExistingToLeaveAsIs = new ValidatedSet(match.existingToLeaveAsIs);
 
         match.existingToRemove = Array.from(this._currentBPRecipies).filter(bp => !setOfExistingToLeaveAsIs.has(bp));
 

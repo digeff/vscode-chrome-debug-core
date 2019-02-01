@@ -1,5 +1,6 @@
 import { ValidatedMap } from './validatedMap';
 import { printMap } from './printing';
+import { ValidatedSet } from './validatedSet';
 
 /** A multi map that throws exceptions instead of returning error codes. */
 export class ValidatedMultiMap<K, V> {
@@ -42,7 +43,7 @@ export class ValidatedMultiMap<K, V> {
     public addKeyIfNotExistant(key: K): this {
         const existingValues = this._wrappedMap.tryGetting(key);
         if (existingValues === undefined) {
-            this._wrappedMap.set(key, new Set());
+            this._wrappedMap.set(key, new ValidatedSet());
         }
 
         return this;
@@ -53,7 +54,7 @@ export class ValidatedMultiMap<K, V> {
         if (existingValues !== undefined) {
             existingValues.add(value);
         } else {
-            this._wrappedMap.set(key, new Set([value]));
+            this._wrappedMap.set(key, new ValidatedSet([value]));
         }
         return this;
     }

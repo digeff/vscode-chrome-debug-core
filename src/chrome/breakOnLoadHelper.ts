@@ -16,6 +16,7 @@ import { BreakpointsLogic } from './internal/breakpoints/breakpointsLogic';
 import { IResourceIdentifier, newResourceIdentifierMap } from './internal/sources/resourceIdentifier';
 import { PausedEvent } from './cdtpDebuggee/eventsProviders/cdtpDebuggeeExecutionEventsProvider';
 import { IDOMInstrumentationBreakpoints } from './cdtpDebuggee/features/cdtpDOMInstrumentationBreakpoints';
+import { ValidatedSet } from './collections/validatedSet';
 
 export interface UrlRegexAndFileSet {
     urlRegex: string;
@@ -227,7 +228,7 @@ export class BreakOnLoadHelper {
             if (regexAndFileNames !== undefined) {
                 regexAndFileNames.fileSet.add(normalizedUrl);
             } else { // else create an entry for this breakpoint id
-                const fileSet = new Set<IResourceIdentifier>();
+                const fileSet = new ValidatedSet<IResourceIdentifier>();
                 fileSet.add(normalizedUrl);
                 this._stopOnEntryBreakpointIdToRequestedFileName.set(breakpointId, { urlRegex, fileSet });
             }
