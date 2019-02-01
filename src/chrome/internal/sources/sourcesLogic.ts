@@ -16,7 +16,7 @@ export interface ISourcesLogic {
 }
 
 @injectable()
-export class SourcesLogic implements IComponent {
+export class SourcesLogic implements ISourcesLogic, IComponent {
     public createSourceResolver(sourceIdentifier: IResourceIdentifier): ISource {
         return this._sourceResolverLogic.createUnresolvedSource(sourceIdentifier);
     }
