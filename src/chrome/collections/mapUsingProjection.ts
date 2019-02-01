@@ -65,6 +65,11 @@ export class MapUsingProjection<K, V, P> implements IValidatedMap<K, V> {
         return this;
     }
 
+    public setAndIgnoreDuplicates(key: K, value: V) {
+        this._projectionToKeyAndvalue.setAndIgnoreDuplicates(this._projection(key), new KeyAndValue(key, value));
+        return this;
+    }
+
     public get size(): number {
         return this._projectionToKeyAndvalue.size;
     }

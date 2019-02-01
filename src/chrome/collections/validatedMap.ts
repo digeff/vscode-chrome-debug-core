@@ -5,6 +5,7 @@ export interface IValidatedMap<K, V> extends Map<K, V> {
     tryGetting(key: K): V | undefined;
     getOrAdd(key: K, obtainValueToAdd: () => V): V;
     setAndReplaceIfExist(key: K, value: V): this;
+    setAndIgnoreDuplicates(key: K, value: V): this;
 }
 
 /** A map that throws exceptions instead of returning error codes. */
@@ -68,8 +69,8 @@ export class ValidatedMap<K, V> implements IValidatedMap<K, V> {
 
     public set(key: K, value: V): this {
         if (this.has(key)) {
-            // breakWhileDebugging();
-            // TODO: throw new Error(`Cannot set key ${key} because it already exists`);
+            breakWhileDebugging();
+            throw new Error(`Cannot set key ${key} because it already exists`);
         }
 
         return this.setAndReplaceIfExist(key, value);
@@ -78,6 +79,16 @@ export class ValidatedMap<K, V> implements IValidatedMap<K, V> {
     public setAndReplaceIfExist(key: K, value: V): this {
         this._wrappedMap.set(key, value);
         return this;
+    }
+
+    public setAndIgnoreDuplicates(key: K, value: V) {
+        const existingValueOrUndefined = this.tryGetting(key);
+        if (existingValueOrUndefined !== undefined && existingValueOrUndefined !== value) {
+            breakWhileDebugging();
+            throw new Error(`Cannot set key ${key} for value ${value} because it already exists and it's associated to a different value: ${existingValueOrUndefined}`);
+        }
+
+        return this.setAndReplaceIfExist(key, value);
     }
 
     [Symbol.iterator](): IterableIterator<[K, V]> {
