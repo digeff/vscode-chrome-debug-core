@@ -1,7 +1,7 @@
 import { Container, interfaces } from 'inversify';
 import { bindAll } from './bind';
 
-export type ComponentCustomizationCallback = <T>(injectable: T) => T;
+export type ComponentCustomizationCallback = <T>(identifier: interfaces.ServiceIdentifier<T>, injectable: T) => T;
 
 // Hides the current DI framework from the rest of our implementation
 export class DependencyInjection {

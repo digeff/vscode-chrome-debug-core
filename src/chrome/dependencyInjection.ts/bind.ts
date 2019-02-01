@@ -95,7 +95,7 @@ export function bindAll(di: Container, callback: ComponentCustomizationCallback)
 
 function bind<T extends object>(container: Container, serviceIdentifier: interfaces.ServiceIdentifier<T>, newable: interfaces.Newable<T>, callback: ComponentCustomizationCallback): void {
     container.bind<T>(serviceIdentifier).to(newable).inSingletonScope().onActivation((_context, object) => {
-        return callback(object);
+        return callback(serviceIdentifier, object);
         /// return new MethodsCalledLogger<T>(object, serviceIdentifier.toString()).wrapped();
     });
 }
