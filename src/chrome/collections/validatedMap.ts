@@ -83,9 +83,9 @@ export class ValidatedMap<K, V> implements IValidatedMap<K, V> {
         return this;
     }
 
-    public setAndIgnoreDuplicates(key: K, value: V) {
+    public setAndIgnoreDuplicates(key: K, value: V, comparer: ValueComparerFunction<V> = (left, right) => left === right) {
         const existingValueOrUndefined = this.tryGetting(key);
-        if (existingValueOrUndefined !== undefined && existingValueOrUndefined !== value) {
+        if (existingValueOrUndefined !== undefined && !comparer(existingValueOrUndefined, value)) {
             breakWhileDebugging();
             throw new Error(`Cannot set key ${key} for value ${value} because it already exists and it's associated to a different value: ${existingValueOrUndefined}`);
         }

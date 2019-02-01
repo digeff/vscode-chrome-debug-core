@@ -66,7 +66,9 @@ export class MapUsingProjection<K, V, P> implements IValidatedMap<K, V> {
     }
 
     public setAndIgnoreDuplicates(key: K, value: V, valueComparer: ValueComparerFunction<V> = (left, right) => left === right) {
-        this._projectionToKeyAndvalue.setAndIgnoreDuplicates(this._projection(key), new KeyAndValue(key, value));
+        this._projectionToKeyAndvalue.setAndIgnoreDuplicates(this._projection(key), new KeyAndValue(key, value),
+            (left, right) =>
+                this._projection(left.key) === this._projection(right.key) && valueComparer(left.value, right.value));
         return this;
     }
 

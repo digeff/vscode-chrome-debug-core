@@ -37,6 +37,7 @@ export interface ILoadedSource<TString = string> extends IEquivalenceComparable 
     readonly identifier: IResourceIdentifier<TString>;
     readonly url: TString;
     readonly sourceScriptRelationship: SourceScriptRelationship;
+    readonly contentsLocation: ContentsLocation;
 
     // readonly origin: string;
     doesScriptHasUrl(): boolean; // TODO DIEGO: Figure out if we can delete this property

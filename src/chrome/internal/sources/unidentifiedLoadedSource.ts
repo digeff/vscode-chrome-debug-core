@@ -1,13 +1,17 @@
 import { IScript } from '../scripts/script';
 import { CDTPScriptUrl } from './resourceIdentifierSubtypes';
 import { IResourceIdentifier, parseResourceIdentifier, ResourceName } from './resourceIdentifier';
-import { ILoadedSource, IScriptMapper, SourceScriptRelationship, ImplementsLoadedSource, ScriptAndSourceMapper } from './loadedSource';
+import { ILoadedSource, IScriptMapper, SourceScriptRelationship, ImplementsLoadedSource, ScriptAndSourceMapper, ContentsLocation } from './loadedSource';
 import { ILoadedSourceToScriptRelationship, DevelopmentSourceOf, RuntimeSourceOf } from './loadedSourceToScriptRelationship';
 import { UnmappedSourceMapper } from '../scripts/sourcesMapper';
 import { LocationInLoadedSource, LocationInScript } from '../locations/location';
 
 export class UnidentifiedLoadedSource implements ILoadedSource<CDTPScriptUrl> {
+    [ImplementsLoadedSource]: string;
+
     public [ImplementsLoadedSource] = 'ILoadedSource';
+
+    public contentsLocation = ContentsLocation.PersistentStorage;
 
     public readonly sourceScriptRelationship = SourceScriptRelationship.SourceIsSingleScript;
 
