@@ -18,6 +18,7 @@ export class ScriptAndSourceMapper {
 }
 
 export interface IScriptMapper {
+    readonly scripts: IScript[];
     mapToScripts(position: LocationInLoadedSource): LocationInScript[];
 }
 

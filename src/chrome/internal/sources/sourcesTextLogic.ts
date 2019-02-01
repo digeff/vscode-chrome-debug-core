@@ -16,12 +16,10 @@ export class SourceTextLogic implements IComponent {
 
         if (text !== null) {
             if (loadedSource.sourceScriptRelationship === SourceScriptRelationship.SourceIsSingleScript) {
-                throw new Error(`Not implemented yet`);
-                // text = await this._scriptSources.getScriptSource(singleOne(loadedSource.scriptMapper().scripts));
+                text = await this._scriptSources.getScriptSource(singleOne(loadedSource.scriptMapper().scripts));
             } else {
-                // TODO: Implement this, by using Page.getResourceContent for SourceScriptRelationship.SourceIsMoreThanAScript
                 // We'll need to figure out what is the right thing to do for SourceScriptRelationship.Unknown
-                throw new Error(`Support for getting the text from dynamic sources that aren't just script hasn't been implemented yet`);
+                throw new Error(`Support for getting the text from dynamic sources that have multiple scripts embedded hasn't been implemented yet`);
             }
             this._sourceToText.set(loadedSource, text);
         }

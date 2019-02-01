@@ -6,8 +6,10 @@ import { ILaunchRequestArgs, IAttachRequestArgs } from '../../debugAdapterInterf
 import { interfaces } from 'inversify';
 import { IDebuggeeLauncher, IDebuggeeRunner } from '../debugeeStartup/debugeeLauncher';
 import { ConnectedCDAConfiguration } from '../client/chromeDebugAdapter/cdaConfiguration';
+import { ComponentCustomizationCallback } from '../dependencyInjection.ts/di';
 
 export interface IExtensibilityPoints {
+    componentCustomizationCallback: ComponentCustomizationCallback;
     isPromiseRejectExceptionFilterEnabled: boolean;
     debugeeLauncher: interfaces.Newable<IDebuggeeLauncher>;
     debugeeRunner: interfaces.Newable<IDebuggeeRunner>;
@@ -37,8 +39,9 @@ export class OnlyProvideCustomLauncherExtensibilityPoints implements IExtensibil
     }
 
     constructor(
+        public readonly logFilePath: string,
         public readonly debugeeLauncher: interfaces.Newable<IDebuggeeLauncher>,
         public readonly debugeeRunner: interfaces.Newable<IDebuggeeRunner>,
-        public readonly logFilePath: string) {
+        public readonly componentCustomizationCallback: ComponentCustomizationCallback) {
     }
 }

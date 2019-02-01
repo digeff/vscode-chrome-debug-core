@@ -56,7 +56,7 @@ export class UnconnectedCDA extends UnconnectedCDACommonLogic implements IDebugA
         }
 
         utils.setCaseSensitivePaths(this._clientCapabilities.clientID !== 'visualstudio'); // TODO DIEGO: Find a way to remove this
-        const di = new DependencyInjection();
+        const di = new DependencyInjection(this._extensibilityPoints.componentCustomizationCallback);
 
         const pathTransformerClass = this._clientCapabilities.supportsMapURLToFilePathRequest
             ? FallbackToClientPathTransformer

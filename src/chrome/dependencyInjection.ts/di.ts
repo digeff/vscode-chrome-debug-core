@@ -1,11 +1,13 @@
 import { Container, interfaces } from 'inversify';
 import { bindAll } from './bind';
 
+export type ComponentCustomizationCallback = <T>(context: interfaces.Context, injectable: T) => T;
+
 // Hides the current DI framework from the rest of our implementation
 export class DependencyInjection {
     private readonly _container = new Container({ autoBindInjectable: true, defaultScope: 'Singleton' });
 
-    constructor() {
+    constructor(private readonly _componentCustomizationCallback: ComponentCustomizationCallback) {
     }
 
     public configureClass<T>(interfaceClass: interfaces.Newable<T> | symbol, value: interfaces.Newable<T>): this {
@@ -32,7 +34,7 @@ export class DependencyInjection {
     }
 
     public bindAll(): this {
-        bindAll(this._container);
+        bindAll(this._container, this._componentCustomizationCallback);
         return this;
     }
 }
