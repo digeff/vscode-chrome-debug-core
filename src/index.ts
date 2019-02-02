@@ -36,7 +36,7 @@ import { parseResourceIdentifier, IResourceIdentifier } from './chrome/internal/
 import { ChromeDebugAdapter } from './chrome/client/chromeDebugAdapter/chromeDebugAdapterV2';
 import { IExtensibilityPoints, OnlyProvideCustomLauncherExtensibilityPoints } from './chrome/extensibility/extensibilityPoints';
 import { IDebuggeeLauncher, ILaunchResult, IDebuggeeRunner } from './chrome/debugeeStartup/debugeeLauncher';
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct, interfaces } from 'inversify';
 import { ConnectedCDAConfiguration } from './chrome/client/chromeDebugAdapter/cdaConfiguration';
 import { IComponent } from './chrome/internal/features/feature';
 import { TYPES } from './chrome/dependencyInjection.ts/types';
@@ -119,6 +119,8 @@ export {
     CDTP,
 
     ISourcesLogic,
+
+    interfaces,
 
     IResourceIdentifier,
 
