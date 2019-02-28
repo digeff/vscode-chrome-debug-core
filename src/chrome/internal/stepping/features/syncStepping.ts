@@ -5,7 +5,7 @@
 import { ScriptCallFrame } from '../../stackTraces/callFrame';
 import { InformationAboutPausedProvider, } from '../../features/takeProperActionOnPausedEvent';
 import { IComponent } from '../../features/feature';
-import { Abstained, IVote } from '../../../communication/collaborativeDecision';
+import { DefaultAction, IActionToTakeWhenPaused } from '../../../communication/collaborativeDecision';
 import { injectable, inject } from 'inversify';
 import { IDebugeeExecutionController } from '../../../cdtpDebuggee/features/cdtpDebugeeExecutionController';
 import { TYPES } from '../../../dependencyInjection.ts/types';
@@ -51,8 +51,8 @@ export class SyncStepping implements IComponent {
         return this._debugeeExecutionControl.pause();
     }
 
-    private async askForInformationAboutPaused(_paused: PausedEvent): Promise<IVote<void>> {
-        return new Abstained(this);
+    private async askForInformationAboutPaused(_paused: PausedEvent): Promise<IActionToTakeWhenPaused<void>> {
+        return new DefaultAction(this);
     }
 
     public async restartFrame(callFrame: ScriptCallFrame): Promise<void> {

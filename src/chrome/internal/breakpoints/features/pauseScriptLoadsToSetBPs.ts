@@ -9,7 +9,7 @@ import { LocationInScript } from '../../locations/location';
 import { IBreakpoint } from '../breakpoint';
 import { NotifyStoppedCommonLogic, ResumeCommonLogic, InformationAboutPausedProvider } from '../../features/takeProperActionOnPausedEvent';
 import { ReasonType } from '../../../stoppedEvent';
-import { IVote, Abstained } from '../../../communication/collaborativeDecision';
+import { IActionToTakeWhenPaused, DefaultAction } from '../../../communication/collaborativeDecision';
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../../../dependencyInjection.ts/types';
 import { IEventsToClientReporter } from '../../../client/eventSender';
@@ -66,7 +66,7 @@ export class PauseScriptLoadsToSetBPs implements IComponent {
         }
     }
 
-    private async askForInformationAboutPaused(paused: PausedEvent): Promise<IVote<void>> {
+    private async askForInformationAboutPaused(paused: PausedEvent): Promise<IActionToTakeWhenPaused<void>> {
         if (this.isInstrumentationPause(paused)) {
             await this._existingBPsForJustParsedScriptSetter.waitUntilBPsAreSet(paused.callFrames[0].location.script);
 
@@ -81,7 +81,7 @@ export class PauseScriptLoadsToSetBPs implements IComponent {
 
             return new PausedWhileLoadingScriptToResolveBreakpoints(this._debugeeExecutionControl);
         } else {
-            return new Abstained(this);
+            return new DefaultAction(this);
         }
     }
 

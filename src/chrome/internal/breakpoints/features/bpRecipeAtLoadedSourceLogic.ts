@@ -12,7 +12,7 @@ import { ReasonType } from '../../../stoppedEvent';
 import { CDTPBreakpoint } from '../../../cdtpDebuggee/cdtpPrimitives';
 import { DebuggeeBPRsSetForClientBPRFinder } from '../registries/debuggeeBPRsSetForClientBPRFinder';
 import { BPRecipeInLoadedSource } from '../BaseMappedBPRecipe';
-import { IVote, Abstained } from '../../../communication/collaborativeDecision';
+import { IActionToTakeWhenPaused, DefaultAction } from '../../../communication/collaborativeDecision';
 import { ConditionalPause, AlwaysPause } from '../bpActionWhenHit';
 import { PausedEvent } from '../../../cdtpDebuggee/eventsProviders/cdtpDebuggeeExecutionEventsProvider';
 import { BPRecipe } from '../bpRecipe';
@@ -53,14 +53,14 @@ export class BPRecipeAtLoadedSourceLogic implements IBreakpointsInLoadedSource {
 
     public readonly withLogging = wrapWithMethodLogger(this);
 
-    public async askForInformationAboutPaused(paused: PausedEvent): Promise<IVote<void>> {
+    public async askForInformationAboutPaused(paused: PausedEvent): Promise<IActionToTakeWhenPaused<void>> {
         if (paused.hitBreakpoints && paused.hitBreakpoints.length > 0) {
             // TODO DIEGO: Improve this to consider breakpoints where we shouldn't pause
             return new HitBreakpoint(this._eventsToClientReporter,
                 // () => this._dependencies.publishGoingToPauseClient() TODO Figure out if we need this for the Chrome Overlay
                 () => { });
         } else {
-            return new Abstained(this);
+            return new DefaultAction(this);
         }
     }
 

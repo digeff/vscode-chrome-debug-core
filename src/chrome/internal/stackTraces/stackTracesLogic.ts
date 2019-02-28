@@ -19,7 +19,7 @@ import { IComponent, ComponentConfiguration } from '../features/feature';
 import { InformationAboutPausedProvider } from '../features/takeProperActionOnPausedEvent';
 import { asyncMap } from '../../collections/async';
 import { TYPES } from '../../dependencyInjection.ts/types';
-import { IVote, Abstained } from '../../communication/collaborativeDecision';
+import { IActionToTakeWhenPaused, DefaultAction } from '../../communication/collaborativeDecision';
 import { IAsyncDebuggingConfigurer } from '../../cdtpDebuggee/features/cdtpAsyncDebuggingConfigurer';
 import { IStackTracePresentation } from './stackTracePresentation';
 import { StackTraceLabel, CallFramePresentationHint, IStackTracePresentationRow } from './stackTracePresentationRow';
@@ -48,9 +48,9 @@ export class StackTracesLogic implements IComponent {
         this._currentPauseEvent = null;
     }
 
-    public async onPaused(pausedEvent: PausedEvent): Promise<IVote<void>> {
+    public async onPaused(pausedEvent: PausedEvent): Promise<IActionToTakeWhenPaused<void>> {
         this._currentPauseEvent = pausedEvent;
-        return new Abstained(this);
+        return new DefaultAction(this);
     }
 
     public async stackTrace(args: DebugProtocol.StackTraceArguments): Promise<IStackTracePresentation> {

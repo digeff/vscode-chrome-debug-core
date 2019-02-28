@@ -7,7 +7,7 @@ import { IComponent } from '../features/feature';
 import * as errors from '../../../errors';
 import { FormattedExceptionParser, IFormattedExceptionLineDescription } from '../formattedExceptionParser';
 import { IPauseOnPromiseRejectionsStrategy, IPauseOnExceptionsStrategy } from './strategies';
-import {  IVote, Abstained } from '../../communication/collaborativeDecision';
+import {  IActionToTakeWhenPaused, DefaultAction } from '../../communication/collaborativeDecision';
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../../dependencyInjection.ts/types';
 import { IEventsToClientReporter } from '../../client/eventSender';
@@ -69,7 +69,7 @@ export class PauseOnExceptionOrRejection implements IComponent {
         this._promiseRejectionsStrategy = promiseRejectionsStrategy;
     }
 
-    public async askForInformationAboutPaused(paused: PausedEvent): Promise<IVote<void>> {
+    public async askForInformationAboutPaused(paused: PausedEvent): Promise<IActionToTakeWhenPaused<void>> {
         if (paused.reason === 'exception') {
             // If we are here is because we either configured the debugee to pauser on unhandled or handled exceptions
             this._lastException = paused.data;
@@ -80,7 +80,7 @@ export class PauseOnExceptionOrRejection implements IComponent {
             return new PromiseWasRejected(this._eventsToClientReporter, this._dependencies.publishGoingToPauseClient);
         } else {
             this._lastException = null;
-            return new Abstained(this);
+            return new DefaultAction(this);
         }
     }
 

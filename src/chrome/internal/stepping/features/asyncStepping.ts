@@ -4,7 +4,7 @@
 
 import { IComponent } from '../../features/feature';
 import { InformationAboutPausedProvider, ResumeCommonLogic } from '../../features/takeProperActionOnPausedEvent';
-import {  IVote, Abstained } from '../../../communication/collaborativeDecision';
+import {  IActionToTakeWhenPaused, DefaultAction } from '../../../communication/collaborativeDecision';
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../../../dependencyInjection.ts/types';
 import { PausedEvent } from '../../../cdtpDebuggee/eventsProviders/cdtpDebuggeeExecutionEventsProvider';
@@ -23,13 +23,13 @@ export class PausedBecauseAsyncCallWasScheduled extends ResumeCommonLogic {
 
 @injectable()
 export class AsyncStepping implements IComponent {
-    public async askForInformationAboutPaused(paused: PausedEvent): Promise<IVote<void>> {
+    public async askForInformationAboutPaused(paused: PausedEvent): Promise<IActionToTakeWhenPaused<void>> {
         if (paused.asyncCallStackTraceId) {
             await this._debugeeStepping.pauseOnAsyncCall({ parentStackTraceId: paused.asyncCallStackTraceId });
             return new PausedBecauseAsyncCallWasScheduled(this._debugeeExecutionControl);
         }
 
-        return new Abstained(this);
+        return new DefaultAction(this);
     }
 
     public install(): void {

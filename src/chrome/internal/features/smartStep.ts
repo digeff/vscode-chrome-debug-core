@@ -11,7 +11,7 @@ import { logger } from 'vscode-debugadapter';
 import { IComponent } from './feature';
 import { LocationInLoadedSource } from '../locations/location';
 import { ICallFramePresentationDetails } from '../stackTraces/callFramePresentation';
-import { Abstained, VoteCommonLogic, IVote } from '../../communication/collaborativeDecision';
+import { DefaultAction, BaseActionToTakeWhenPaused, IActionToTakeWhenPaused } from '../../communication/collaborativeDecision';
 import * as nls from 'vscode-nls';
 import { injectable, inject } from 'inversify';
 import { IStackTracePresentationLogicProvider } from '../stackTraces/stackTracesLogic';
@@ -31,7 +31,7 @@ export interface ISmartStepLogicConfiguration {
 export interface IShouldStepInToAvoidSkippedSourceDependencies {
     stepIntoDebugee(): Promise<void>;
 }
-export class ShouldStepInToAvoidSkippedSource extends VoteCommonLogic<void> {
+export class ShouldStepInToAvoidSkippedSource extends BaseActionToTakeWhenPaused<void> {
     private readonly _dependencies: IShouldStepInToAvoidSkippedSourceDependencies;
 
     public async execute(): Promise<void> {
@@ -61,7 +61,7 @@ export class SmartStepLogic implements IComponent, IStackTracePresentationLogicP
         this.stepInIfOnSkippedSource();
     }
 
-    public async askForInformationAboutPaused(paused: PausedEvent): Promise<IVote<void>> {
+    public async askForInformationAboutPaused(paused: PausedEvent): Promise<IActionToTakeWhenPaused<void>> {
         if (this.isEnabled() && await this.shouldSkip(paused.callFrames[0])) {
             this._smartStepCount++;
             return new ShouldStepInToAvoidSkippedSource();
@@ -70,7 +70,7 @@ export class SmartStepLogic implements IComponent, IStackTracePresentationLogicP
                 logger.log(`SmartStep: Skipped ${this._smartStepCount} steps`);
                 this._smartStepCount = 0;
             }
-            return new Abstained(this);
+            return new DefaultAction(this);
         }
     }
 

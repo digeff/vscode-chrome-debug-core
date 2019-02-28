@@ -7,7 +7,7 @@ import { PausedEvent } from '../../cdtpDebuggee/eventsProviders/cdtpDebuggeeExec
 import { IEventsToClientReporter } from '../../client/eventSender';
 import { ReasonType } from '../../stoppedEvent';
 import { PromiseOrNot } from '../../utils/promises';
-import { IVote, VoteCommonLogic, ExecuteDecisionBasedOnVotes, Abstained } from '../../communication/collaborativeDecision';
+import { IActionToTakeWhenPaused, BaseActionToTakeWhenPaused, HighestPriorityItemFinder, DefaultAction } from '../../communication/collaborativeDecision';
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../../dependencyInjection.ts/types';
 import { IDebugeeExecutionController } from '../../cdtpDebuggee/features/cdtpDebugeeExecutionController';
@@ -20,7 +20,7 @@ import { ExceptionWasThrown, PromiseWasRejected } from '../exceptions/pauseOnExc
 import { ValidatedMap } from '../../collections/validatedMap';
 import { type } from 'os';
 
-export abstract class ResumeCommonLogic extends VoteCommonLogic<void> {
+export abstract class ResumeCommonLogic extends BaseActionToTakeWhenPaused<void> {
     protected readonly abstract _debugeeExecutionControl: IDebugeeExecutionController;
 
     public async execute(): Promise<void> {
@@ -28,11 +28,11 @@ export abstract class ResumeCommonLogic extends VoteCommonLogic<void> {
     }
 }
 
-type VoteClass = { new(...args: any[]): IVote<unknown> };
+type VoteClass = { new(...args: any[]): IActionToTakeWhenPaused<unknown> };
 
 const situationsFromHighestToLowestPriority: VoteClass[] = [
     ShouldStepInToAvoidSkippedSource,
-    Abstained,
+    DefaultAction,
     HitBreakpoint,
     HitAndSatisfiedCountBPCondition,
     HitStillPendingBreakpoint,
@@ -43,7 +43,7 @@ const situationsFromHighestToLowestPriority: VoteClass[] = [
 const priorityAndVoteClassPairs = situationsFromHighestToLowestPriority.map((situationClass, index) => <[VoteClass, number]>[situationClass, index]);
 const situationClassToPriorityIndexMapping = new ValidatedMap(priorityAndVoteClassPairs);
 
-export abstract class NotifyStoppedCommonLogic extends VoteCommonLogic<void> {
+export abstract class NotifyStoppedCommonLogic extends BaseActionToTakeWhenPaused<void> {
     protected readonly exception: any;
     protected readonly abstract reason: ReasonType;
     protected readonly abstract _eventsToClientReporter: IEventsToClientReporter;
@@ -55,7 +55,7 @@ export abstract class NotifyStoppedCommonLogic extends VoteCommonLogic<void> {
     }
 }
 
-export type InformationAboutPausedProvider = (paused: PausedEvent) => Promise<IVote<void>>;
+export type InformationAboutPausedProvider = (paused: PausedEvent) => Promise<IActionToTakeWhenPaused<void>>;
 
 export interface IEventsConsumedByTakeProperActionOnPausedEvent extends ITakeActionBasedOnInformationDependencies {
     // onPaused(listener: (paused: PausedEvent) => Promise<void> | void): void;
@@ -82,19 +82,19 @@ export class TakeProperActionOnPausedEvent implements IComponent {
 }
 
 export interface ITakeActionBasedOnInformationDependencies {
-    askForInformationAboutPause(paused: PausedEvent): PromiseOrNot<IVote<void>[]>;
+    askForInformationAboutPause(paused: PausedEvent): PromiseOrNot<IActionToTakeWhenPaused<void>[]>;
 }
 
 export class TakeActionBasedOnInformation {
-    private readonly _takeActionBasedOnVotes: ExecuteDecisionBasedOnVotes<void>;
+    private readonly _takeActionBasedOnVotes: HighestPriorityItemFinder<void>;
 
     public async takeAction(): Promise<void> {
-        return this._takeActionBasedOnVotes.execute();
+        return this._takeActionBasedOnVotes.find();
     }
 
-    constructor(piecesOfInformation: IVote<void>[],
+    constructor(piecesOfInformation: IActionToTakeWhenPaused<void>[],
         private readonly _eventsToClientReporter: IEventsToClientReporter) {
-        this._takeActionBasedOnVotes = new ExecuteDecisionBasedOnVotes(async () => {
+        this._takeActionBasedOnVotes = new HighestPriorityItemFinder(async () => {
             // If we don't have any information whatsoever, then we assume that we stopped due to a debugger statement
             return this._eventsToClientReporter.sendDebugeeIsStopped({ reason: 'debugger_statement' });
         }, piecesOfInformation, voteClass => situationClassToPriorityIndexMapping.get(<VoteClass>voteClass.constructor));

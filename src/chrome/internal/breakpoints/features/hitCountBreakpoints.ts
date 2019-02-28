@@ -10,7 +10,7 @@ import { ValidatedMap } from '../../../collections/validatedMap';
 import { HitCountConditionParser, HitCountConditionFunction } from './hitCountConditionParser';
 import { NotifyStoppedCommonLogic, InformationAboutPausedProvider } from '../../features/takeProperActionOnPausedEvent';
 import { ReasonType } from '../../../stoppedEvent';
-import { IVote, Abstained } from '../../../communication/collaborativeDecision';
+import { IActionToTakeWhenPaused, DefaultAction } from '../../../communication/collaborativeDecision';
 import { injectable, inject } from 'inversify';
 import { IEventsToClientReporter } from '../../../client/eventSender';
 import { TYPES } from '../../../dependencyInjection.ts/types';
@@ -36,7 +36,7 @@ class HitCountBPData {
     public notifyBPHit(): object {
         return this._shouldPauseCondition(this._hitCount++)
             ? new NotAbstained()
-            : new Abstained(this._voter);
+            : new DefaultAction(this._voter);
     }
 
     constructor(
@@ -73,14 +73,14 @@ export class HitCountBreakpoints implements IComponent {
         this.underlyingToBPRecipe.set(underlyingBPRecipe, new HitCountBPData(this, bpRecipe, shouldPauseCondition));
     }
 
-    public async askForInformationAboutPaused(paused: PausedEvent): Promise<IVote<void>> {
+    public async askForInformationAboutPaused(paused: PausedEvent): Promise<IActionToTakeWhenPaused<void>> {
         const hitCountBPData = paused.hitBreakpoints.map(hitBPRecipe =>
             this.underlyingToBPRecipe.tryGetting(hitBPRecipe.unmappedBPRecipe)).filter(bpRecipe => bpRecipe !== undefined);
 
         const individualDecisions = hitCountBPData.map(data => data.notifyBPHit());
-        return individualDecisions.some(v => !(v instanceof Abstained))
+        return individualDecisions.some(v => !(v instanceof DefaultAction))
             ? new HitAndSatisfiedCountBPCondition(this._eventsToClientReporter, this._dependencies.publishGoingToPauseClient)
-            : new Abstained(this);
+            : new DefaultAction(this);
     }
 
     constructor(private readonly _dependencies: IHitCountBreakpointsDependencies,
