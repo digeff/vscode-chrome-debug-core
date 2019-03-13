@@ -44,7 +44,6 @@ import { IDebuggeeStateInspector } from './chrome/cdtpDebuggee/features/cdtpDebu
 import { CDTPEventsEmitterDiagnosticsModule, CDTPEnableableDiagnosticsModule } from './chrome/cdtpDebuggee/infrastructure/cdtpDiagnosticsModule';
 import { ICommunicator } from './chrome/communication/communicator';
 import { ISupportedDomains } from './chrome/internal/domains/supportedDomains';
-import { Internal } from './chrome/communication/internalChannels';
 import { ISession } from './chrome/client/session';
 import { IPausedOverlayConfigurer } from './chrome/cdtpDebuggee/features/cdtpPausedOverlayConfigurer';
 import { INetworkCacheConfigurer } from './chrome/cdtpDebuggee/features/cdtpNetworkCacheConfigurer';
@@ -104,8 +103,6 @@ export {
     TargetVersions,
 
     ICommunicator,
-
-    Internal,
 
     INetworkCacheConfigurer as INetworkCacheConfiguration,
     IDebuggeeRuntimeVersionProvider as IDebuggeeVersionProvider,

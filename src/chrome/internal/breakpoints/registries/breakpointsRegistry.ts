@@ -11,6 +11,7 @@ import { BPRecipeInSource } from '../bpRecipeInSource';
 import { BreakpointInSource } from '../breakpoint';
 import { IScript } from '../../scripts/script';
 import { BPRecipeIsUnboundInRuntimeLocation, BPRecipeIsBoundInRuntimeLocation, IBPRecipeSingleLocationStatus } from '../bpRecipeStatusForRuntimeLocation';
+import { IBreakpointsEventsListener } from '../features/breakpointsEventSystem';
 
 export interface IBreakpointsRegistryDependencies {
     onBPRecipeStatusChanged(bpRecipeInSource: BPRecipeInSource): void;
@@ -20,16 +21,20 @@ export class BreakpointsRegistry {
     private readonly _unmappedRecipeToBreakpoints = new ValidatedMap<BPRecipeInSource, IValidatedMap<LocationInLoadedSource, IBPRecipeSingleLocationStatus>>();
     private readonly _scriptToBreakpoints = new ValidatedMultiMap<IScript, CDTPBreakpoint>();
 
-    constructor(private readonly _dependencies: IBreakpointsRegistryDependencies) { }
+    public constructor(breakpointsEventsListener: IBreakpointsEventsListener,
+        private readonly _dependencies: IBreakpointsRegistryDependencies) {
+        breakpointsEventsListener.listenForOnClientBPRecipeAdded(clientBPRecipe => this.registerBPRecipeIfNeeded(clientBPRecipe));
+        breakpointsEventsListener.listenForOnClientBPRecipeRemoved(clientBPRecipe => this.unregisterBPRecipe(clientBPRecipe));
+    }
 
-    public registerBPRecipeIfNeeded(bpRecipe: BPRecipeInSource): void {
+    private registerBPRecipeIfNeeded(bpRecipe: BPRecipeInSource): void {
         // If the same breakpoint recipe maps to multiple runtime files with different URLs, we'll get the call to registerBPRecipeIfNeeded with the same recipe more than once
         if (!this._unmappedRecipeToBreakpoints.has(bpRecipe)) {
             this._unmappedRecipeToBreakpoints.set(bpRecipe, new ValidatedMap<LocationInLoadedSource, IBPRecipeSingleLocationStatus>());
         }
     }
 
-    public unregisterBPRecipe(bpRecipe: BPRecipeInSource): void {
+    private unregisterBPRecipe(bpRecipe: BPRecipeInSource): void {
         this._unmappedRecipeToBreakpoints.delete(bpRecipe);
     }
 

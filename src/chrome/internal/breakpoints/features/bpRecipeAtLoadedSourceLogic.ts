@@ -2,10 +2,10 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { inject, injectable } from 'inversify';
+import * as _ from 'lodash';
+import * as chromeUtils from '../../../chromeUtils';
 import { IDebuggeeBreakpointsSetter } from '../../../cdtpDebuggee/features/cdtpDebuggeeBreakpointsSetter';
 import { IBreakpointFeaturesSupport } from '../../../cdtpDebuggee/features/cdtpBreakpointFeaturesSupport';
-import { TYPES } from '../../../dependencyInjection.ts/types';
 import { IEventsToClientReporter } from '../../../client/eventSender';
 import { ReasonType } from '../../../stoppedEvent';
 import { CDTPBreakpoint } from '../../../cdtpDebuggee/cdtpPrimitives';
@@ -15,19 +15,16 @@ import { ConditionalPause, AlwaysPause } from '../bpActionWhenHit';
 import { PausedEvent } from '../../../cdtpDebuggee/eventsProviders/cdtpDebuggeeExecutionEventsProvider';
 import { BPRecipe } from '../bpRecipe';
 import { ISource } from '../../sources/source';
-import { LocationInScript, Position, ScriptOrSourceOrURLOrURLRegexp } from '../../locations/location';
+import { LocationInScript, Position } from '../../locations/location';
 import { createColumnNumber, createLineNumber } from '../../locations/subtypes';
-import { RangeInScript, RangeInResource } from '../../locations/rangeInScript';
+import { RangeInResource } from '../../locations/rangeInScript';
 import { logger } from 'vscode-debugadapter/lib/logger';
 import { BreakpointsRegistry } from '../registries/breakpointsRegistry';
 import { asyncMap } from '../../../collections/async';
-import { IBreakpoint, BPPossibleResources } from '../breakpoint';
-import * as _ from 'lodash';
-import * as chromeUtils from '../../../chromeUtils';
-import { IComponentWithAsyncInitialization } from '../../features/components';
 import { wrapWithMethodLogger } from '../../../logging/methodsCalledLogger';
-import { BaseNotifyClientOfPause, ActionToTakeWhenPausedProvider, IActionToTakeWhenPaused, NoActionIsNeededForThisPause } from '../../features/actionToTakeWhenPaused';
+import { BaseNotifyClientOfPause, IActionToTakeWhenPaused, NoActionIsNeededForThisPause } from '../../features/actionToTakeWhenPaused';
 import { IDebuggeePausedHandler } from '../../features/debuggeePausedHandler';
+import { IBreakpointsEventsPublisher } from './BreakpointsEventSystem';
 
 export class HitBreakpoint extends BaseNotifyClientOfPause {
     protected reason: ReasonType = 'breakpoint';
@@ -39,15 +36,18 @@ export class HitBreakpoint extends BaseNotifyClientOfPause {
 
 export interface IBreakpointsInLoadedSource {
     addBreakpointAtLoadedSource(bpRecipe: BPRecipeInLoadedSource<ConditionalPause | AlwaysPause>): Promise<CDTPBreakpoint[]>;
-    removeBreakpoint(clientBPRecipe: BPRecipe<ISource>): Promise<void>;
+    removeDebuggeeBPRs(clientBPRecipe: BPRecipe<ISource>): Promise<void>;
 }
 
 export class BPRecipeAtLoadedSourceLogic implements IBreakpointsInLoadedSource {
     private readonly doesTargetSupportColumnBreakpointsCached: Promise<boolean>;
+    private readonly _publishDebuggeeBPRecipeAdded = this._breakpointsEventsPublisher.publisherForDebuggeeBPRecipeAdded();
+    private readonly _publishDebuggeeBPRecipeRemoved = this._breakpointsEventsPublisher.publisherForDebuggeeBPRecipeRemoved();
 
     public readonly withLogging = wrapWithMethodLogger(this);
 
     constructor(
+        private readonly _breakpointsEventsPublisher: IBreakpointsEventsPublisher,
         private readonly _breakpointFeaturesSupport: IBreakpointFeaturesSupport,
         private readonly _breakpointRegistry: BreakpointsRegistry,
         private readonly _bpRecipesRegistry: DebuggeeBPRsSetForClientBPRFinder,
@@ -69,7 +69,6 @@ export class BPRecipeAtLoadedSourceLogic implements IBreakpointsInLoadedSource {
 
     public async addBreakpointAtLoadedSource(bpRecipe: BPRecipeInLoadedSource<ConditionalPause | AlwaysPause>): Promise<CDTPBreakpoint[]> {
         const bpsInScriptRecipe = bpRecipe.mappedToScript();
-        this._breakpointRegistry.registerBPRecipeIfNeeded(bpRecipe.unmappedBPRecipe);
 
         const breakpoints = _.flatten(await asyncMap(bpsInScriptRecipe, async bpInScriptRecipe => {
             const bestLocation = await this.considerColumnAndSelectBestBPLocation(bpInScriptRecipe.location);
@@ -93,24 +92,21 @@ export class BPRecipeAtLoadedSourceLogic implements IBreakpointsInLoadedSource {
 
             // The onBreakpointResolvedSyncOrAsync handler will notify us that a breakpoint was bound, and send the status update to the client if neccesary
 
-            breakpoints.forEach(breakpoint => {
-                this._bpRecipesRegistry.debuggeeBPRsWasSet(bpRecipe.unmappedBPRecipe, breakpoint.recipe);
-            });
+            for (const breakpoint of breakpoints) {
+                await this._publishDebuggeeBPRecipeAdded(breakpoint.recipe);
+            }
 
             return breakpoints;
         }));
         return breakpoints;
     }
 
-    public async removeBreakpoint(clientBPRecipe: BPRecipe<ISource>): Promise<void> {
+    public async removeDebuggeeBPRs(clientBPRecipe: BPRecipe<ISource>): Promise<void> {
         const debuggeeBPRecipes = this._bpRecipesRegistry.findDebuggeeBPRsSet(clientBPRecipe);
         await asyncMap(debuggeeBPRecipes, async bpr => {
             await this._targetBreakpoints.removeBreakpoint(bpr);
-            await this._bpRecipesRegistry.debuggeeBPRsWasRemoved(clientBPRecipe, bpr);
+            await this._publishDebuggeeBPRecipeRemoved(bpr);
         });
-
-        this._bpRecipesRegistry.clientBPRWasRemoved(clientBPRecipe);
-        this._breakpointRegistry.unregisterBPRecipe(clientBPRecipe);
     }
 
     private async considerColumnAndSelectBestBPLocation(location: LocationInScript): Promise<LocationInScript> {

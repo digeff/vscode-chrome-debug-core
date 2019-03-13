@@ -6,9 +6,9 @@ import { BPRecipesInSource, BPRecipesInLoadedSource } from '../bpRecipes';
 import { ExistingBPsForJustParsedScriptSetter } from './existingBPsForJustParsedScriptSetter';
 import { asyncMap } from '../../../collections/async';
 import { IBPRecipeStatus } from '../bpRecipeStatus';
-import { ClientCurrentBPRecipesRegistry } from '../registries/clientCurrentBPRecipesRegistry';
+import { CurrentBPRecipesForSourceRegistry } from '../registries/currentBPRecipesForSourceRegistry';
 import { BreakpointsRegistry } from '../registries/breakpointsRegistry';
-import { BPRecipeAtLoadedSourceLogic, IBreakpointsInLoadedSource } from './bpRecipeAtLoadedSourceLogic';
+import { BPRecipeAtLoadedSourceLogic } from './bpRecipeAtLoadedSourceLogic';
 import { IEventsToClientReporter } from '../../../client/eventSender';
 import { PauseScriptLoadsToSetBPs } from './pauseScriptLoadsToSetBPs';
 import { inject, injectable } from 'inversify';
@@ -27,14 +27,20 @@ import { IBreakpointFeaturesSupport } from '../../../cdtpDebuggee/features/cdtpB
 import { wrapWithMethodLogger } from '../../../logging/methodsCalledLogger';
 import { ITelemetryPropertyCollector } from '../../../../telemetry';
 import { IDebuggeePausedHandler } from '../../features/debuggeePausedHandler';
+import { BreakpointsEventSystem } from './breakpointsEventSystem';
 
 @injectable()
 export class BreakpointsUpdater {
-    private readonly _clientCurrentBPRecipesRegistry = wrapWithMethodLogger(new ClientCurrentBPRecipesRegistry(), 'ClientCurrentBPRecipesRegistry');
-    private readonly _debuggeeBPRsSetForClientBPRFinder = wrapWithMethodLogger(new DebuggeeBPRsSetForClientBPRFinder(), 'DebuggeeBPRsSetForClientBPRFinder');
-    private readonly _breakpointRegistry = wrapWithMethodLogger(new BreakpointsRegistry({ onBPRecipeStatusChanged: recipie => this.onUnbounBPRecipeIsNowBound(recipie) }), 'BreakpointsRegistry');
+    private readonly _breakpointsEventSystem = new BreakpointsEventSystem();
+    private readonly _publishClientBPRecipeAdded = this._breakpointsEventSystem.publisherForClientBPRecipeAdded();
+    private readonly _publishClientBPRecipeRemoved = this._breakpointsEventSystem.publisherForClientBPRecipeRemoved();
 
-    private readonly _breakpointsInLoadedSource = new BPRecipeAtLoadedSourceLogic(this._breakpointFeaturesSupport, this._breakpointRegistry, this._debuggeeBPRsSetForClientBPRFinder,
+    private readonly _clientCurrentBPRecipesRegistry = wrapWithMethodLogger(new CurrentBPRecipesForSourceRegistry(), 'ClientCurrentBPRecipesRegistry');
+    private readonly _debuggeeBPRsSetForClientBPRFinder = wrapWithMethodLogger(new DebuggeeBPRsSetForClientBPRFinder(this._breakpointsEventSystem), 'DebuggeeBPRsSetForClientBPRFinder');
+    private readonly _breakpointRegistry = wrapWithMethodLogger(new BreakpointsRegistry(this._breakpointsEventSystem,
+        { onBPRecipeStatusChanged: recipie => this.onUnbounBPRecipeIsNowBound(recipie) }), 'BreakpointsRegistry');
+
+    private readonly _breakpointsInLoadedSource = new BPRecipeAtLoadedSourceLogic(this._breakpointsEventSystem, this._breakpointFeaturesSupport, this._breakpointRegistry, this._debuggeeBPRsSetForClientBPRFinder,
         this._targetBreakpoints, this._eventsToClientReporter, this._debuggeePausedHandler).withLogging;
 
     private readonly _existingBPsForJustParsedScriptSetter = new ExistingBPsForJustParsedScriptSetter({ onBPRecipeStatusChanged: (bpr: BPRecipeInSource) => this.onUnbounBPRecipeIsNowBound(bpr) },
@@ -74,7 +80,9 @@ export class BreakpointsUpdater {
     public async updateBreakpointsForFile(requestedBPs: BPRecipesInSource, _?: ITelemetryPropertyCollector): Promise<IBPRecipeStatus[]> {
         const bpsDelta = this._clientCurrentBPRecipesRegistry.updateBPRecipesAndCalculateDelta(requestedBPs);
         const requestedBPsToAdd = new BPRecipesInSource(bpsDelta.resource, bpsDelta.requestedToAdd);
-        bpsDelta.requestedToAdd.forEach(requestedBP => this._breakpointRegistry.registerBPRecipeIfNeeded(requestedBP));
+        for (const requestedBP of bpsDelta.requestedToAdd) {
+            await this._publishClientBPRecipeAdded(requestedBP);
+        }
 
         await requestedBPsToAdd.tryResolving(
             async requestedBPsToAddInLoadedSources => {
@@ -101,7 +109,8 @@ export class BreakpointsUpdater {
 
     private async removeDeletedBreakpointsFromFile(bpsDelta: BPRsDeltaInRequestedSource) {
         await asyncMap(bpsDelta.existingToRemove, async (existingBPToRemove) => {
-            await this._breakpointsInLoadedSource.removeBreakpoint(existingBPToRemove);
+            await this._breakpointsInLoadedSource.removeDebuggeeBPRs(existingBPToRemove);
+            this._publishClientBPRecipeRemoved(existingBPToRemove);
         });
     }
 

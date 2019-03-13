@@ -16,7 +16,7 @@ import { TYPES } from '../../../dependencyInjection.ts/types';
 import { ValidatedSet } from '../../../collections/validatedSet';
 import { IScriptParsedProvider } from '../../../cdtpDebuggee/eventsProviders/cdtpOnScriptParsedEventProvider';
 import { DebuggeeBPRsSetForClientBPRFinder } from '../registries/debuggeeBPRsSetForClientBPRFinder';
-import { ClientCurrentBPRecipesRegistry } from '../registries/clientCurrentBPRecipesRegistry';
+import { CurrentBPRecipesForSourceRegistry } from '../registries/currentBPRecipesForSourceRegistry';
 import { ValidatedMap } from '../../../collections/validatedMap';
 import { BPRecipeInSource } from '../bpRecipeInSource';
 import { BreakpointsRegistry } from '../registries/breakpointsRegistry';
@@ -41,7 +41,7 @@ export class ExistingBPsForJustParsedScriptSetter {
         private readonly _dependencies: IExistingBPsForJustParsedScriptSetterDependencies,
         private readonly _scriptParsedProvider: IScriptParsedProvider,
         private readonly _debuggeeBPRsSetForClientBPRFinder: DebuggeeBPRsSetForClientBPRFinder,
-        private readonly _clientCurrentBPRecipesRegistry: ClientCurrentBPRecipesRegistry,
+        private readonly _clientCurrentBPRecipesRegistry: CurrentBPRecipesForSourceRegistry,
         private readonly _breakpointsInLoadedSource: IBreakpointsInLoadedSource,
         private readonly _breakpointsRegistry: BreakpointsRegistry) {
         this._scriptParsedProvider.onScriptParsed(scriptParsed => this.withLogging.setBPsForScript(scriptParsed.script));
