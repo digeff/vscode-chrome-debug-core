@@ -21,6 +21,11 @@ export class DebuggeeBPRsSetForClientBPRFinder {
         breakpointsEventsListener.listenForOnClientBPRecipeRemoved(clientBPRecipe => this.clientBPRWasRemoved(clientBPRecipe));
     }
 
+    public findDebuggeeBPRsSet(clientBPRecipe: ClientBPRecipe): DebuggeeBPRecipe[] {
+        // TODO: Review if it's okay to use getOr here, or if we should use get instead
+        return Array.from(this._clientBPRToDebuggeeBPRItSet.getOr(clientBPRecipe, () => new Set()));
+    }
+
     private clientBPRWasAdded(clientBPRecipe: ClientBPRecipe): void {
         this._clientBPRToDebuggeeBPRItSet.addKeyIfNotExistant(clientBPRecipe);
     }
@@ -45,11 +50,6 @@ export class DebuggeeBPRsSetForClientBPRFinder {
         }
 
         this._clientBPRToDebuggeeBPRItSet.delete(clientBPRecipe);
-    }
-
-    public findDebuggeeBPRsSet(clientBPRecipe: ClientBPRecipe): DebuggeeBPRecipe[] {
-        // TODO: Review if it's okay to use getOr here, or if we should use get instead
-        return Array.from(this._clientBPRToDebuggeeBPRItSet.getOr(clientBPRecipe, () => new Set()));
     }
 
     public toString(): string {
