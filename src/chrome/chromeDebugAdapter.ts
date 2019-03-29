@@ -3,12 +3,12 @@
  *--------------------------------------------------------*/
 
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { TerminatedEvent, ContinuedEvent, logger, } from 'vscode-debugadapter';
+import { ContinuedEvent, logger, } from 'vscode-debugadapter';
 
 import {
-    ICommonRequestArgs, ILaunchRequestArgs, IScopesResponseBody, IVariablesResponseBody,
+    ICommonRequestArgs, IScopesResponseBody, IVariablesResponseBody,
     IThreadsResponseBody, IEvaluateResponseBody, ISetVariableResponseBody,
-    ICompletionsResponseBody, IRestartRequestArgs, ITimeTravelRuntime
+    ICompletionsResponseBody, ITimeTravelRuntime
 } from '../debugAdapterInterfaces';
 
 import { ChromeConnection } from './chromeConnection';
@@ -22,7 +22,7 @@ import { stackTraceWithoutLogpointFrame } from './internalSourceBreakpoint';
 
 import * as errors from '../errors';
 import * as utils from '../utils';
-import { telemetry, BatchTelemetryReporter } from '../telemetry';
+import { telemetry } from '../telemetry';
 import { StepProgressEventsEmitter } from '../executionTimingsReporter';
 
 import { LineColTransformer } from '../transformers/lineNumberTransformer';
@@ -93,24 +93,19 @@ export class ChromeDebugLogic {
     public _session: ISession;
     public _domains = new Map<CrdpDomain, CDTP.Schema.Domain>();
     private _exception: CDTP.Runtime.RemoteObject | undefined;
-    private _expectingResumedEvent: boolean;
+    private _expectingResumedEvent = false;
     public _expectingStopReason: ReasonType | undefined;
     private _waitAfterStep = Promise.resolve();
 
     private _variableHandles: variables.VariableHandles;
 
     private _lineColTransformer: LineColTransformer;
-    protected _chromeConmer: BaseSourceMapTransformer;
     public _pathTransformer: BasePathTransformer;
 
-    public _attachMode: boolean;
     public readonly _launchAttachArgs: ICommonRequestArgs = this._configuration.args;
-    public _port: number;
 
     private _currentLogMessage = Promise.resolve();
     privaRejectExceptionFilterEnabled = false;
-
-    private _batchTelemetryReporter: BatchTelemetryReporter;
 
     public readonly events: StepProgressEventsEmitter;
 
@@ -138,7 +133,6 @@ export class ChromeDebugLogic {
         @inject(TYPES.IPauseOnExceptions) private readonly _pauseOnExceptions: IPauseOnExceptionsConfigurer,
     ) {
         telemetry.setupEventHandler(e => session.sendEvent(e));
-        this._batchTelemetryReporter = new BatchTelemetryReporter(telemetry);
         this._session = session;
         this._chromeConnection = chromeConnection;
         this.events = new StepProgressEventsEmitter(this._chromeConnection.events ? [this._chromeConnection.events] : []);
