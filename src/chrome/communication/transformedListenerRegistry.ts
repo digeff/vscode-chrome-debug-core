@@ -6,12 +6,13 @@ import { Listeners } from './listeners';
 import { PromiseOrNot } from '../utils/promises';
 
 export class TransformedListenerRegistry<O, T> {
-    private readonly _transformedListeners = new Listeners<T, void>();
+    private readonly _transformedListeners = new Listeners<T, PromiseOrNot<void>>();
 
     constructor(
         public readonly _description: string, // This description is only used for debugging purposes
         private readonly _registerOriginalListener: (originalListener: (originalParameters: O) => void) => PromiseOrNot<void>,
-        private readonly _transformation: (originalParameters: O) => PromiseOrNot<T>) {
+        private readonly _transformation: (originalParameters: O) => PromiseOrNot<T>,
+        private readonly _resultsProcessor: (results: PromiseOrNot<void>[]) => void) {
     }
 
     public registerListener(transformedListener: (params: T) => void) {
@@ -21,7 +22,7 @@ export class TransformedListenerRegistry<O, T> {
     public async install(): Promise<this> {
         await this._registerOriginalListener(async originalParameters => {
             const transformedParameters = await this._transformation(originalParameters);
-            return this._transformedListeners.call(transformedParameters);
+            return this._resultsProcessor(this._transformedListeners.call(transformedParameters));
         });
         return this;
     }

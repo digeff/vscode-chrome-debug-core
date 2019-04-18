@@ -96,7 +96,7 @@ export interface IChromeError {
  */
 @injectable()
 export class ChromeConnection implements IObservableEvents<IStepStartedEventsEmitter> {
-    private static ATTACH_TIMEOUT = 10000; // ms
+    private static ATTACH_TIMEOUT = 6 * 10000; // ms DIEGO TODO
 
     private _socket: WebSocket | null = null;
     private _client?: Client;

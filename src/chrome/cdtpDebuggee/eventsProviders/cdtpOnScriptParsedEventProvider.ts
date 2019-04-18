@@ -25,6 +25,7 @@ import * as _ from 'lodash';
 import { SourceMap } from '../../../sourceMaps/sourceMap';
 import { BasePathTransformer } from '../../../transformers/basePathTransformer';
 import { BaseSourceMapTransformer } from '../../../transformers/baseSourceMapTransformer';
+import { PromiseOrNot } from '../../utils/promises';
 
 /**
  * A new JavaScript Script has been parsed by the debuggee and it's about to be executed
@@ -85,17 +86,19 @@ export type ScriptParsedListener = (params: IScriptParsedEvent) => void;
 
 export interface IScriptParsedProvider {
     onScriptParsed(listener: (event: IScriptParsedEvent) => void): void;
+    waitForOnFlightEventsToFinish(): Promise<void>;
 }
 
 export class CDTPOnScriptParsedEventProvider extends CDTPEventsEmitterDiagnosticsModule<CDTP.DebuggerApi, void, CDTP.Debugger.EnableResponse> implements IScriptParsedProvider {
     protected readonly api = this._protocolApi.Debugger;
+    private _waitForOnFlightEvents = Promise.resolve<unknown>(null);
 
     public onScriptParsed = this.addApiListener('scriptParsed', async (params: CDTP.Debugger.ScriptParsedEvent) => {
         const creator = !!params.url ? IdentifiedScriptCreator : UnidentifiedScriptCreator;
         await new creator(this._scriptsRegistry, this._loadedSourcesRegistry, this._pathTransformer, this._sourceMapTransformer, params).createAndRegisterScript();
 
         return await this.toScriptParsedEvent(params);
-    });
+    }, listener => this.processOnScriptParsedResults(listener));
 
     constructor(
         @inject(TYPES.CDTPClient) private readonly _protocolApi: CDTP.ProtocolApi,
@@ -106,6 +109,15 @@ export class CDTPOnScriptParsedEventProvider extends CDTPEventsEmitterDiagnostic
         @inject(LoadedSourcesRegistry) private readonly _loadedSourcesRegistry: LoadedSourcesRegistry,
     ) {
         super(domainsEnabler);
+    }
+
+    public async waitForOnFlightEventsToFinish(): Promise<void> {
+        await this._waitForOnFlightEvents;
+    }
+
+    private processOnScriptParsedResults(results: PromiseOrNot<void>[]): void {
+        const ignoreFailureResults = results.map(async result => Promise.resolve(result).catch(() => { }));
+        this._waitForOnFlightEvents = Promise.all([this._waitForOnFlightEvents].concat(ignoreFailureResults));
     }
 
     private async toScriptParsedEvent(params: CDTP.Debugger.ScriptParsedEvent): Promise<IScriptParsedEvent> {
@@ -171,7 +183,7 @@ abstract class ScriptCreator {
     protected abstract registerRuntimeAndDevelopmentSourcesRelationships(script: IScript): Promise<void>;
 
     private mappedSources(sourceMapper: IMappedSourcesMapper): IdentifiedLoadedSource[] {
-        return sourceMapper.sources.map((path: string) => this.obtainLoadedSource(parseResourceIdentifier(path), SourceScriptRelationship.Unknown));
+        return sourceMapper.sources.map(path => this.obtainLoadedSource(path, SourceScriptRelationship.Unknown));
     }
 
     private sourceMapper(script: IScript, sourceMap: SourceMap | null): IMappedSourcesMapper {
