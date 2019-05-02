@@ -168,7 +168,7 @@
     // tslint-eslint-rules
     "no-irregular-whitespace": true,
 
-    "strict-boolean-expressions": false,
+    "strict-boolean-expressions": true,
     "strict-type-predicates": true
   }
 }
