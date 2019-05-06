@@ -4,12 +4,9 @@
     "node_modules/tslint-eslint-rules/dist/rules"],
   "defaultSeverity": "warn",
   "rules": {
-    "indent": [
-      true,
-      "spaces"
-    ],
     "align": [
-      false,
+      true,
+      "parameters",
       "statements"
     ],
     "ban": false,
@@ -20,13 +17,16 @@
     ],
     "curly": false,
     "forin": false,
+    "indent": [
+      true,
+      "spaces"
+    ],
     "jsdoc-format": true,
     "label-position": true,
     "max-line-length": [
       false,
       140
     ],
-    "no-floating-promises": true,
     "member-access": false,
     "member-ordering": [
       true,
@@ -42,7 +42,7 @@
          ]
       }
     ],
-    "quotemark": [true, "single", "avoid-escape"],
+    "no-floating-promises": true,
     "no-any": false,
     "no-arg": true,
     "no-bitwise": true,
@@ -77,6 +77,11 @@
       "check-else",
       "check-whitespace"
     ],
+    "quotemark": [
+      true,
+      "single",
+      "avoid-escape"
+    ],
     "radix": true,
     "semicolon": [
       true,
@@ -107,8 +112,8 @@
       true,
       "check-branch",
       "check-decl",
-      "check-operator",
       "check-module",
+      "check-operator",
       "check-separator",
       "check-type"
       // "check-typecast"
