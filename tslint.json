@@ -7,6 +7,7 @@
     "align": [
       true,
       "parameters",
+      "arguments",
       "statements"
     ],
     "ban": false,
@@ -16,11 +17,13 @@
       "check-space"
     ],
     "curly": false,
-    "forin": false,
+    "eofline": true,
+    "forin": true,
     "indent": [
       true,
       "spaces"
     ],
+	"interface-name": [true, "always-prefix"],
     "jsdoc-format": true,
     "label-position": true,
     "max-line-length": [
@@ -49,10 +52,17 @@
     "no-conditional-assignment": true,
     "no-consecutive-blank-lines": true,
     "no-console": [
-      false
+      true,
+      "debug",
+      "log",
+      "info",
+      "time",
+      "timeEnd",
+      "trace"
     ],
     "no-construct": true,
     "no-debugger": true,
+    "no-shadowed-variable": true,
     "no-duplicate-variable": true,
     "no-empty": false,
     "no-eval": true,
@@ -60,12 +70,11 @@
     "no-internal-module": true,
     "no-invalid-this": true,
     "no-require-imports": false,
-    "no-shadowed-variable": false,
+    "no-shadowed-variable": true,
     "no-string-literal": true,
     "no-switch-case-fall-through": true,
-    "no-trailing-whitespace": false,
+    "no-trailing-whitespace": true,
     "no-unused-expression": true,
-    "no-unused-variable": false,
     "no-use-before-declare": false,
     "no-var-keyword": true,
     "no-var-requires": true,
