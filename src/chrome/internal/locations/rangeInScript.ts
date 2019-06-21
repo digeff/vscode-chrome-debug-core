@@ -5,6 +5,7 @@
 import { Position, Location, ScriptOrSourceOrURLOrURLRegexp, createLocation, LocationInScript } from './location';
 import { IScript } from '../scripts/script';
 import { createColumnNumber, createLineNumber, LineNumber, ColumnNumber } from './subtypes';
+import { IFutureScript } from '../scripts/IFutureScript';
 
 export class Range {
     public constructor(
@@ -88,3 +89,4 @@ export class RangeInResource<TResource extends ScriptOrSourceOrURLOrURLRegexp> {
 }
 
 export type RangeInScript = RangeInResource<IScript>;
+export type RangeInFutureScript = RangeInResource<IFutureScript>;
