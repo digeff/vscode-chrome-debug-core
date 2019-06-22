@@ -26,6 +26,7 @@ import { SourceMap } from '../../../sourceMaps/sourceMap';
 import { BasePathTransformer } from '../../../transformers/basePathTransformer';
 import { BaseSourceMapTransformer } from '../../../transformers/baseSourceMapTransformer';
 import { isNotEmpty, isNotNull } from '../../utils/typedOperators';
+import { ICDTPEventHandlerTracker } from '../infrastructure/cdtpEventHandlerTracker';
 
 /**
  * A new JavaScript Script has been parsed by the debuggee and it's about to be executed
@@ -88,7 +89,7 @@ export interface IScriptParsedProvider {
     onScriptParsed(listener: (event: IScriptParsedEvent) => void): void;
 }
 
-export class CDTPOnScriptParsedEventProvider extends CDTPEventsEmitterDiagnosticsModule<CDTP.DebuggerApi, void, CDTP.Debugger.EnableResponse> implements IScriptParsedProvider {
+export class CDTPOnScriptParsedEventProvider extends CDTPEventsEmitterDiagnosticsModule<CDTP.DebuggerApi, CDTP.Debugger.ScriptParsedEvent, void, CDTP.Debugger.EnableResponse> implements IScriptParsedProvider {
     protected readonly api = this._protocolApi.Debugger;
 
     public onScriptParsed = this.addApiListener('scriptParsed', async (params: CDTP.Debugger.ScriptParsedEvent) => {
@@ -103,10 +104,11 @@ export class CDTPOnScriptParsedEventProvider extends CDTPEventsEmitterDiagnostic
         @inject(TYPES.BasePathTransformer) private readonly _pathTransformer: BasePathTransformer,
         @inject(TYPES.BaseSourceMapTransformer) private readonly _sourceMapTransformer: BaseSourceMapTransformer,
         @inject(TYPES.CDTPScriptsRegistry) private readonly _scriptsRegistry: CDTPScriptsRegistry,
-        @inject(TYPES.IDomainsEnabler) domainsEnabler: CDTPDomainsEnabler,
+        @inject(TYPES.ICDTPEventHandlerTracker) protected readonly _eventHandlerTracker: ICDTPEventHandlerTracker,
+        @inject(TYPES.IDomainsEnabler) protected readonly _domainsEnabler: CDTPDomainsEnabler,
         @inject(LoadedSourcesRegistry) private readonly _loadedSourcesRegistry: LoadedSourcesRegistry,
     ) {
-        super(domainsEnabler);
+        super();
     }
 
     private async toScriptParsedEvent(params: CDTP.Debugger.ScriptParsedEvent): Promise<IScriptParsedEvent> {

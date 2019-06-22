@@ -10,6 +10,7 @@ import { TYPES } from '../../dependencyInjection.ts/types';
 import { LocationInScript } from '../../internal/locations/location';
 import { CDTPEnableableDiagnosticsModule } from '../infrastructure/cdtpDiagnosticsModule';
 import { CDTPDomainsEnabler } from '../infrastructure/cdtpDomainsEnabler';
+import { CDTPEventHandlerTracker } from '../infrastructure/cdtpEventHandlerTracker';
 
 export interface IBlackboxPatternsConfigurer {
     setBlackboxPatterns(params: CDTP.Debugger.SetBlackboxPatternsRequest): Promise<void>;
@@ -17,14 +18,15 @@ export interface IBlackboxPatternsConfigurer {
 }
 
 @injectable()
-export class CDTPBlackboxPatternsConfigurer extends CDTPEnableableDiagnosticsModule<CDTP.DebuggerApi, void, CDTP.Debugger.EnableResponse> implements IBlackboxPatternsConfigurer {
+export class CDTPBlackboxPatternsConfigurer extends CDTPEnableableDiagnosticsModule<CDTP.DebuggerApi, CDTP.Debugger.ScriptParsedEvent, void, CDTP.Debugger.EnableResponse> implements IBlackboxPatternsConfigurer {
     protected readonly api = this._protocolApi.Debugger;
 
     constructor(
         @inject(TYPES.CDTPClient) private readonly _protocolApi: CDTP.ProtocolApi,
         @inject(TYPES.CDTPScriptsRegistry) private readonly _scriptsRegistry: CDTPScriptsRegistry,
-        @inject(TYPES.IDomainsEnabler) domainsEnabler: CDTPDomainsEnabler) {
-        super(domainsEnabler);
+        @inject(TYPES.ICDTPEventHandlerTracker) protected readonly _eventHandlerTracker: CDTPEventHandlerTracker,
+        @inject(TYPES.IDomainsEnabler) protected readonly _domainsEnabler: CDTPDomainsEnabler) {
+        super();
     }
 
     public async setBlackboxedRanges(script: IScript, positions: LocationInScript[]): Promise<void> {

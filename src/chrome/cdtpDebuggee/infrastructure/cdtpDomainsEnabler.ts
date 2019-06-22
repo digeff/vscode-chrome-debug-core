@@ -12,14 +12,14 @@ import { ValidatedMap } from '../../collections/validatedMap';
 import * as _ from 'lodash';
 
 export interface IDomainsEnabler {
-    registerToEnable<T extends IEnableableApi<EnableParameters, EnableResponse>, EnableParameters, EnableResponse>
+    registerToEnable<T extends IEnableableApi<E, EnableParameters, EnableResponse>, E, EnableParameters, EnableResponse>
         (api: T, parameters: EnableParameters): Promise<EnableResponse>;
 
     enableDomains(): Promise<void>;
 }
 
 interface IState {
-    registerToEnable<T extends IEnableableApi<EnableParameters, EnableResponse>, EnableParameters, EnableResponse>
+    registerToEnable<T extends IEnableableApi<E, EnableParameters, EnableResponse>, E, EnableParameters, EnableResponse>
         (api: T, parameters: EnableParameters): Promise<EnableResponse>;
     enableDomains(): Promise<IState>;
 }
@@ -33,7 +33,7 @@ class EnableDomainFunctionAndResultPromise<EnableResponse> {
 }
 
 class GatheringDomainsToEnableDuringStartup implements IState {
-    private readonly _registeredDomains = new ValidatedMap<IEnableableApi<unknown, unknown>, EnableDomainFunctionAndResultPromise<any>>();
+    private readonly _registeredDomains = new ValidatedMap<IEnableableApi<unknown, unknown, unknown>, EnableDomainFunctionAndResultPromise<any>>();
 
     constructor(@inject(TYPES.CDTPClient) protected readonly protocolApi: CDTP.ProtocolApi) { }
 
@@ -43,7 +43,7 @@ class GatheringDomainsToEnableDuringStartup implements IState {
         return new DomainsAlreadyEnabledAfterStartup();
     }
 
-    public async executeEnable(domain: IEnableableApi<unknown, unknown>, extras: EnableDomainFunctionAndResultPromise<any>): Promise<void> {
+    public async executeEnable(domain: IEnableableApi<unknown, unknown, unknown>, extras: EnableDomainFunctionAndResultPromise<any>): Promise<void> {
         await this.verifyPrerequisitesAreMet(domain);
 
         try {
@@ -53,14 +53,14 @@ class GatheringDomainsToEnableDuringStartup implements IState {
         }
     }
 
-    public async verifyPrerequisitesAreMet(domain: IEnableableApi<unknown, unknown>): Promise<void> {
+    public async verifyPrerequisitesAreMet(domain: IEnableableApi<unknown, unknown, unknown>): Promise<void> {
         if (domain !== this.protocolApi.Runtime) {
             // TODO: For the time being we assume that all domains require the Runtime domain to be enabled. Figure out if this can be improved
             await this._registeredDomains.get(this.protocolApi.Runtime).defer.promise;
         }
     }
 
-    public async registerToEnable<T extends IEnableableApi<EnableParameters, EnableResponse>, EnableParameters, EnableResponse>
+    public async registerToEnable<T extends IEnableableApi<E, EnableParameters, EnableResponse>, E, EnableParameters, EnableResponse>
         (api: T, parameters: EnableParameters): Promise<EnableResponse> {
         const enableDomain = () => api.enable(parameters);
 
@@ -74,7 +74,7 @@ class GatheringDomainsToEnableDuringStartup implements IState {
         return await entry.defer.promise;
     }
 
-    private getDomainName(api: IEnableableApi<unknown, unknown>): string {
+    private getDomainName(api: IEnableableApi<unknown, unknown, unknown>): string {
         const name = _.findKey(this.protocolApi, api);
         if (name !== undefined) {
             return name;
@@ -85,7 +85,7 @@ class GatheringDomainsToEnableDuringStartup implements IState {
 }
 
 class DomainsAlreadyEnabledAfterStartup implements IState {
-    public registerToEnable<T extends IEnableableApi<EnableParameters, EnableResponse>, EnableParameters, EnableResponse>
+    public registerToEnable<T extends IEnableableApi<E, EnableParameters, EnableResponse>, E, EnableParameters, EnableResponse>
         (api: T, parameters: EnableParameters): Promise<EnableResponse> {
         return api.enable(parameters);
     }
@@ -101,7 +101,7 @@ export class CDTPDomainsEnabler implements IDomainsEnabler {
 
     constructor(@inject(TYPES.CDTPClient) private readonly _protocolApi: CDTP.ProtocolApi) { }
 
-    public registerToEnable<T extends IEnableableApi<EnableParameters, EnableResponse>, EnableParameters, EnableResponse>
+    public registerToEnable<T extends IEnableableApi<E, EnableParameters, EnableResponse>, E, EnableParameters, EnableResponse>
         (api: T, parameters?: EnableParameters): Promise<EnableResponse> {
         return this._state.registerToEnable(api, parameters);
     }

@@ -14,6 +14,7 @@ import { IScript } from '../../internal/scripts/script';
 import { CodeFlowStackTrace } from '../../internal/stackTraces/codeFlowStackTrace';
 import { CDTPDomainsEnabler } from '../infrastructure/cdtpDomainsEnabler';
 import { isDefined, isNotEmpty } from '../../utils/typedOperators';
+import { ICDTPEventHandlerTracker } from '../infrastructure/cdtpEventHandlerTracker';
 
 export interface IExceptionThrownEvent {
     readonly timestamp: CDTP.Runtime.Timestamp;
@@ -37,7 +38,7 @@ export interface IExceptionThrownEventProvider {
 }
 
 @injectable()
-export class CDTPExceptionThrownEventsProvider extends CDTPEventsEmitterDiagnosticsModule<CDTP.RuntimeApi> implements IExceptionThrownEventProvider {
+export class CDTPExceptionThrownEventsProvider extends CDTPEventsEmitterDiagnosticsModule<CDTP.RuntimeApi, CDTP.Runtime.ExceptionThrownEvent> implements IExceptionThrownEventProvider {
     protected readonly api = this.protocolApi.Runtime;
 
     private readonly _stackTraceParser = new CDTPStackTraceParser(this._scriptsRegistry);
@@ -51,9 +52,10 @@ export class CDTPExceptionThrownEventsProvider extends CDTPEventsEmitterDiagnost
     constructor(
         @inject(TYPES.CDTPClient) private readonly protocolApi: CDTP.ProtocolApi,
         @inject(TYPES.CDTPScriptsRegistry) private _scriptsRegistry: CDTPScriptsRegistry,
-        @inject(TYPES.IDomainsEnabler) domainsEnabler: CDTPDomainsEnabler,
+        @inject(TYPES.ICDTPEventHandlerTracker) protected readonly _eventHandlerTracker: ICDTPEventHandlerTracker,
+        @inject(TYPES.IDomainsEnabler) protected readonly _domainsEnabler: CDTPDomainsEnabler
     ) {
-        super(domainsEnabler);
+        super();
     }
 
     private async toExceptionDetails(exceptionDetails: CDTP.Runtime.ExceptionDetails): Promise<IExceptionDetails> {

@@ -24,6 +24,7 @@ import { MappableBreakpoint, ActualLocation } from '../../internal/breakpoints/b
 import { BPRecipeInScript, BPRecipeInUrl, BPRecipeInUrlRegexp, IBPRecipeForRuntimeSource } from '../../internal/breakpoints/baseMappedBPRecipe';
 import { ConditionalPause } from '../../internal/breakpoints/bpActionWhenHit';
 import { singleElementOfArray } from '../../collections/utilities';
+import { ICDTPEventHandlerTracker } from '../infrastructure/cdtpEventHandlerTracker';
 
 export enum Synchronicity {
     Sync,
@@ -54,7 +55,7 @@ export interface IDebuggeeBreakpointsSetter {
 }
 
 @injectable()
-export class CDTPDebuggeeBreakpointsSetter extends CDTPEventsEmitterDiagnosticsModule<CDTP.DebuggerApi, void, CDTP.Debugger.EnableResponse> implements IDebuggeeBreakpointsSetter {
+export class CDTPDebuggeeBreakpointsSetter extends CDTPEventsEmitterDiagnosticsModule<CDTP.DebuggerApi, CDTP.Debugger.BreakpointResolvedEvent, void, CDTP.Debugger.EnableResponse> implements IDebuggeeBreakpointsSetter {
     protected readonly api = this.protocolApi.Debugger;
 
     private readonly _cdtpLocationParser = new CDTPLocationParser(this._scriptsRegistry);
@@ -72,9 +73,10 @@ export class CDTPDebuggeeBreakpointsSetter extends CDTPEventsEmitterDiagnosticsM
         @inject(TYPES.CDTPClient) protected readonly protocolApi: CDTP.ProtocolApi,
         private readonly _breakpointIdRegistry: CDTPBreakpointIdsRegistry,
         @inject(TYPES.CDTPScriptsRegistry) private readonly _scriptsRegistry: CDTPScriptsRegistry,
-        @inject(TYPES.IDomainsEnabler) domainsEnabler: CDTPDomainsEnabler,
+        @inject(TYPES.ICDTPEventHandlerTracker) protected readonly _eventHandlerTracker: ICDTPEventHandlerTracker,
+        @inject(TYPES.IDomainsEnabler) protected readonly _domainsEnabler: CDTPDomainsEnabler,
     ) {
-        super(domainsEnabler);
+        super();
         this.onBreakpointResolvedAsync(bp => this.onBreakpointResolvedSyncOrAsyncListeners.call(new BPRecipeWasResolved(bp, Synchronicity.Async)));
         this.onBreakpointResolvedSyncOrAsyncListeners.add(bpRecipeWasResolved => {
             const eventsConsumer = this._breakpointIdRegistry.getEventsConsumer(bpRecipeWasResolved.breakpoint.recipe);

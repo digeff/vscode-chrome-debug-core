@@ -10,9 +10,10 @@ import { CDTPScriptsRegistry } from '../registries/cdtpScriptsRegistry';
 import { TYPES } from '../../dependencyInjection.ts/types';
 import { CDTPDomainsEnabler } from '../infrastructure/cdtpDomainsEnabler';
 import { FrameId } from '../cdtpPrimitives';
+import { ICDTPEventHandlerTracker } from '../infrastructure/cdtpEventHandlerTracker';
 
 @injectable()
-export class CDTPExecutionContextEventsProvider extends CDTPEventsEmitterDiagnosticsModule<CDTP.RuntimeApi> {
+export class CDTPExecutionContextEventsProvider extends CDTPEventsEmitterDiagnosticsModule<CDTP.RuntimeApi, CDTP.Runtime.ExecutionContextCreatedEvent> {
     protected readonly api = this._protocolApi.Runtime;
 
     public readonly onExecutionContextsCleared = this.addApiListener('executionContextsCleared', (params: void) => params);
@@ -26,8 +27,9 @@ export class CDTPExecutionContextEventsProvider extends CDTPEventsEmitterDiagnos
     constructor(
         @inject(TYPES.CDTPClient) private readonly _protocolApi: CDTP.ProtocolApi,
         @inject(TYPES.CDTPScriptsRegistry) private readonly _scriptsRegistry: CDTPScriptsRegistry,
-        @inject(TYPES.IDomainsEnabler) domainsEnabler: CDTPDomainsEnabler,
+        @inject(TYPES.ICDTPEventHandlerTracker) protected readonly _eventHandlerTracker: ICDTPEventHandlerTracker,
+        @inject(TYPES.IDomainsEnabler) protected readonly _domainsEnabler: CDTPDomainsEnabler
     ) {
-        super(domainsEnabler);
+        super();
     }
 }

@@ -13,6 +13,7 @@ import { inject } from 'inversify';
 import { CDTPScriptsRegistry } from '../registries/cdtpScriptsRegistry';
 import { CDTPDomainsEnabler } from '../infrastructure/cdtpDomainsEnabler';
 import { isDefined } from '../../utils/typedOperators';
+import { CDTPEventHandlerTracker } from '../infrastructure/cdtpEventHandlerTracker';
 
 export type LogEntrySource = 'xml' | 'javascript' | 'network' | 'storage' | 'appcache' | 'rendering' | 'security' | 'deprecation' | 'worker' | 'violation' | 'intervention' | 'recommendation' | 'other';
 export type LogLevel = 'verbose' | 'info' | 'warning' | 'error';
@@ -34,7 +35,7 @@ export interface ILogEventsProvider {
     onEntryAdded(listener: (entry: ILogEntry) => void): void;
 }
 
-export class CDTPLogEventsProvider extends CDTPEventsEmitterDiagnosticsModule<CDTP.LogApi> implements ILogEventsProvider {
+export class CDTPLogEventsProvider extends CDTPEventsEmitterDiagnosticsModule<CDTP.LogApi, CDTP.Log.EntryAddedEvent> implements ILogEventsProvider {
     protected readonly api = this._protocolApi.Log;
 
     private readonly _stackTraceParser = new CDTPStackTraceParser(this._scriptsRegistry);
@@ -44,9 +45,10 @@ export class CDTPLogEventsProvider extends CDTPEventsEmitterDiagnosticsModule<CD
     constructor(
         @inject(TYPES.CDTPClient) private readonly _protocolApi: CDTP.ProtocolApi,
         @inject(TYPES.CDTPScriptsRegistry) private _scriptsRegistry: CDTPScriptsRegistry,
-        @inject(TYPES.IDomainsEnabler) domainsEnabler: CDTPDomainsEnabler,
+        @inject(TYPES.ICDTPEventHandlerTracker) protected readonly _eventHandlerTracker: CDTPEventHandlerTracker,
+        @inject(TYPES.IDomainsEnabler) protected readonly _domainsEnabler: CDTPDomainsEnabler,
     ) {
-        super(domainsEnabler);
+        super();
     }
 
     private async toLogEntry(entry: CDTP.Log.LogEntry): Promise<ILogEntry> {

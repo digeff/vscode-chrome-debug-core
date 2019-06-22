@@ -7,6 +7,7 @@ import { Protocol as CDTP } from 'devtools-protocol';
 import { TYPES } from '../../dependencyInjection.ts/types';
 import { inject } from 'inversify';
 import { CDTPDomainsEnabler } from '../infrastructure/cdtpDomainsEnabler';
+import { ICDTPEventHandlerTracker } from '../infrastructure/cdtpEventHandlerTracker';
 
 export interface IPausedOverlayConfigurer {
     setPausedInDebuggerMessage(params: CDTP.Overlay.SetPausedInDebuggerMessageRequest): Promise<void>;
@@ -15,13 +16,14 @@ export interface IPausedOverlayConfigurer {
 /**
  * TODO: Move this to a browser shared package
  */
-export class CDTPPausedOverlayConfigurer extends CDTPEnableableDiagnosticsModule<CDTP.OverlayApi> implements IPausedOverlayConfigurer {
+export class CDTPPausedOverlayConfigurer extends CDTPEnableableDiagnosticsModule<CDTP.OverlayApi, CDTP.Overlay.InspectNodeRequestedEvent> implements IPausedOverlayConfigurer {
     protected readonly api = this._protocolApi.Overlay;
 
     constructor(
         @inject(TYPES.CDTPClient) private readonly _protocolApi: CDTP.ProtocolApi,
-        @inject(TYPES.IDomainsEnabler) domainsEnabler: CDTPDomainsEnabler, ) {
-        super(domainsEnabler);
+        @inject(TYPES.ICDTPEventHandlerTracker) protected readonly _eventHandlerTracker: ICDTPEventHandlerTracker,
+        @inject(TYPES.IDomainsEnabler) protected readonly _domainsEnabler: CDTPDomainsEnabler) {
+        super();
     }
 
     public setPausedInDebuggerMessage(params: CDTP.Overlay.SetPausedInDebuggerMessageRequest): Promise<void> {

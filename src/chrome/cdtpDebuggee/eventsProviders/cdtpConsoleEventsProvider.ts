@@ -11,6 +11,7 @@ import { TYPES } from '../../dependencyInjection.ts/types';
 import { CDTPScriptsRegistry } from '../registries/cdtpScriptsRegistry';
 import { CDTPDomainsEnabler } from '../infrastructure/cdtpDomainsEnabler';
 import { isDefined } from '../../utils/typedOperators';
+import { ICDTPEventHandlerTracker } from '../infrastructure/cdtpEventHandlerTracker';
 
 export type ConsoleAPIEventType = 'log' | 'debug' | 'info' | 'error' | 'warning' | 'dir' | 'dirxml' | 'table' | 'trace' | 'clear' | 'startGroup' | 'startGroupCollapsed' | 'endGroup' | 'assert' | 'profile' | 'profileEnd' | 'count' | 'timeEnd';
 
@@ -31,19 +32,20 @@ export interface IConsoleEventsProvider {
     onConsoleAPICalled(listener: onConsoleAPICalled): void;
 }
 
-class CDTPConsoleEventsFromConsoleProvider extends CDTPEventsEmitterDiagnosticsModule<CDTP.ConsoleApi>  {
+class CDTPConsoleEventsFromConsoleProvider extends CDTPEventsEmitterDiagnosticsModule<CDTP.ConsoleApi, CDTP.Console.MessageAddedEvent>  {
     protected readonly api = this._protocolApi.Console;
 
     public readonly onMessageAdded = this.addApiListener('messageAdded', (params: CDTP.Console.MessageAddedEvent) => params);
 
     constructor(
         private readonly _protocolApi: CDTP.ProtocolApi,
-        domainsEnabler: CDTPDomainsEnabler) {
-        super(domainsEnabler);
+        @inject(TYPES.ICDTPEventHandlerTracker) protected readonly _eventHandlerTracker: ICDTPEventHandlerTracker,
+        @inject(TYPES.IDomainsEnabler) protected readonly _domainsEnabler: CDTPDomainsEnabler) {
+        super();
     }
 }
 
-class CDTPConsoleEventsFromRuntimeProvider extends CDTPEventsEmitterDiagnosticsModule<CDTP.RuntimeApi> {
+class CDTPConsoleEventsFromRuntimeProvider extends CDTPEventsEmitterDiagnosticsModule<CDTP.RuntimeApi, CDTP.Runtime.ConsoleAPICalledEvent> {
     protected readonly api = this._protocolApi.Runtime;
     private readonly _stackTraceParser = new CDTPStackTraceParser(this._scriptsRegistry);
 
@@ -60,21 +62,23 @@ class CDTPConsoleEventsFromRuntimeProvider extends CDTPEventsEmitterDiagnosticsM
     constructor(
         private readonly _protocolApi: CDTP.ProtocolApi,
         @inject(TYPES.CDTPScriptsRegistry) private _scriptsRegistry: CDTPScriptsRegistry,
-        domainsEnabler: CDTPDomainsEnabler,
+        @inject(TYPES.ICDTPEventHandlerTracker) protected readonly _eventHandlerTracker: ICDTPEventHandlerTracker,
+        @inject(TYPES.IDomainsEnabler) protected readonly _domainsEnabler: CDTPDomainsEnabler,
     ) {
-        super(domainsEnabler);
+        super();
     }
 }
 
 @injectable()
 export class CDTPConsoleEventsProvider implements IConsoleEventsProvider {
-    private readonly _consoleEventsFromConsoleProvider = new CDTPConsoleEventsFromConsoleProvider(this._protocolApi, this._domainsEnabler);
-    private readonly _consoleEventsFromRuntimeProvider = new CDTPConsoleEventsFromRuntimeProvider(this._protocolApi, this._scriptsRegistry, this._domainsEnabler);
+    private readonly _consoleEventsFromConsoleProvider = new CDTPConsoleEventsFromConsoleProvider(this._protocolApi, this._eventHandlerTracker, this._domainsEnabler);
+    private readonly _consoleEventsFromRuntimeProvider = new CDTPConsoleEventsFromRuntimeProvider(this._protocolApi, this._scriptsRegistry, this._eventHandlerTracker, this._domainsEnabler);
 
     constructor(
         @inject(TYPES.CDTPClient) private readonly _protocolApi: CDTP.ProtocolApi,
         @inject(TYPES.CDTPScriptsRegistry) private _scriptsRegistry: CDTPScriptsRegistry,
-        @inject(TYPES.IDomainsEnabler) private readonly _domainsEnabler: CDTPDomainsEnabler,
+        @inject(TYPES.ICDTPEventHandlerTracker) protected readonly _eventHandlerTracker: ICDTPEventHandlerTracker,
+        @inject(TYPES.IDomainsEnabler) protected readonly _domainsEnabler: CDTPDomainsEnabler,
     ) {
     }
 

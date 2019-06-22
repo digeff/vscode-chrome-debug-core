@@ -21,6 +21,7 @@ import { CDTPDomainsEnabler } from '../infrastructure/cdtpDomainsEnabler';
 import { CDTPBPRecipe, validateNonPrimitiveRemoteObject } from '../cdtpPrimitives';
 import * as _ from 'lodash';
 import { isDefined } from '../../utils/typedOperators';
+import { ICDTPEventHandlerTracker } from '../infrastructure/cdtpEventHandlerTracker';
 
 export type PauseEventReason = 'XHR' | 'DOM' | 'EventListener' | 'exception' | 'assert' | 'debugCommand' | 'promiseRejection' | 'OOM' | 'other' | 'ambiguous';
 
@@ -45,7 +46,7 @@ export interface ICDTPDebuggeeExecutionEventsProvider {
 }
 
 @injectable()
-export class CDTPDebuggeeExecutionEventsProvider extends CDTPEventsEmitterDiagnosticsModule<CDTP.DebuggerApi, void, CDTP.Debugger.EnableResponse> implements ICDTPDebuggeeExecutionEventsProvider {
+export class CDTPDebuggeeExecutionEventsProvider extends CDTPEventsEmitterDiagnosticsModule<CDTP.DebuggerApi, CDTP.Debugger.PausedEvent, void, CDTP.Debugger.EnableResponse> implements ICDTPDebuggeeExecutionEventsProvider {
     protected readonly api = this._protocolApi.Debugger;
 
     private readonly _cdtpLocationParser = new CDTPLocationParser(this._scriptsRegistry);
@@ -72,9 +73,10 @@ export class CDTPDebuggeeExecutionEventsProvider extends CDTPEventsEmitterDiagno
         @inject(TYPES.CDTPScriptsRegistry) private _scriptsRegistry: CDTPScriptsRegistry,
         private readonly _breakpointIdRegistry: CDTPBreakpointIdsRegistry,
         private readonly _callFrameRegistry: CDTPCallFrameRegistry,
-        @inject(TYPES.IDomainsEnabler) domainsEnabler: CDTPDomainsEnabler,
+        @inject(TYPES.ICDTPEventHandlerTracker) protected readonly _eventHandlerTracker: ICDTPEventHandlerTracker,
+        @inject(TYPES.IDomainsEnabler) protected readonly _domainsEnabler: CDTPDomainsEnabler
     ) {
-        super(domainsEnabler);
+        super();
     }
 
     private getBPFromID(hitBreakpoint: CDTP.Debugger.BreakpointId): CDTPBPRecipe {

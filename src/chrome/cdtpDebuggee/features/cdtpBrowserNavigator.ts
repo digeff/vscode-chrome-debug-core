@@ -8,6 +8,7 @@ import { injectable, inject } from 'inversify';
 import { TYPES } from '../../dependencyInjection.ts/types';
 import { CDTPEventsEmitterDiagnosticsModule } from '../infrastructure/cdtpDiagnosticsModule';
 import { CDTPDomainsEnabler } from '../infrastructure/cdtpDomainsEnabler';
+import { ICDTPEventHandlerTracker } from '../infrastructure/cdtpEventHandlerTracker';
 
 export interface IBrowserNavigator {
     navigate(params: CDTP.Page.NavigateRequest): Promise<CDTP.Page.NavigateResponse>;
@@ -16,7 +17,7 @@ export interface IBrowserNavigator {
 }
 
 @injectable()
-export class CDTPBrowserNavigator extends CDTPEventsEmitterDiagnosticsModule<CDTP.PageApi> implements IBrowserNavigator {
+export class CDTPBrowserNavigator extends CDTPEventsEmitterDiagnosticsModule<CDTP.PageApi, CDTP.Page.FrameNavigatedEvent> implements IBrowserNavigator {
     protected api = this._protocolApi.Page;
 
     public readonly onFrameNavigated = this.addApiListener('frameNavigated', (params: CDTP.Page.FrameNavigatedEvent) => params);
@@ -24,9 +25,10 @@ export class CDTPBrowserNavigator extends CDTPEventsEmitterDiagnosticsModule<CDT
     constructor(
         @inject(TYPES.CDTPClient)
         protected _protocolApi: CDTP.ProtocolApi,
-        @inject(TYPES.IDomainsEnabler) domainsEnabler: CDTPDomainsEnabler,
+        @inject(TYPES.ICDTPEventHandlerTracker) protected readonly _eventHandlerTracker: ICDTPEventHandlerTracker,
+        @inject(TYPES.IDomainsEnabler) protected readonly _domainsEnabler: CDTPDomainsEnabler
     ) {
-        super(domainsEnabler);
+        super();
     }
 
     public navigate(params: CDTP.Page.NavigateRequest): Promise<CDTP.Page.NavigateResponse> {
