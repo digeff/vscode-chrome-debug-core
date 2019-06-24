@@ -32,6 +32,11 @@ export class LoadedSourcesRegistry implements ICurrentScriptRelationshipsProvide
         return new ScriptMapper(Array.from(this._loadedSourceToCurrentScriptRelationships.get(loadedSource)));
     }
 
+    // After we refresh the page, we discard all relationships to scripts
+    public clearAllRelationships(): void {
+        this._loadedSourceToCurrentScriptRelationships.clear();
+    }
+
     public toString(): string {
         return `Loaded sources: ${this._loadedSourceByPath}\nRelationships:\n${this._loadedSourceToCurrentScriptRelationships}`;
     }

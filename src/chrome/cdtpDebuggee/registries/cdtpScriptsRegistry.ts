@@ -21,7 +21,7 @@ import { printMap } from '../../collections/printing';
 @injectable()
 export class CDTPScriptsRegistry {
     private readonly _idToExecutionContext = new ValidatedMap<CDTP.Runtime.ExecutionContextId, ExecutionContext>();
-    private readonly _scripts = new CDTPCurrentGeneration();
+    private _scripts = new CDTPCurrentGeneration();
 
     public registerExecutionContext(executionContextId: CDTP.Runtime.ExecutionContextId, frameId: FrameId): IExecutionContext {
         const executionContext = new ExecutionContext(frameId);
@@ -58,6 +58,11 @@ export class CDTPScriptsRegistry {
 
     public getScriptsByPath(nameOrLocation: IResourceIdentifier): IScript[] {
         return this._scripts.getScriptByPath(nameOrLocation);
+    }
+
+    // After we refresh the page, we discard all information about scripts
+    public clearExecutionContexts(): void {
+        this._scripts = new CDTPCurrentGeneration();
     }
 
     public toString(): string {
