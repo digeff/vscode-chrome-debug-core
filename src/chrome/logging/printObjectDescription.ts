@@ -1,5 +1,11 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ *--------------------------------------------------------*/
+
 import * as _ from 'lodash';
 import { isNotEmpty } from '../utils/typedOperators';
+import { logger } from 'vscode-debugadapter';
+import { isJSONSerializable } from './isJSONObject';
 
 export function printTopLevelObjectDescription(objectToPrint: unknown) {
     return printObjectDescription(objectToPrint, printFirstLevelProperties);
@@ -24,7 +30,7 @@ export function printObjectDescription(objectToPrint: unknown, fallbackPrintDesc
                 const toString = objectToPrint.toString();
                 if (toString !== '[object Object]') {
                     printed = toString;
-                } else if (isJSONObject(objectToPrint)) {
+                } else if (isJSONSerializable(objectToPrint)) {
                     printed = JSON.stringify(objectToPrint);
                 } else if (objectToPrint.constructor === Object) {
                     printed = fallbackPrintDescription(objectToPrint);
@@ -48,16 +54,8 @@ export function printObjectDescription(objectToPrint: unknown, fallbackPrintDesc
         printed = `${objectToPrint}`;
     }
 
+    logger.log('DIEGO');
     return printed;
-}
-
-function isJSONObject(objectToPrint: any): boolean {
-    if (objectToPrint.constructor === Object) {
-        const values = _.values(objectToPrint);
-        return values.every(value => !value || value.constructor === Object);
-    } else {
-        return false;
-    }
 }
 
 function printFirstLevelProperties(objectToPrint: any): string {

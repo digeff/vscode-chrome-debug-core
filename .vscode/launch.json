@@ -98,7 +98,7 @@
                 "methodsCalledLogger.ts",
                 "next_tick.js",
                 "inspector_async_hook.js",
-                "printObjectDescription.js",
+                // "printObjectDescription.js",
                 "lodash.js",
                 "listeners.ts"
             ]
