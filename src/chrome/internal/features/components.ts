@@ -35,6 +35,10 @@ export class CommandHandlerDeclaration implements ICommandHandlerDeclaration {
     public static fromLiteralObject(mappings: RequestHandlerMappings): CommandHandlerDeclaration[] {
         return Object.keys(mappings).map(requestName => new CommandHandlerDeclaration(<CommandText>requestName, mappings[requestName]));
     }
+
+    public toString(): string {
+        return `Handler for ${this.commandName}`;
+    }
 }
 
 export interface ICommandHandlerDeclarer {

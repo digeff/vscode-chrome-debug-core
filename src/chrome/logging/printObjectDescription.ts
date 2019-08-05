@@ -6,6 +6,7 @@ import * as _ from 'lodash';
 import { isNotEmpty } from '../utils/typedOperators';
 import { logger } from 'vscode-debugadapter';
 import { isJSONSerializable } from './isJSONObject';
+import { breakWhileDebugging } from '../../validation';
 
 export function printTopLevelObjectDescription(objectToPrint: unknown) {
     return printObjectDescription(objectToPrint, printFirstLevelProperties);
@@ -35,8 +36,20 @@ export function printObjectDescription(objectToPrint: unknown, fallbackPrintDesc
                 } else if (objectToPrint.constructor === Object) {
                     printed = fallbackPrintDescription(objectToPrint);
                 } else {
-                    printed = `a ${objectToPrint.constructor.name}`;
-                }
+                    try {
+                        printed = JSON.stringify(objectToPrint);
+                    } catch (exception) {
+                        if (exception.message !== 'Converting circular structure to JSON') {
+                            breakWhileDebugging(); // Unexpected. TODO: Do something
+                        }
+
+                        if (objectToPrint.constructor === Object) {
+                            printed = fallbackPrintDescription(objectToPrint);
+                        } else {
+                            printed = `a ${objectToPrint.constructor.name}`;
+                        }
+                    }
+               }
             }
         }
     } else if (typeof objectToPrint === 'function') {
