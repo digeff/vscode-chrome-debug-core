@@ -6,6 +6,7 @@ import { IResourceIdentifier } from './resourceIdentifier';
 import { ILoadedSource } from './loadedSource';
 import { SourceResolver } from './sourceResolver';
 import { IEquivalenceComparable } from '../../utils/equivalence';
+import { inspect } from 'util';
 
 /**
  * VS Code debug protocol sends breakpoint requests with a path?: string; or sourceReference?: number; Before we can use the path, we need to wait for the related script to be loaded so we can match it with a script id.
@@ -49,10 +50,10 @@ export class SourceToBeResolvedViaPath extends BaseSource implements ISource {
     }
 
     public [inspect.custom](): string {
-        return this.toString(inspect);
+        return this.toString();
     }
 
-    public toString(print = (value: unknown) => `${value}`): string {
+    public toString(): string {
         return `${this.sourceIdentifier}`;
     }
 }
@@ -78,6 +79,6 @@ export class SourceAlreadyResolvedToLoadedSource extends BaseSource implements I
     }
 
     public toString(print = (value: unknown) => `${value}`): string {
-        return `${this.loadedSource}`;
+        return print(this.loadedSource);
     }
 }

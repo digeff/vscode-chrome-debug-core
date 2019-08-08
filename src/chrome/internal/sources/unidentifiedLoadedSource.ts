@@ -52,10 +52,10 @@ export class UnidentifiedLoadedSource implements ILoadedSource<CDTPScriptUrl> {
     }
 
     public [inspect.custom](): string {
-        return this.toString(inspect);
+        return this.toString();
     }
 
-    public toString(print = (value: unknown) => `${value}`): string {
+    public toString(): string {
         return `No URL script source with id: ${this.name}`;
     }
 }
@@ -81,10 +81,10 @@ export class CurrentUnidentifiedSourceScriptRelationships implements IScriptMapp
     }
 
     public [inspect.custom](): string {
-        return this.toString(inspect);
+        return this.toString();
     }
 
-    public toString(print = (value: unknown) => `${value}`): string {
+    public toString(): string {
         return `This unidentified source is it's own runtime and development script`;
     }
 }

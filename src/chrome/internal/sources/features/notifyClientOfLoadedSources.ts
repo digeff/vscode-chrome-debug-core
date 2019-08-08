@@ -83,10 +83,10 @@ export class NotifyClientOfLoadedSources implements IServiceComponent {
     }
 
     public [inspect.custom](): string {
-        return this.toString(inspect);
+        return this.toString();
     }
 
-    public toString(print = (value: unknown) => `${value}`): string {
+    public toString(): string {
         return 'NotifyClientOfLoadedSources';
     }
 }

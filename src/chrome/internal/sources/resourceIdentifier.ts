@@ -72,10 +72,10 @@ abstract class IsEquivalentAndConstructorCommonLogic<TString extends string = st
     }
 
     public [inspect.custom](): string {
-        return this.toString(inspect);
+        return this.toString();
     }
 
-    public toString(print = (value: unknown) => `${value}`): string {
+    public toString(): string {
         return `${this.textRepresentation}`;
     }
 }
@@ -121,10 +121,10 @@ export class LocalFileURL<TString extends string = string> extends IsEquivalentC
     }
 
     public [inspect.custom](): string {
-        return this.toString(inspect);
+        return this.toString();
     }
 
-    public toString(print = (value: unknown) => `${value}`): string {
+    public toString(): string {
         return path.basename(this.textRepresentation);
     }
 }
@@ -134,10 +134,10 @@ export class NonLocalFileURL<TString extends string = string> extends IsEquivale
     [ImplementsResourceIdentifier]: void;
 
     public [inspect.custom](): string {
-        return this.toString(inspect);
+        return this.toString();
     }
 
-    public toString(print = (value: unknown) => `${value}`): string {
+    public toString(): string {
         return path.basename(this.textRepresentation);
     }
 }
@@ -166,10 +166,10 @@ abstract class LocalFilePathCommonLogic<TString extends string = string> extends
     protected abstract generateCanonicalized(): string;
 
     public [inspect.custom](): string {
-        return this.toString(inspect);
+        return this.toString();
     }
 
-    public toString(print = (value: unknown) => `${value}`): string {
+    public toString(): string {
         return localize('resourceIdentifier.resourcePrefix', 'res:{0}', this.textRepresentation);
     }
 }

@@ -28,7 +28,7 @@ export class UnmappedSourceOf extends BaseLoadedSourceToScriptRelationship {
     }
 
     public toString(print = (value: unknown) => `${value}`): string {
-        return `${this.runtimeSource} is runtime source of ${this.script}`;
+        return `${print(this.runtimeSource)} is runtime source of ${print(this.script)}`;
     }
 }
 
@@ -47,6 +47,6 @@ export class MappedSourceOf extends BaseLoadedSourceToScriptRelationship {
     }
 
     public toString(print = (value: unknown) => `${value}`): string {
-        return `${this.mappedSource} is a mapped source of ${this.script.developmentSource}/${this.script}`;
+        return `${print(this.mappedSource)} is a mapped source of ${print(this.script.developmentSource)}/${this.script}`;
     }
 }

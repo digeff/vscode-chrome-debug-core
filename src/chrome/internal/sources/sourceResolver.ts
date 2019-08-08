@@ -10,6 +10,7 @@ import { injectable, inject } from 'inversify';
 import { IScriptParsedProvider } from '../../cdtpDebuggee/eventsProviders/cdtpOnScriptParsedEventProvider';
 import { TYPES } from '../../dependencyInjection.ts/types';
 import { IExecutionContextEventsProvider } from '../../cdtpDebuggee/eventsProviders/cdtpExecutionContextEventsProvider';
+import { inspect } from 'util';
 
 /**
  * The SourceResolver listens to onScriptParsed events to build a map of paths to loaded sources. When an SourceToBeResolvedViaPath is created, it'll store a reference to this object,
@@ -61,6 +62,6 @@ export class SourceResolver {
     }
 
     public toString(print = (value: unknown) => `${value}`): string {
-        return `Source resolver { path to source: ${this._pathToSource} }`;
+        return `Source resolver { path to source: ${print(this._pathToSource)} }`;
     }
 }

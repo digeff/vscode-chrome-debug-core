@@ -6,6 +6,7 @@ import { ReasonType } from '../../stoppedEvent';
 import { IEventsToClientReporter } from '../../client/eventsToClientReporter';
 import { PausedEvent } from '../../cdtpDebuggee/eventsProviders/cdtpDebuggeeExecutionEventsProvider';
 import { printClassDescription } from '../../utils/printing';
+import { inspect } from 'util';
 
 /**
  * Action that a component proposes to do when the debuggee is paused. Should be show the pause to the client? Auto-resume?
@@ -25,10 +26,10 @@ export abstract class BaseActionToTakeWhenPaused implements IActionToTakeWhenPau
     public abstract isAutoResuming(): boolean;
 
     public [inspect.custom](): string {
-        return this.toString(inspect);
+        return this.toString();
     }
 
-    public toString(print = (value: unknown) => `${value}`): string {
+    public toString(): string {
         return this.constructor.name;
     }
 }

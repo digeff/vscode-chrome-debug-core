@@ -18,6 +18,7 @@ import { IEventsToClientReporter } from '../../../client/eventsToClientReporter'
 import { logger } from 'vscode-debugadapter';
 import { DoNotLog } from '../../../logging/decorators';
 import { printDebugDescription } from '../../../logging/printObjectDescription';
+import { inspect } from 'util';
 
 type SteppingAction = () => Promise<void>;
 
@@ -44,10 +45,10 @@ export class FinishedStepping extends BaseNotifyClientOfPause {
     }
 
     public [inspect.custom](): string {
-        return this.toString(inspect);
+        return this.toString();
     }
 
-    public toString(print = (value: unknown) => `${value}`): string {
+    public toString(): string {
         return 'Finished stepping';
     }
 }

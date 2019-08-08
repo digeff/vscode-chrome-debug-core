@@ -12,6 +12,7 @@ import { ScriptCallFrame, CallFrameWithState } from './callFrame';
 import { CodeFlowStackTrace } from './codeFlowStackTrace';
 import { ILoadedSource } from '../sources/loadedSource';
 import { isDefined } from '../../utils/typedOperators';
+import { inspect } from 'util';
 
 interface ICurrentStackTraceProviderState {
     ifExceptionWasThrown(exceptionWasThrownAction: (exception: CDTP.Runtime.RemoteObject) => void, noExceptionAction: () => void): void;
@@ -75,7 +76,7 @@ class CurrentStackTraceProviderWhenPaused implements ICurrentStackTraceProviderS
     }
 
     public toString(print = (value: unknown) => `${value}`): string {
-        return `Paused on: ${this._currentPauseEvent}`;
+        return `Paused on: ${print(this._currentPauseEvent)}`;
     }
 }
 

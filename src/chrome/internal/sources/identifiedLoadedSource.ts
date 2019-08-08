@@ -57,10 +57,10 @@ export class IdentifiedLoadedSource<TString extends string = string> implements 
     }
 
     public [inspect.custom](): string {
-        return this.toString(inspect);
+        return this.toString();
     }
 
-    public toString(print = (value: unknown) => `${value}`): string {
+    public toString(): string {
         return `src:${this.identifier}`;
     }
 }
@@ -86,6 +86,6 @@ export class ScriptMapper implements IScriptMapper {
     }
 
     public toString(print = (value: unknown) => `${value}`): string {
-        return printArray('relationships', this.relationships);
+        return printArray('relationships', this.relationships, print);
     }
 }

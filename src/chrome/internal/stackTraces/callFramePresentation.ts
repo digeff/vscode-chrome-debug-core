@@ -79,7 +79,7 @@ export class CallFramePresentation implements IStackTracePresentationRow {
     }
 
     public toString(print = (value: unknown) => `${value}`): string {
-        return `${this.callFrame}[printed with ${this._descriptionFormatArgs} and ${JSON.stringify(this.additionalPresentationDetails)}](${this.presentationHint})`;
+        return `${print(this.callFrame)}[printed with ${print(this._descriptionFormatArgs)} and ${print(this.additionalPresentationDetails)}](${this.presentationHint})`;
     }
 }
 
