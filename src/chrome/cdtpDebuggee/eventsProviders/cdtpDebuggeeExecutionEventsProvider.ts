@@ -22,6 +22,7 @@ import { CDTPBPRecipe, validateNonPrimitiveRemoteObject } from '../cdtpPrimitive
 import * as _ from 'lodash';
 import { isDefined } from '../../utils/typedOperators';
 import { InternalError } from '../../utils/internalError';
+import { inspect } from 'util';
 
 export type PauseEventReason = 'XHR' | 'DOM' | 'EventListener' | 'exception' | 'assert' | 'debugCommand' | 'promiseRejection' | 'OOM' | 'other' | 'ambiguous';
 
@@ -35,8 +36,12 @@ export class PausedEvent {
         public readonly asyncStackTraceId: CDTP.Runtime.StackTraceId | undefined,
         public readonly asyncCallStackTraceId: CDTP.Runtime.StackTraceId | undefined) { }
 
-    public toString(): string {
-        return `Debugger paused due to ${this.reason} on ${this.callFrames.length > 0 ? this.callFrames[0] : 'No call frame'}${this.hitBreakpoints.length > 0 ? 'at ' + this.hitBreakpoints.join(',') : ''}`;
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
+        return `Debugger paused due to ${this.reason} on ${this.callFrames.length > 0 ? print(this.callFrames[0]) : 'No call frame'}${this.hitBreakpoints.length > 0 ? 'at ' + this.hitBreakpoints.join(',') : ''}`;
     }
 }
 

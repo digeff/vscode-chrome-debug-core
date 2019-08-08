@@ -1,5 +1,7 @@
 import * as _ from 'lodash';
 import { isNotEmpty } from '../utils/typedOperators';
+import * as util from 'util';
+import { logger } from 'vscode-debugadapter';
 
 export function printTopLevelObjectDescription(objectToPrint: unknown) {
     return printObjectDescription(objectToPrint, printFirstLevelProperties);
@@ -63,4 +65,10 @@ function isJSONObject(objectToPrint: any): boolean {
 function printFirstLevelProperties(objectToPrint: any): string {
     const printedProeprties = Object.keys(objectToPrint).map(key => `${key}: ${printObjectDescription(objectToPrint[key])}`);
     return `{ ${printedProeprties.join(', ')} }`;
+}
+
+export function printDebugDescription(value: unknown): string {
+    const description = util.inspect(value);
+    logger.log(`DIEGO INSPECT: ${description}`);
+    return description;
 }

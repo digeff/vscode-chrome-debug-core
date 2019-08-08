@@ -17,6 +17,7 @@ import { printClassDescription, printInstanceDescription } from '../../../utils/
 import { IEventsToClientReporter } from '../../../client/eventsToClientReporter';
 import { logger } from 'vscode-debugadapter';
 import { DoNotLog } from '../../../logging/decorators';
+import { printDebugDescription } from '../../../logging/printObjectDescription';
 
 type SteppingAction = () => Promise<void>;
 
@@ -57,6 +58,7 @@ export class UserPaused extends BaseNotifyClientOfPause {
         protected readonly _eventsToClientReporter: IEventsToClientReporter,
     ) {
         super();
+        printDebugDescription(this);
     }
 
     public async execute(): Promise<void> {
