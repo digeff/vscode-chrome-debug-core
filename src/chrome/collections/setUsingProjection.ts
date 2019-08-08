@@ -4,6 +4,7 @@
 
 import { ValidatedMap, IValidatedMap } from './validatedMap';
 import { printSet } from './printing';
+import { inspect } from 'util';
 
 export interface IProjection<K, P> {
     (element: K): P;
@@ -89,7 +90,11 @@ export class SetUsingProjection<T, P> implements Set<T> {
         return 'SetUsingProjection' as 'Set';
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return printSet('SetUsingProjection', this);
     }
 }

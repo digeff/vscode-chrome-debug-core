@@ -10,6 +10,7 @@ import { IBreakpointsEventsListener } from '../features/breakpointsEventSystem';
 import { injectable, inject, LazyServiceIdentifer } from 'inversify';
 import { PrivateTypes } from '../diTypes';
 import { InternalError } from '../../../utils/internalError';
+import { inspect } from 'util';
 
 type ClientBPRecipe = IBPRecipe<ISource>;
 type DebuggeeBPRecipe = CDTPBPRecipe;
@@ -63,7 +64,11 @@ export class DebuggeeBPRsSetForClientBPRFinder {
         this._clientBPRToDebuggeeBPRItSet.delete(clientBPRecipe);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Debuggee BPRs set for Client BPR finder: ${this._clientBPRToDebuggeeBPRItSet}`;
     }
 }

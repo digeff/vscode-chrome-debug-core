@@ -12,6 +12,7 @@ import { newResourceIdentifierMap } from '../resourceIdentifier';
 import { LoadedSourceEventReason } from '../../../chromeDebugAdapter';
 import { IServiceComponent } from '../../features/components';
 import { IExecutionContextEventsProvider } from '../../../cdtpDebuggee/eventsProviders/cdtpExecutionContextEventsProvider';
+import { inspect } from 'util';
 
 /**
  * This class will keep the client updated of the sources that are associated with the scripts that are currently loaded in the debuggee
@@ -81,7 +82,11 @@ export class NotifyClientOfLoadedSources implements IServiceComponent {
         return this._eventsToClientReporter.sendSourceWasLoaded({ reason: loadedSourceEventReason, source: source });
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return 'NotifyClientOfLoadedSources';
     }
 }

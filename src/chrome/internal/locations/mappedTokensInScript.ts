@@ -8,6 +8,7 @@ import { printArray } from '../../collections/printing';
 import { IHasSourceMappingInformation } from '../scripts/IHasSourceMappingInformation';
 import { IScript } from '../scripts/script';
 import { InternalError } from '../../utils/internalError';
+import { inspect } from 'util';
 
 export interface IMappedTokensInScript<T extends IHasSourceMappingInformation = IHasSourceMappingInformation> {
     readonly script: T;
@@ -45,7 +46,11 @@ export class MappedTokensInScript<T extends IHasSourceMappingInformation = IHasS
         return false;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return printArray('Mapped to script tokens at:', this._ranges);
     }
 }
@@ -65,7 +70,11 @@ export class NoMappedTokensInScript<T extends IHasSourceMappingInformation = IHa
         return true;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Didn't map to any script tokens`;
     }
 }

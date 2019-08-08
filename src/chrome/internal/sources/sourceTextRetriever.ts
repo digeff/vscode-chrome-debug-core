@@ -15,6 +15,7 @@ import { singleElementOfArray } from '../../collections/utilities';
 import * as utils from '../../../utils';
 import { logger } from 'vscode-debugadapter';
 import { printArray } from '../../collections/printing';
+import { inspect } from 'util';
 
 /**
  * Retrieves the text associated with a loaded source that maps to a JavaScript script file
@@ -56,7 +57,11 @@ export class SourceTextRetriever {
         return text;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Sources text logic\n${printIterable('sources in cache', this._sourceToText.keys())}`;
     }
 }

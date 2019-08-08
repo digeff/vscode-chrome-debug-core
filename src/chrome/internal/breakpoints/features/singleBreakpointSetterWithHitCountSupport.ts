@@ -7,6 +7,7 @@ import { IBPRecipeStatus } from '../bpRecipeStatus';
 import { ISingleBreakpointSetter, SingleBreakpointSetter } from './singleBreakpointSetter';
 import { BPRecipeStatusChanged } from '../registries/bpRecipeStatusCalculator';
 import { OnPausedForBreakpointCallback } from './onPausedForBreakpointCallback';
+import { inspect } from 'util';
 
 @injectable()
 export class SingleBreakpointSetterWithHitCountSupport implements ISingleBreakpointSetter {
@@ -42,7 +43,11 @@ export class SingleBreakpointSetterWithHitCountSupport implements ISingleBreakpo
         return this;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `SingleBreakpointSetterWithHitCountSupport`;
     }
 

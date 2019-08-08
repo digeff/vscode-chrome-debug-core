@@ -6,6 +6,7 @@ import { printSet } from './printing';
 import { breakWhileDebugging } from '../../validation';
 import { isDefined } from '../utils/typedOperators';
 import { InternalError } from '../utils/internalError';
+import { inspect } from 'util';
 
 export interface IValidatedSet<K> extends Set<K> {
     addOrReplaceIfExists(key: K): this;
@@ -89,7 +90,11 @@ export class ValidatedSet<K> implements IValidatedSet<K> {
         return this._wrappedSet.values();
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return printSet('ValidatedSet', this);
     }
 

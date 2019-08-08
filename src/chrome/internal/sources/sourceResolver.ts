@@ -56,7 +56,11 @@ export class SourceResolver {
         return new SourceToBeResolvedViaPath(sourceIdentifier, this);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Source resolver { path to source: ${this._pathToSource} }`;
     }
 }

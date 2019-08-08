@@ -6,6 +6,7 @@ import { ICommandHandlerDeclarer, CommandHandlerDeclaration, RequestHandlerMappi
 import { injectable } from 'inversify';
 import { ISession } from '../session';
 import { DoNotLog } from '../../logging/decorators';
+import { inspect } from 'util';
 
 @injectable()
 export abstract class BaseCDAState implements IDebugAdapterState {
@@ -40,7 +41,11 @@ export abstract class BaseCDAState implements IDebugAdapterState {
         this._session.shutdown();
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return this.constructor.name;
     }
 }

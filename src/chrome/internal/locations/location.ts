@@ -67,7 +67,11 @@ export class Position implements IEquivalenceComparable {
             (this.lineNumber === right.lineNumber && this.columnNumber < right.columnNumber);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return localize('position.description', '{0}:{1}', this.lineNumber, this.columnNumber);
     }
 }
@@ -131,7 +135,11 @@ abstract class BaseLocation<T extends ScriptOrSourceOrURLOrURLRegexp> implements
         return false;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return localize('location.description', '{0}:{1}', this.resource.toString(), this.position.toString());
     }
 }

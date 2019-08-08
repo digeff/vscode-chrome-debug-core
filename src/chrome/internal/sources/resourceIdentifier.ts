@@ -13,6 +13,7 @@ import * as utils from '../../../utils';
 import { SetUsingProjection } from '../../collections/setUsingProjection';
 import { hasMatches } from '../../utils/typedOperators';
 import { InternalError } from '../../utils/internalError';
+import { inspect } from 'util';
 
 /**
  * Hierarchy:
@@ -70,7 +71,11 @@ abstract class IsEquivalentAndConstructorCommonLogic<TString extends string = st
         return this.textRepresentation;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `${this.textRepresentation}`;
     }
 }
@@ -115,7 +120,11 @@ export class LocalFileURL<TString extends string = string> extends IsEquivalentC
         return true;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return path.basename(this.textRepresentation);
     }
 }
@@ -124,7 +133,11 @@ export class LocalFileURL<TString extends string = string> extends IsEquivalentC
 export class NonLocalFileURL<TString extends string = string> extends IsEquivalentAndConstructorCommonLogic<TString> implements IURL<TString> {
     [ImplementsResourceIdentifier]: void;
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return path.basename(this.textRepresentation);
     }
 }
@@ -152,7 +165,11 @@ abstract class LocalFilePathCommonLogic<TString extends string = string> extends
 
     protected abstract generateCanonicalized(): string;
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return localize('resourceIdentifier.resourcePrefix', 'res:{0}', this.textRepresentation);
     }
 }

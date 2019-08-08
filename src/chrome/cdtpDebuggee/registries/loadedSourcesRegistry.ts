@@ -5,6 +5,7 @@ import { CDTPScriptUrl } from '../../internal/sources/resourceIdentifierSubtypes
 import { ValidatedMultiMap } from '../../collections/validatedMultiMap';
 import { ILoadedSourceToScriptRelationship } from '../../internal/sources/loadedSourceToScriptRelationship';
 import { injectable } from 'inversify';
+import { inspect } from 'util';
 
 @injectable()
 export class LoadedSourcesRegistry implements ICurrentScriptRelationshipsProvider {
@@ -43,7 +44,11 @@ export class LoadedSourcesRegistry implements ICurrentScriptRelationshipsProvide
         this._loadedSourceToCurrentScriptRelationships.clear();
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Loaded sources: ${this._loadedSourceByPath}\nRelationships:\n${this._loadedSourceToCurrentScriptRelationships}`;
     }
 }

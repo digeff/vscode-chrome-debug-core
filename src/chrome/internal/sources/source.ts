@@ -48,7 +48,11 @@ export class SourceToBeResolvedViaPath extends BaseSource implements ISource {
         return this._sourceResolver.tryResolving(this.sourceIdentifier, succesfulAction, failedAction);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `${this.sourceIdentifier}`;
     }
 }
@@ -69,7 +73,11 @@ export class SourceAlreadyResolvedToLoadedSource extends BaseSource implements I
         return this.loadedSource.identifier;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `${this.loadedSource}`;
     }
 }

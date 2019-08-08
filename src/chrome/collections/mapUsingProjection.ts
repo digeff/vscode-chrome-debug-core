@@ -7,12 +7,17 @@ import { IProjection } from './setUsingProjection';
 import { printMap } from './printing';
 import * as _ from 'lodash';
 import { InternalError } from '../utils/internalError';
+import { inspect } from 'util';
 
 class KeyAndValue<K, V> {
     constructor(public readonly key: K, public readonly value: V) { }
 
-    public toString(): string {
-        return `${this.key}: ${this.value}`;
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
+        return `${print(this.key)}: ${print(this.value)}`;
     }
 }
 
@@ -128,7 +133,11 @@ export class MapUsingProjection<K, V, P> implements IValidatedMap<K, V> {
         return JSON.stringify(Array.from(this.entries())) as 'Map';
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return printMap('MapUsingProjection', this);
     }
 }

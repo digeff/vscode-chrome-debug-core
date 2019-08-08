@@ -5,8 +5,8 @@ import { isNotEmpty } from '../utils/typedOperators';
  *--------------------------------------------------------*/
 
 /** Methods to print the contents of a collection for logging and debugging purposes (This is not intended for the end-user to see) */
-export function printMap<K, V>(typeDescription: string, map: { entries(): IterableIterator<[K, V]> }): string {
-    const elementsPrinted = Array.from(map.entries()).map(entry => `${entry[0]}: ${entry[1]}`).join('; ');
+export function printMap<K, V>(typeDescription: string, map: { entries(): IterableIterator<[K, V]> }, print: (element: K | V) => string): string {
+    const elementsPrinted = Array.from(map.entries()).map(entry => `${print(entry[0])}: ${print(entry[1])}`).join('; ');
     return `${typeDescription} { ${elementsPrinted} }`;
 }
 

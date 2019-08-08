@@ -13,6 +13,7 @@ import { ChromeConnection } from '../../chromeConnection';
 import { IRestartRequestArgs } from '../../../debugAdapterInterfaces';
 import { IDebuggeeRunner, IDebuggeeLauncher, TerminatingReason } from '../../debugeeStartup/debugeeLauncher';
 import { TerminatedCDA } from './terminatedCDA';
+import { inspect } from 'util';
 
 export type TerminatingCDAProvider = (reason: TerminatingReason) => TerminatingCDA;
 export class TerminatingCDA extends BaseCDAState {
@@ -72,7 +73,11 @@ export class TerminatingCDA extends BaseCDAState {
         this._session.sendEvent(new TerminatedEvent(restart));
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Terminating the debug session`;
     }
 }

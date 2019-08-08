@@ -27,6 +27,7 @@ import { SourceToScriptMapper } from '../../services/sourceToScriptMapper';
 import { OnPausedForBreakpointCallback, defaultOnPausedForBreakpointCallback } from './onPausedForBreakpointCallback';
 import { DoNotLog } from '../../../logging/decorators';
 import { InternalError } from '../../../utils/internalError';
+import { inspect } from 'util';
 
 @printClassDescription
 export class HitBreakpoint extends BaseNotifyClientOfPause {
@@ -136,7 +137,11 @@ export class BPRecipeAtLoadedSourceSetter implements IBPRecipeAtLoadedSourceSett
         });
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return 'BPRecipeAtLoadedSourceLogic';
     }
 }

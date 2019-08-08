@@ -7,6 +7,7 @@ import { bindAll, createWrapWithLoggerActivator } from './bind';
 import { MethodsCalledLoggerConfiguration, ReplacementInstruction } from '../logging/methodsCalledLogger';
 import { addCDTPBindings } from '../cdtpDebuggee/cdtpDIContainer';
 import { addBreakpointsFeatureBindings } from '../internal/breakpoints/diBindings';
+import { inspect } from 'util';
 
 export type GetComponentByID = <T>(identifier: interfaces.ServiceIdentifier<T>) => T;
 export type ComponentCustomizationCallback = <T>(identifier: interfaces.ServiceIdentifier<T>, injectable: T, getComponentById: GetComponentByID) => T;
@@ -97,7 +98,11 @@ export class DependencyInjection {
         return privateClassesContainer;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Dependency Injection container: ${this._name}`;
     }
 }

@@ -34,7 +34,11 @@ export class BPRsDeltaCalculatorFromStoredBPRs {
         this._requestedSourcePathToCurrentBPRecipes.setAndReplaceIfExists(requestedSourceIdentifier, Array.from(bpRecipes));
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Current BP recipes for source registry {${this._requestedSourcePathToCurrentBPRecipes}}`;
     }
 }

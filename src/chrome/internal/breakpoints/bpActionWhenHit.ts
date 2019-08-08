@@ -5,6 +5,7 @@
 import { IEquivalenceComparable } from '../../utils/equivalence';
 
 import * as nls from 'vscode-nls';
+import { inspect } from 'util';
 let localize = nls.loadMessageBundle();
 
 /**
@@ -23,6 +24,10 @@ export class AlwaysPause implements IBPActionWhenHit {
         return bpActionWhenHit instanceof AlwaysPause;
     }
 
+    public [inspect.custom](): string {
+        return this.toString();
+    }
+
     public toString(): string {
         return localize('breakpoint.normal.description', 'always pause');
     }
@@ -36,7 +41,11 @@ export class ConditionalPause implements IBPActionWhenHit {
             && this.expressionOfWhenToPause === bpActionWhenHit.expressionOfWhenToPause;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return localize('breakpoint.conditional.description', 'pause if: {0}', this.expressionOfWhenToPause);
     }
 }
@@ -49,7 +58,11 @@ export class PauseOnHitCount implements IBPActionWhenHit {
             && this.pauseOnHitCondition === bpActionWhenHit.pauseOnHitCondition;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return localize('breakpoint.hitCount.description', 'pause when hits: {0}', this.pauseOnHitCondition);
     }
 }
@@ -62,7 +75,11 @@ export class LogMessage implements IBPActionWhenHit {
             && this.expressionToLog === bpActionWhenHit.expressionToLog;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return localize('breakpoint.logpoint.description', 'log: {0}', this.expressionToLog);
     }
 }

@@ -39,7 +39,11 @@ export class BreakpointsSetForScriptFinder {
         return bpsAtLocation;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Breakpoints recipe status Registry:\nRecipe to breakpoints: ${this._scriptToBreakpoints}`;
     }
 }

@@ -8,6 +8,7 @@ import { BPRecipe } from './bpRecipe';
 import { printArray } from '../../collections/printing';
 import { IResourceIdentifier } from '../sources/resourceIdentifier';
 import { InternalError } from '../../utils/internalError';
+import { inspect } from 'util';
 
 /**
  * These classes are used to handle all the set of breakpoints for a single file as a unit, and be able to resolve them all together
@@ -22,7 +23,11 @@ export class BaseBPRecipes<TResource extends ILoadedSource | ISource> {
         });
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return printArray(`BPs @ ${this.source}`, this.breakpoints.map(bp => `line ${bp.location.position} do: ${bp.bpActionWhenHit}`));
     }
 }

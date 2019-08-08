@@ -4,6 +4,7 @@
 
 import { LocationInScript } from '../locations/location';
 import { CDTPNonPrimitiveRemoteObject } from '../../cdtpDebuggee/cdtpPrimitives';
+import { inspect } from 'util';
 
 /** This class represents a variable's scope (Globals, locals, block variables, etc...) */
 export class Scope {
@@ -14,7 +15,11 @@ export class Scope {
         public readonly startLocation?: LocationInScript,
         public readonly endLocation?: LocationInScript) { }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `${this.type}`;
     }
 }

@@ -21,6 +21,7 @@ import { BPRecipeStatusChanged } from '../registries/bpRecipeStatusCalculator';
 import { LocationInLoadedSource } from '../../locations/location';
 import { logger } from 'vscode-debugadapter';
 import { OnPausedForBreakpointCallback } from './onPausedForBreakpointCallback';
+import { inspect } from 'util';
 
 @printClassDescription
 export class HitAndSatisfiedHitCountBreakpoint extends BaseNotifyClientOfPause {
@@ -56,7 +57,11 @@ class HitCountBreakpointData {
         return shouldPause;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Pause when: ${this.hitCountBPRecipe.bpActionWhenHit.pauseOnHitCondition}, current: hits ${this._currentHitCount}`;
     }
 }
@@ -84,7 +89,11 @@ class HitCountBPRecipeStatus implements IBPRecipeStatus {
         return this._underlyingBPRecipeStatus.ifHasActualLocation(ifHasAction, ifDoesNotHaveAction);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return this.statusDescription;
     }
 }
@@ -153,7 +162,11 @@ export class HitCountBreakpointsSetter implements ISingleBreakpointSetter {
         return this.bpRecipetoData.get(bpRecipe).underlyingBPRecipe;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `HitCountBreakpointsSetter: ${this.bpRecipetoData}`;
     }
 

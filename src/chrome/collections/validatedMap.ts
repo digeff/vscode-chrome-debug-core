@@ -5,6 +5,7 @@
 import { printMap } from './printing';
 import { breakWhileDebugging } from '../../validation';
 import { InternalError } from '../utils/internalError';
+import { inspect } from 'util';
 
 export type ValueComparerFunction<V> = (left: V, right: V) => boolean;
 
@@ -150,7 +151,11 @@ export class ValidatedMap<K, V> implements IValidatedMap<K, V> {
         return this._wrappedMap.get(key);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return printMap('ValidatedMap', this);
     }
 }

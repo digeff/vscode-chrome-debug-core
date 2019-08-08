@@ -14,11 +14,16 @@ import { injectable, inject } from 'inversify';
 import { Listeners } from '../../../communication/listeners';
 import { PrivateTypes } from '../diTypes';
 import { BPRecipeWasResolved, Synchronicity } from '../../../cdtpDebuggee/features/cdtpDebuggeeBreakpointsSetter';
+import { inspect } from 'util';
 
 export class BPRecipeStatusChanged {
     public constructor(public readonly status: IBPRecipeStatus, public readonly changeSynchronicity: Synchronicity) { }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `${this.changeSynchronicity}: ${this.status}`;
     }
 }
@@ -72,7 +77,11 @@ export class BPRecipeStatusCalculator {
         this._recipeToUnboundStatus.delete(bpRecipe);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `${printMap(`BPRecipe status calculator:`, this._recipeToStatusAtLocation)} ${printMap(`Unbound bps:`, this._recipeToUnboundStatus)}`;
     }
 }

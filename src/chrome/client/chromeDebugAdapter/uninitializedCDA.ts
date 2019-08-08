@@ -12,6 +12,7 @@ import { TYPES } from '../../dependencyInjection.ts/types';
 import { inject, injectable } from 'inversify';
 import { isNotEmpty } from '../../utils/typedOperators';
 import { ISession } from '../session';
+import { inspect } from 'util';
 let localize = nls.loadMessageBundle(); // Initialize to an unlocalized version until we know which locale to use
 
 @injectable()
@@ -70,7 +71,11 @@ export class UninitializedCDA extends BaseCDAState {
         return { capabilities, newState };
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Waiting for the debug session to be initialized`;
     }
 }

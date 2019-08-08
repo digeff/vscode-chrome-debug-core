@@ -13,6 +13,7 @@ import assert = require('assert');
 import { ValidatedSet } from '../../../collections/validatedSet';
 import { printArray } from '../../../collections/printing';
 import { InternalError } from '../../../utils/internalError';
+import { inspect } from 'util';
 
 function canonicalizeBPLocation(breakpoint: BPRecipeInSource): string {
     return `${breakpoint.location.position.lineNumber}:${breakpoint.location.position.columnNumber}[${breakpoint.bpActionWhenHit}]`;
@@ -97,7 +98,11 @@ export class BPRsDeltaCalculator {
         return bpRecipes.map(bpRecipe => `${bpRecipe.location.position}`);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `BPs Delta Calculator {\n\tRequested BPs: ${this._requestedBPRecipes}\n\tExisting BPs: ${this._currentBPRecipes}\n}`;
     }
 }
@@ -109,7 +114,11 @@ export abstract class BPRsDeltaCommonLogic<TResource extends ILoadedSource | ISo
         public readonly existingToRemove: BPRecipe<TResource>[],
         public readonly existingToLeaveAsIs: BPRecipe<TResource>[]) { }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `${printArray('New BPs', this.requestedToAdd)}\n${printArray('BPs to remove', this.existingToRemove)}\n${printArray('BPs to keep', this.existingToLeaveAsIs)}`;
     }
 }

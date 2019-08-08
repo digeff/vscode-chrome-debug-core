@@ -7,6 +7,7 @@ import { newResourceIdentifierMap, IResourceIdentifier } from '../../sources/res
 import { injectable } from 'inversify';
 import { ValidatedMultiMap } from '../../../collections/validatedMultiMap';
 import { IValidatedSet } from '../../../collections/validatedSet';
+import { inspect } from 'util';
 
 /**
  * Store the current list of breakpoint recipes for a particular source
@@ -27,7 +28,11 @@ export class BPRecipesForSourceRetriever {
         this._sourcePathToBPRecipes.removeValue(removedBPRecipe.location.resource.sourceIdentifier, removedBPRecipe);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `BPRecipesForSourceRetriever {${this._sourcePathToBPRecipes}}`;
     }
 }

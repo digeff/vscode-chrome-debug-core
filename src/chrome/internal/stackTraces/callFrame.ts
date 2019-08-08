@@ -8,6 +8,7 @@ import { IScript } from '../scripts/script';
 import { Protocol as CDTP } from 'devtools-protocol';
 import { Scope } from './scopes';
 import { printArray } from '../../collections/printing';
+import { inspect } from 'util';
 
 /**
  * CDTP has two types of stack traces:
@@ -46,7 +47,11 @@ export class CodeFlowFrame<TResource extends ScriptOrLoadedSource> {
         return this.location.position.columnNumber;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `${this.index}: ${this.functionName} at ${this.location}`;
     }
 }
@@ -97,7 +102,11 @@ abstract class BaseCallFrame<TResource extends ScriptOrLoadedSource> implements 
         return this.codeFlow.functionName;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `${this.codeFlow} {${this.state}}`;
     }
 }
@@ -110,7 +119,11 @@ export class CallFrameWithState implements ICallFrameState {
         public readonly frameThis: CDTP.Runtime.RemoteObject,
         public readonly returnValue?: CDTP.Runtime.RemoteObject) {}
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return printArray('Scopes', this.scopeChain);
     }
 }
@@ -129,7 +142,11 @@ export class ScriptCallFrame<TState extends ICallFrameState> extends BaseCallFra
         return new LoadedSourceCallFrame(this, codeFlow);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `${this.codeFlow}`;
     }
 }

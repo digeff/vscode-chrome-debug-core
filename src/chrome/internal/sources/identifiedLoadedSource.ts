@@ -7,6 +7,7 @@ import * as _ from 'lodash';
 import { printArray } from '../../collections/printing';
 import { LocationInLoadedSource } from '../locations/location';
 import { IMappedTokensInScript } from '../locations/mappedTokensInScript';
+import { inspect } from 'util';
 
 /**
  * Loaded Source classification:
@@ -55,7 +56,11 @@ export class IdentifiedLoadedSource<TString extends string = string> implements 
         return this === source;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `src:${this.identifier}`;
     }
 }
@@ -76,7 +81,11 @@ export class ScriptMapper implements IScriptMapper {
         return _.flatten(this.relationships.map(relationship => relationship.scriptAndSourceMapper));
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return printArray('relationships', this.relationships);
     }
 }

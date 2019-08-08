@@ -9,6 +9,7 @@ import { ISource } from './source';
 import { IScript } from '../scripts/script';
 import { injectable } from 'inversify';
 import { InternalError } from '../../utils/internalError';
+import { inspect } from 'util';
 
 export interface ISourcesRetriever {
     loadedSourcesTrees(): Promise<ILoadedSourceTreeNode[]>;
@@ -39,7 +40,11 @@ export class SourcesRetriever implements ISourcesRetriever {
             });
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Sources retriever for text:\n${this._sourceTextRetriever}\n for trees:\n${this._sourceTreeNodeLogic}\n}`;
     }
 }

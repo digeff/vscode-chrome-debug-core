@@ -43,7 +43,11 @@ export class FinishedStepping extends BaseNotifyClientOfPause {
         await super.execute();
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return 'Finished stepping';
     }
 }

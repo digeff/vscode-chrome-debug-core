@@ -6,6 +6,7 @@ import { injectable, inject } from 'inversify';
 import { BaseCDAState } from './baseCDAState';
 import { ISession } from '../session';
 import { TYPES } from '../../dependencyInjection.ts/types';
+import { inspect } from 'util';
 
 @injectable()
 export class TerminatedCDA extends BaseCDAState {
@@ -13,7 +14,11 @@ export class TerminatedCDA extends BaseCDAState {
         super([], {});
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Terminated the debug session`;
     }
 }

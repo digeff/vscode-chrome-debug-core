@@ -17,6 +17,7 @@ import { IHasSourceMappingInformation } from './IHasSourceMappingInformation';
 import { isNotNull } from '../../utils/typedOperators';
 import { telemetry } from '../../../telemetry';
 import { InternalError } from '../../utils/internalError';
+import { inspect } from 'util';
 
 export interface ISourceToScriptMapper<T extends IHasSourceMappingInformation = IHasSourceMappingInformation> {
     getPositionInScript(positionInSource: LocationInLoadedSource | LocationInSource): IMappedTokensInScript<T>;
@@ -82,7 +83,11 @@ export class MappedSourcesMapper<T extends IHasSourceMappingInformation = IHasSo
         return this._sourceMap.mappedSources;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Mapped sources mapper of ${this._script} into ${this._script.mappedSources}`;
     }
 
@@ -122,7 +127,11 @@ export class NoMappedSourcesMapper<T extends IHasSourceMappingInformation = IHas
         return [];
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `No sources mapper of ${this._script}`;
     }
 }
@@ -138,7 +147,11 @@ export class UnmappedSourceMapper implements ISourceMapper<IScript> {
         return MappedTokensInScript.characterAt(new LocationInScript(this._script, positionInSource.position));
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Unmapped sources mapper of ${this._script}`;
     }
 }

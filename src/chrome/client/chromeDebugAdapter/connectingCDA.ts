@@ -11,6 +11,7 @@ import { ConnectedCDAConfiguration } from './cdaConfiguration';
 import { ITelemetryPropertyCollector } from '../../../telemetry';
 import { ISession } from '../session';
 import { ExecutionTimingsReporter, StepProgressEventsEmitter } from '../../../executionTimingsReporter';
+import { inspect } from 'util';
 
 export type ConnectingCDAProvider = (configuration: ConnectedCDAConfiguration) => ConnectingCDA;
 
@@ -35,7 +36,11 @@ export class ConnectingCDA extends BaseCDAState {
         return newState;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Connecting to the debuggee`;
     }
 }

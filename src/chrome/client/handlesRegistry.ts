@@ -8,6 +8,7 @@ import { BidirectionalMap } from '../collections/bidirectionalMap';
 import { injectable } from 'inversify';
 import { IStackTracePresentationRow } from '../internal/stackTraces/stackTracePresentationRow';
 import { ISource } from '../internal/sources/source';
+import { inspect } from 'util';
 
 export class BidirectionalHandles<T> {
     private readonly _idToObject = new BidirectionalMap<number, T>();
@@ -34,7 +35,11 @@ export class BidirectionalHandles<T> {
         return this._idToObject.getByRight(obj);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return this._idToObject.toString();
     }
 }
@@ -49,7 +54,11 @@ export class HandlesRegistry {
     public readonly frames = new BidirectionalHandles<IStackTracePresentationRow>(123 * prefixMultiplier);
     public readonly sources = new BidirectionalHandles<ILoadedSource>(555 * prefixMultiplier);
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Handles {\nBPs:\n${this.breakpoints}\nFrames:\n${this.frames}\nSources:\n${this.sources}\n}`;
     }
 }

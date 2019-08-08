@@ -9,6 +9,7 @@ import { CodeFlowFrame, ICallFrame, CallFrame, ICallFrameState } from './callFra
 import { CallFramePresentationHint, IStackTracePresentationRow } from './stackTracePresentationRow';
 import { IStackTraceFormat, StackTraceCustomFormat } from './stackTracePresenter';
 import { isTrue, isNotEmpty } from '../../utils/typedOperators';
+import { inspect } from 'util';
 
 export type SourcePresentationHint = 'normal' | 'emphasize' | 'deemphasize';
 
@@ -73,7 +74,11 @@ export class CallFramePresentation implements IStackTracePresentationRow {
         return formattedDescription;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `${this.callFrame}[printed with ${this._descriptionFormatArgs} and ${JSON.stringify(this.additionalPresentationDetails)}](${this.presentationHint})`;
     }
 }

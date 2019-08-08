@@ -37,7 +37,11 @@ export class CDTPBreakpointIdsRegistry {
         return this._recipeToEventsConsumer.get(bpRecipe);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Breakpoint IDs: ${this._recipeToBreakpointId}`;
     }
 }

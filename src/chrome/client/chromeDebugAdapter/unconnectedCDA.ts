@@ -15,6 +15,7 @@ import { injectable, inject } from 'inversify';
 import { ConnectingCDAProvider } from './connectingCDA';
 import { ISession } from '../session';
 import { InternalError } from '../../utils/internalError';
+import { inspect } from 'util';
 
 export enum ScenarioType {
     Launch,
@@ -99,7 +100,11 @@ export class UnconnectedCDA implements IDebugAdapterState {
         return new ConnectedCDAConfiguration(this._debugSessionOptions.extensibilityPoints, this.parseLoggingConfiguration(args), this._session, this._clientCapabilities, scenarioType, args);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return 'UnconnectedCDA';
     }
 }

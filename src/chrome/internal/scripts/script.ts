@@ -12,6 +12,7 @@ import { RangeInResource } from '../locations/rangeInScript';
 import * as _ from 'lodash';
 import { IHasSourceMappingInformation } from './IHasSourceMappingInformation';
 import { Position } from '../locations/location';
+import { inspect } from 'util';
 
 /**
  * Multiplicity:
@@ -127,7 +128,11 @@ export class Script implements IScript {
         return `Script(${this.runtimeSource} or ${this.developmentSource}) ${printArray(' --> ', this.mappedSources)}`;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `${this.runtimeSource}` + (!this.rangeInSource.start.position.isOrigin() ? `<${this.rangeInSource.start.position}>` : ``);
     }
 }

@@ -24,7 +24,11 @@ export abstract class BaseActionToTakeWhenPaused implements IActionToTakeWhenPau
     public abstract execute(actionsWithLowerPriority: IActionToTakeWhenPaused[]): Promise<void>;
     public abstract isAutoResuming(): boolean;
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return this.constructor.name;
     }
 }
@@ -46,7 +50,11 @@ export class NoActionIsNeededForThisPause extends BaseActionToTakeWhenPaused {
         return false;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `${this.actionProvider} doesn't need to do any action for this pause`;
     }
 }

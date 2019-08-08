@@ -10,6 +10,7 @@ import { CommandText } from '../requests';
 import { RequestHandler, ICommandHandlerDeclarer } from '../../internal/features/components';
 import { printArray } from '../../collections/printing';
 import { DoNotLog } from '../../logging/decorators';
+import { inspect } from 'util';
 
 export class RequestProcessor {
     private readonly _requestNameToHandler = new ValidatedMap<CommandText, RequestHandler>();
@@ -34,7 +35,11 @@ export class RequestProcessor {
         }
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return printArray(`Request processor for`, Array.from(this._requestNameToHandler.keys()));
     }
 }

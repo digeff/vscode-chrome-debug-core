@@ -11,6 +11,7 @@ import { UnmappedSourceMapper } from '../scripts/sourcesMapper';
 import { LocationInLoadedSource, LocationInScript } from '../locations/location';
 import { IMappedTokensInScript, MappedTokensInScript } from '../locations/mappedTokensInScript';
 import { InternalError } from '../../utils/internalError';
+import { inspect } from 'util';
 
 export class UnidentifiedLoadedSource implements ILoadedSource<CDTPScriptUrl> {
     // TODO DIEGO: Move these two properties to the client layer
@@ -50,7 +51,11 @@ export class UnidentifiedLoadedSource implements ILoadedSource<CDTPScriptUrl> {
         return this === source;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `No URL script source with id: ${this.name}`;
     }
 }
@@ -75,7 +80,11 @@ export class CurrentUnidentifiedSourceScriptRelationships implements IScriptMapp
         return [this._source.script];
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `This unidentified source is it's own runtime and development script`;
     }
 }

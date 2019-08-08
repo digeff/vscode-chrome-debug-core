@@ -8,6 +8,7 @@ import { printMap } from './printing';
 import { breakWhileDebugging } from '../../validation';
 import { isDefined } from '../utils/typedOperators';
 import { InternalError } from '../utils/internalError';
+import { inspect } from 'util';
 
 /** A map where we can efficiently get the key from the value or the value from the key */
 export class BidirectionalMap<Left, Right> {
@@ -111,7 +112,11 @@ export class BidirectionalMap<Left, Right> {
         return this._rightToLeft.keys();
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return printMap('BidirectionalMap', this._leftToRight);
     }
 }

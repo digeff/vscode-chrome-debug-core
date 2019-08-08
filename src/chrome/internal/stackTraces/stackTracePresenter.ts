@@ -27,6 +27,7 @@ import { ICDTPDebuggeeExecutionEventsProvider } from '../../cdtpDebuggee/eventsP
 import * as _ from 'lodash';
 import { isDefined, isNotEmpty } from '../../utils/typedOperators';
 import { DoNotLog } from '../../logging/decorators';
+import { inspect } from 'util';
 
 export interface IStackTracePresentationDetailsProvider {
     callFrameAdditionalDetails(locationInLoadedSource: LocationInLoadedSource): ICallFramePresentationDetails[];
@@ -37,13 +38,21 @@ export interface IStackTraceFormat {}
 export class StackTraceCustomFormat implements IStackTraceFormat {
     public constructor(public readonly formatOptions: DebugProtocol.StackFrameFormat) { }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return JSON.stringify(this.formatOptions);
     }
 }
 
 export class StackTraceDefaultFormat implements IStackTraceFormat {
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `default format`;
     }
 }

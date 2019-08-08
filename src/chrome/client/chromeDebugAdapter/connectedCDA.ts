@@ -21,6 +21,7 @@ import { IDebuggeeInitializer, TerminatingReason } from '../../debugeeStartup/de
 import { ISupportedDomains } from '../../internal/domains/supportedDomains';
 import { StepProgressEventsEmitter, ExecutionTimingsReporter } from '../../../executionTimingsReporter';
 import { InternalError } from '../../utils/internalError';
+import { inspect } from 'util';
 
 export type ConnectedCDAProvider = (protocolApi: CDTP.ProtocolApi) => ConnectedCDA;
 
@@ -117,7 +118,11 @@ export class ConnectedCDA extends BaseCDAState {
         await this._chromeDebugAdapter.terminate(terminatingCDA);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Connected to the debuggee`;
     }
 }

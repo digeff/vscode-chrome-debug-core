@@ -1,6 +1,7 @@
 import { IScript } from '../scripts/script';
 import { UnmappedSourceMapper } from '../scripts/sourcesMapper';
 import { ILoadedSource, ScriptAndSourceMapper } from './loadedSource';
+import { inspect } from 'util';
 
 export interface ILoadedSourceToScriptRelationship {
     readonly scriptAndSourceMapper: ScriptAndSourceMapper;
@@ -22,7 +23,11 @@ export class UnmappedSourceOf extends BaseLoadedSourceToScriptRelationship {
         return new ScriptAndSourceMapper(this.script, new UnmappedSourceMapper(this.script, this.runtimeSource));
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `${this.runtimeSource} is runtime source of ${this.script}`;
     }
 }
@@ -37,7 +42,11 @@ export class MappedSourceOf extends BaseLoadedSourceToScriptRelationship {
         return new ScriptAndSourceMapper(this.script, this.script.sourceMapper);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `${this.mappedSource} is a mapped source of ${this.script.developmentSource}/${this.script}`;
     }
 }

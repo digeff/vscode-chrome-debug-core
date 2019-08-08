@@ -14,6 +14,7 @@ import { ISource } from '../sources/source';
 import { IBPRecipeForRuntimeSource } from './baseMappedBPRecipe';
 import { BPRecipeInSource } from './bpRecipeInSource';
 import { IBPRecipe, BPInScriptSupportedHitActions } from './bpRecipe';
+import { inspect } from 'util';
 
 export type BPPossibleResources = IScript | ISource | URLRegexp | IResourceIdentifier<CDTPScriptUrl>;
 export type ActualLocation<TResource extends BPPossibleResources> =
@@ -33,7 +34,11 @@ abstract class BaseBreakpoint<TResource extends BPPossibleResources> implements 
     public abstract get recipe(): IBPRecipe<TResource>;
     public abstract get actualLocation(): ActualLocation<TResource>;
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return localize('breakpoint.bound.description', '{0} actual location is {1}', `${this.recipe}`, this.actualLocation.toString());
     }
 }

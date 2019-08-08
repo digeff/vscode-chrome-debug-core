@@ -13,6 +13,7 @@ import * as _ from 'lodash';
 import { DoNotLog } from '../../logging/decorators';
 import { printMap } from '../../collections/printing';
 import { retryAsync } from '../../../utils';
+import { inspect } from 'util';
 
 const WAIT_FOR_SCRIPT_PARSED_TIMEOUT_IN_MS = 5000;
 const WAIT_FOR_SCRIPT_PARSED_INTERVAL_IN_MS = 100;
@@ -77,7 +78,11 @@ export class CDTPScriptsRegistry {
         this._idToExecutionContext = new ValidatedMap<CDTP.Runtime.ExecutionContextId, ExecutionContext>();
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `${this._scripts}`;
     }
 }
@@ -131,7 +136,11 @@ class CDTPCurrentGeneration {
         return _.defaultTo(runtimeScript, []);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return printMap('Script to ID', this._scriptByCdtpId);
     }
 }

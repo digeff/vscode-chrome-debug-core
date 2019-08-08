@@ -19,6 +19,7 @@ import { TYPES } from '../../../dependencyInjection.ts/types';
 import { printClassDescription } from '../../../utils/printing';
 import { PrivateTypes } from '../diTypes';
 import { DoNotLog } from '../../../logging/decorators';
+import { inspect } from 'util';
 
 @printClassDescription
 export class HitStillPendingBreakpoint extends BaseNotifyClientOfPause {
@@ -134,7 +135,11 @@ export class PauseScriptLoadsToSetBPs implements IInstallableComponent {
         return this;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return 'PauseScriptLoadsToSetBPs';
     }
 }

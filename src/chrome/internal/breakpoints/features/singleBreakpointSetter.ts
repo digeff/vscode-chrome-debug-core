@@ -18,6 +18,7 @@ import { ConnectedCDAConfiguration } from '../../../client/chromeDebugAdapter/cd
 import { ISource } from '../../sources/source';
 import { BPAtNotLoadedScriptViaHeuristicSetter } from './bpAtNotLoadedScriptViaHeuristicSetter';
 import { OnPausedForBreakpointCallback } from './onPausedForBreakpointCallback';
+import { inspect } from 'util';
 
 export interface ISingleBreakpointSetter {
     readonly bpRecipeStatusChangedListeners: Listeners<BPRecipeStatusChanged, void>;
@@ -104,7 +105,11 @@ export class SingleBreakpointSetter implements ISingleBreakpointSetter {
         this._bpRecipesForSourceRetriever.bpRecipeWasRemoved(clientBPRecipe);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `SingleBreakpointSetter`;
     }
 

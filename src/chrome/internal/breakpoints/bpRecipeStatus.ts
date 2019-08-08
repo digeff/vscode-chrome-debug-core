@@ -10,6 +10,7 @@ import { breakWhileDebugging } from '../../../validation';
 
 import * as nls from 'vscode-nls';
 import { InternalError } from '../../utils/internalError';
+import { inspect } from 'util';
 const localize = nls.loadMessageBundle();
 
 /** These interface and classes represent the status of a BP Recipe (Is it bound or not?) */
@@ -43,7 +44,11 @@ export class BPRecipeIsUnboundDueToNoSubstatuses implements IBPRecipeStatus {
         return ifDoesNotHaveAction();
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `${this.recipe} is ${this.statusDescription}`;
     }
 }
@@ -78,7 +83,11 @@ export class BPRecipeHasBoundSubstatuses implements IBPRecipeStatus {
         return ifHasAction(this.actualLocationInSource);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `${this.recipe} is ${this.statusDescription}`;
     }
 }
@@ -107,7 +116,11 @@ export class BPRecipeHasOnlyUnboundSubstatuses implements IBPRecipeStatus {
         return ifDoesNotHaveAction();
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `${this.recipe} is ${this.statusDescription}`;
     }
 }

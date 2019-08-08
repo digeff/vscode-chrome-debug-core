@@ -10,6 +10,7 @@ import { CDTPScriptUrl } from '../sources/resourceIdentifierSubtypes';
 import * as utils from '../../../utils';
 import { IMappedTokensInScript } from '../locations/mappedTokensInScript';
 import { notNullOrUndefined } from '../../../validation';
+import { inspect } from 'util';
 
 export interface IMappedBPRecipe<TResource extends ScriptOrSourceOrURLOrURLRegexp, TBPActionWhenHit extends IBPActionWhenHit>
     extends IBPRecipe<TResource, TBPActionWhenHit> {
@@ -38,7 +39,11 @@ abstract class BaseMappedBPRecipe<TResource extends ScriptOrSourceOrURLOrURLRege
             && right.unmappedBPRecipe.isEquivalentTo(this.unmappedBPRecipe);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `BP @ ${this.location} do: ${this.bpActionWhenHit}`;
     }
 

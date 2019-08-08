@@ -56,6 +56,7 @@ import { isTrue, isNotNull, isNotEmpty, isUndefined, isDefined, hasElements, isE
 import * as _ from 'lodash';
 import { CurrentStackTraceProvider } from './internal/stackTraces/currentStackTraceProvider';
 import { InternalError } from './utils/internalError';
+import { inspect } from 'util';
 
 let localize = nls.loadMessageBundle();
 
@@ -1026,7 +1027,11 @@ export class ChromeDebugLogic {
         this._variableHandles.onPaused();
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return 'ChromeDebugLogic';
     }
 }

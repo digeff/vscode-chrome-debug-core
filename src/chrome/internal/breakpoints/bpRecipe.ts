@@ -15,6 +15,7 @@ import { URLRegexp } from '../locations/subtypes';
 import { IEquivalenceComparable } from '../../utils/equivalence';
 import { BPRecipeInLoadedSource, BPRecipeInScript, BPRecipeInUrl, BPRecipeInUrlRegexp } from './baseMappedBPRecipe';
 import { BPRecipeInSource } from './bpRecipeInSource';
+import { inspect } from 'util';
 
 /**
  * IBPRecipe represents the instruction/recipe to set a breakpoint with some particular properties. Assuming that IBPRecipe ends up creating an actual
@@ -37,7 +38,11 @@ export abstract class BaseBPRecipe<TResource extends ScriptOrSourceOrURLOrURLReg
         return this.bpActionWhenHit instanceof PauseOnHitCount;
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return localize('breakpoint.description', 'Breakpoint at {0} do: {1}', this.location.toString(), this.bpActionWhenHit.toString());
     }
 }

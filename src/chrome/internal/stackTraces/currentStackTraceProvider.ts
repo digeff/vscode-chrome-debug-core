@@ -70,7 +70,11 @@ class CurrentStackTraceProviderWhenPaused implements ICurrentStackTraceProviderS
         : noExceptionAction();
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Paused on: ${this._currentPauseEvent}`;
     }
 }

@@ -6,6 +6,7 @@ import { ValidatedMap, IValidatedMap } from './validatedMap';
 import { printMap } from './printing';
 import { ValidatedSet, IValidatedSet } from './validatedSet';
 import { InternalError } from '../utils/internalError';
+import { inspect } from 'util';
 
 /** A multi map that throws exceptions instead of returning error codes. */
 export class ValidatedMultiMap<K, V> {
@@ -125,7 +126,11 @@ export class ValidatedMultiMap<K, V> {
         return this._wrappedMap.tryGetting(key);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return printMap('ValidatedMultiMap', this);
     }
 }

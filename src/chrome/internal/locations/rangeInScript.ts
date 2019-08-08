@@ -7,6 +7,7 @@ import { IScript } from '../scripts/script';
 import { createColumnNumber, createLineNumber, LineNumber, ColumnNumber } from './subtypes';
 import { IHasSourceMappingInformation } from '../scripts/IHasSourceMappingInformation';
 import { InternalError } from '../../utils/internalError';
+import { inspect } from 'util';
 
 export class Range {
     public constructor(
@@ -49,7 +50,11 @@ export class Range {
         return this.start.isEquivalentTo(this.exclusiveEnd);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `[${this.start} to ${this.exclusiveEnd}]`;
     }
 }
@@ -85,7 +90,11 @@ export class RangeInResource<TResource extends ScriptOrSourceOrURLOrURLRegexp> {
         return createLocation(this.resource, this.range.exclusiveEnd);
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `${this.resource} @ [${this.start.position} to ${this.end.position}]`;
     }
 }

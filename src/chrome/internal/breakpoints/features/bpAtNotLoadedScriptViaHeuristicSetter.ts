@@ -89,7 +89,11 @@ export class SourceWithSourceMap implements IHasSourceMappingInformation {
         return Position.origin; // TODO: Try to figure out an heuristic for .html files
     }
 
-    public toString(): string {
+    public [inspect.custom](): string {
+        return this.toString(inspect);
+    }
+
+    public toString(print = (value: unknown) => `${value}`): string {
         return `Source with map: ${this._sourceMap.generatedPath}`;
     }
 }
