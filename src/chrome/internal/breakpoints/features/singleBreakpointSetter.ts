@@ -1,36 +1,35 @@
-import { inject, injectable, LazyServiceIdentifer } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { PrivateTypes } from '../diTypes';
 
 import { BPRecipeAtLoadedSourceSetter } from './bpRecipeAtLoadedSourceLogic';
-import { BPRecipeStatusCalculator, BPRecipeStatusChanged } from '../registries/bpRecipeStatusCalculator';
+import { BPRecipeStatusChanged } from '../registries/bpRecipeStatusCalculator';
 import { Listeners } from '../../../communication/listeners';
 import { BPRecipeInSource } from '../bpRecipeInSource';
-import { IBPRecipeStatus } from '../bpRecipeStatus';
 import { BPRecipe } from '../bpRecipe';
-import { PauseScriptLoadsToSetBPs } from './pauseScriptLoadsToSetBPs';
 import { BreakpointsEventSystem } from './breakpointsEventSystem';
 import { BPRecipesForSourceRetriever } from '../registries/bpRecipesForSourceRetriever';
 import { ExistingBPsForJustParsedScriptSetter } from './existingBPsForJustParsedScriptSetter';
 import { IEventsConsumer, BPRecipeWasResolved } from '../../../cdtpDebuggee/features/cdtpDebuggeeBreakpointsSetter';
 import { IBPActionWhenHit } from '../bpActionWhenHit';
-import { TYPES } from '../../../dependencyInjection.ts/types';
-import { ConnectedCDAConfiguration } from '../../../client/chromeDebugAdapter/cdaConfiguration';
 import { ISource } from '../../sources/source';
 import { BPAtNotLoadedScriptViaHeuristicSetter } from './bpAtNotLoadedScriptViaHeuristicSetter';
 import { OnPausedForBreakpointCallback } from './onPausedForBreakpointCallback';
+import { BPRecipeIsUnbound } from '../bpRecipeStatusForRuntimeLocation';
+import { InternalError } from '../../../utils/internalError';
+
+export type BPRecipeWasResolvedCallback = (event: BPRecipeWasResolved) => void;
 
 export interface ISingleBreakpointSetter {
     readonly bpRecipeStatusChangedListeners: Listeners<BPRecipeStatusChanged, void>;
 
     setOnPausedForBreakpointCallback(onPausedForBreakpointCallback: OnPausedForBreakpointCallback): void;
+    setBPRecipeWasResolvedCallback(callback: BPRecipeWasResolvedCallback): void;
 
     addBPRecipe(requestedBP: BPRecipeInSource): Promise<void>;
     removeBPRecipe(clientBPRecipe: BPRecipeInSource): Promise<void>;
-
-    statusOfBPRecipe(bpRecipe: BPRecipeInSource): IBPRecipeStatus;
-
-    install(): Promise<this>;
 }
+
+const defaultBPRecipeWasResolvedCallback: BPRecipeWasResolvedCallback = () => { throw new InternalError('error.singleBreakpointSetter.noCallback', 'No callback was specified for BPRecipeWasResolvedCallback'); };
 
 @injectable()
 export class SingleBreakpointSetter implements ISingleBreakpointSetter {
@@ -38,8 +37,9 @@ export class SingleBreakpointSetter implements ISingleBreakpointSetter {
     public readonly clientBPRecipeRemovedListeners = new Listeners<BPRecipeInSource, void>();
     public readonly bpRecipeIsResolvedListeners = new Listeners<BPRecipeWasResolved, void>();
     public readonly bpRecipeStatusChangedListeners = new Listeners<BPRecipeStatusChanged, void>();
+    public readonly bpRecipeFailedToBindListeners = new Listeners<BPRecipeIsUnbound, void>();
 
-    private _isBpsWhileLoadingEnable = false;
+    private _bpRecipeWasResolvedCallback = defaultBPRecipeWasResolvedCallback;
 
     public readonly _bpRecipeWasResolvedEventsConsumer: IEventsConsumer = {
         bpRecipeWasResolved: (breakpoint, resolutionSynchronicity) =>
@@ -48,47 +48,41 @@ export class SingleBreakpointSetter implements ISingleBreakpointSetter {
 
     public constructor(
         @inject(PrivateTypes.BPRecipeAtLoadedSourceSetter) private readonly _breakpointsInLoadedSource: BPRecipeAtLoadedSourceSetter,
-        @inject(new LazyServiceIdentifer(() => TYPES.ConnectedCDAConfiguration)) private readonly _configuration: ConnectedCDAConfiguration,
         @inject(PrivateTypes.IBreakpointsEventsListener) private readonly _breakpointsEventSystem: BreakpointsEventSystem,
         @inject(PrivateTypes.BPRecipesForSourceRetriever) private readonly _bpRecipesForSourceRetriever: BPRecipesForSourceRetriever,
         @inject(PrivateTypes.BPAtNotLoadedScriptViaHeuristicSetter) private readonly _bpAtNotLoadedScriptViaHeuristicSetter: BPAtNotLoadedScriptViaHeuristicSetter,
-        @inject(new LazyServiceIdentifer(() => PrivateTypes.PauseScriptLoadsToSetBPs)) private readonly _bpsWhileLoadingLogic: PauseScriptLoadsToSetBPs,
-        @inject(PrivateTypes.ExistingBPsForJustParsedScriptSetter) private readonly _existingBPsForJustParsedScriptSetter: ExistingBPsForJustParsedScriptSetter,
-        @inject(PrivateTypes.BPRecipeStatusCalculator) private readonly _bpRecipeStatusCalculator: BPRecipeStatusCalculator) {
+        @inject(PrivateTypes.ExistingBPsForJustParsedScriptSetter) private readonly _existingBPsForJustParsedScriptSetter: ExistingBPsForJustParsedScriptSetter) {
         this._breakpointsEventSystem.setDependencies(this, this._breakpointsInLoadedSource);
-        this._bpRecipeStatusCalculator.bpRecipeStatusChangedListeners.add(bpRecipe => this.onBPRecipeStatusChanged(bpRecipe));
         this._existingBPsForJustParsedScriptSetter.setEventsConsumer(this._bpRecipeWasResolvedEventsConsumer);
+    }
+
+    public setBPRecipeWasResolvedCallback(callback: (event: BPRecipeWasResolved) => void): void {
+        if (this._bpRecipeWasResolvedCallback === defaultBPRecipeWasResolvedCallback) {
+            this._bpRecipeWasResolvedCallback = callback;
+        } else {
+            throw new InternalError('error.singleBreakpointSetter.callbackAlreadyConfigured', 'BPRecipeWasResolvedCallback was already configured to a different value');
+        }
+    }
+
+    public publishBPRecipeFailedToBind(event: BPRecipeIsUnbound): void {
+        this.bpRecipeFailedToBindListeners.call(event);
     }
 
     public setOnPausedForBreakpointCallback(onPausedForBreakpointCallback: OnPausedForBreakpointCallback): void {
         this._breakpointsInLoadedSource.setOnPausedForBreakpointCallback(onPausedForBreakpointCallback);
     }
 
-    public async install(): Promise<this> {
-        await this._bpsWhileLoadingLogic.install();
-        await this.configure();
-        return this;
-    }
-
-    public async configure(): Promise<this> {
-        this._isBpsWhileLoadingEnable = this._configuration.args.breakOnLoadStrategy !== 'off';
-        if (this._isBpsWhileLoadingEnable) {
-            await this._bpsWhileLoadingLogic.enableIfNeccesary();
-        }
-        return this;
-    }
-
-    public statusOfBPRecipe(bpRecipe: BPRecipeInSource): IBPRecipeStatus {
-        return this._bpRecipeStatusCalculator.statusOfBPRecipe(bpRecipe);
-    }
-
     public async addBPRecipe(requestedBP: BPRecipeInSource): Promise<void> {
-        this._bpRecipesForSourceRetriever.bpRecipeIsBeingAdded(requestedBP);
-        this.clientBPRecipeAddedListeners.call(requestedBP);
+        try {
+            this._bpRecipesForSourceRetriever.bpRecipeIsBeingAdded(requestedBP);
+            this.clientBPRecipeAddedListeners.call(requestedBP);
 
-        await this.setAlreadyRegisteredBPRecipe(requestedBP, async () => {
-            await this._bpAtNotLoadedScriptViaHeuristicSetter.addBPRecipe(requestedBP, this._bpRecipeWasResolvedEventsConsumer);
-        });
+            await this.setAlreadyRegisteredBPRecipe(requestedBP, async () => {
+                await this._bpAtNotLoadedScriptViaHeuristicSetter.addBPRecipe(requestedBP, this._bpRecipeWasResolvedEventsConsumer);
+            });
+        } catch (exception) {
+            this.bpRecipeFailedToBindListeners.call(new BPRecipeIsUnbound(requestedBP, exception)); // We publish it so the breakpoint itself will have this information in the tooltip
+        }
     }
 
     private async setAlreadyRegisteredBPRecipe(requestedBP: BPRecipeInSource<IBPActionWhenHit>, whenNotResolvedAction: () => void): Promise<void> {
@@ -106,9 +100,5 @@ export class SingleBreakpointSetter implements ISingleBreakpointSetter {
 
     public toString(): string {
         return `SingleBreakpointSetter`;
-    }
-
-    private onBPRecipeStatusChanged(bpRecipeStatusChanged: BPRecipeStatusChanged): void {
-        this.bpRecipeStatusChangedListeners.call(bpRecipeStatusChanged);
     }
 }

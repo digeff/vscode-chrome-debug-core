@@ -2,15 +2,13 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
+import * as _ from 'lodash';
 import { ValidatedMultiMap } from '../../../collections/validatedMultiMap';
 import { LocationInScript } from '../../locations/location';
 import { CDTPBreakpoint } from '../../../cdtpDebuggee/cdtpPrimitives';
 import { IScript } from '../../scripts/script';
-import { IBreakpointsEventsListener } from '../features/breakpointsEventSystem';
-import { injectable, inject } from 'inversify';
-import { PrivateTypes } from '../diTypes';
+import { injectable } from 'inversify';
 import { BPRecipeWasResolved } from '../../../cdtpDebuggee/features/cdtpDebuggeeBreakpointsSetter';
-import * as _ from 'lodash';
 
 /**
  * Find the list of breakpoints that we set for a particular script
@@ -19,11 +17,7 @@ import * as _ from 'lodash';
 export class BreakpointsSetForScriptFinder {
     private readonly _scriptToBreakpoints = ValidatedMultiMap.empty<IScript, CDTPBreakpoint>();
 
-    public constructor(@inject(PrivateTypes.IBreakpointsEventsListener) breakpointsEventsListener: IBreakpointsEventsListener) {
-        breakpointsEventsListener.listenForOnBPRecipeIsResolved(breakpoint => this.onBPRecipeIsResolved(breakpoint));
-    }
-
-    private onBPRecipeIsResolved(bpRecipeWasResolved: BPRecipeWasResolved): void {
+    public bpRecipeIsResolved(bpRecipeWasResolved: BPRecipeWasResolved): void {
         this._scriptToBreakpoints.add(bpRecipeWasResolved.breakpoint.actualLocation.script, bpRecipeWasResolved.breakpoint);
     }
 
