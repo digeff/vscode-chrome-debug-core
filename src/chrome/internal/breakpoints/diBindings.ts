@@ -22,7 +22,8 @@ import { SourceToScriptMapper } from '../services/sourceToScriptMapper';
 import { BPAtNotLoadedScriptViaHeuristicSetter } from './features/bpAtNotLoadedScriptViaHeuristicSetter';
 
 const exportedIdentifierToClasses = new ValidatedMap<interfaces.ServiceIdentifier<any>, interfaces.Newable<any>>([
-    [TYPES.ICommandHandlerDeclarer, SetBreakpointsRequestHandler]]);
+    [TYPES.ICommandHandlerDeclarer, SetBreakpointsRequestHandler],
+    [SetBreakpointsRequestHandler, SetBreakpointsRequestHandler]]);
 
 const privateIdentifierToClasses: IdentifierToClassPairs = [
     [PrivateTypes.IBreakpointsUpdater, BreakpointsUpdater],

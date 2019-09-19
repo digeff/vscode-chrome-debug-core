@@ -6,6 +6,8 @@ import { printTopLevelObjectDescription } from './printObjectDescription';
 import { logger } from 'vscode-debugadapter';
 import { shouldLog } from './decorators';
 
+const isLoggingEnabled = false;
+
 enum Synchronicity {
     Sync,
     Async
@@ -61,7 +63,7 @@ export class MethodsCalledLogger<T extends object> {
     }
 
     public wrapped(): T {
-        if (typeof this._objectToWrap === 'number') {
+        if (!isLoggingEnabled || typeof this._objectToWrap === 'number') {
             return this._objectToWrap;
         }
 

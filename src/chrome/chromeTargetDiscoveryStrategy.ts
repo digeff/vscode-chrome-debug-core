@@ -3,7 +3,7 @@
  *--------------------------------------------------------*/
 
 import * as utils from '../utils';
-import { IStepStartedEventsEmitter, StepProgressEventsEmitter, IObservableEvents, ExecutionTimingsReporter } from '../executionTimingsReporter';
+import { IStepStartedEventsEmitter, StepProgressEventsEmitter, IObservableEvents, IExecutionTimingsReporter } from '../executionTimingsReporter';
 
 import * as chromeUtils from './chromeUtils';
 
@@ -31,7 +31,7 @@ export class ChromeTargetDiscovery implements ITargetDiscoveryStrategy, IObserva
     public constructor(
         @inject(TYPES.ILogger) private logger: ILogger,
         @inject(TYPES.ITelemetryReporter) private readonly telemetry: ITelemetryReporter,
-        @inject(TYPES.ExecutionTimingsReporter) reporter?: ExecutionTimingsReporter) { // The extension uses null here
+        @inject(TYPES.ExecutionTimingsReporter) reporter?: IExecutionTimingsReporter) { // The extension uses null here
             if (isDefined(reporter)) {
                 reporter.subscribeTo(this.events);
             }

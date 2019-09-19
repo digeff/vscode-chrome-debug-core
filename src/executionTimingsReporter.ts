@@ -118,8 +118,12 @@ export interface IAllRequestProperties {
     [propertyName: string]: number[];
 }
 
+export interface IExecutionTimingsReporter {
+    subscribeTo(events: StepProgressEventsEmitter): void;
+}
+
 @injectable()
-export class ExecutionTimingsReporter {
+export class ExecutionTimingsReporter implements IExecutionTimingsReporter {
     private readonly _allStartTime: HighResTimer;
     private readonly _eventsExecutionTimesInMilliseconds: {[stepName: string]: [number]} = {};
     private readonly _stepsList = [] as string[];

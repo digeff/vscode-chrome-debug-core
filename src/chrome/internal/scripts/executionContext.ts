@@ -10,14 +10,14 @@ import { InternalError } from '../../utils/internalError';
  * We keep track of this because only scripts of non destroyed execution contexts should be displayed to the user
  */
 export interface IExecutionContext {
-    readonly frameId: FrameId;
+    readonly frameId: FrameId | undefined;
     isDestroyed(): boolean;
 }
 
 export class ExecutionContext implements IExecutionContext {
     private _isDestroyed = false;
 
-    public constructor(public readonly frameId: FrameId) {}
+    public constructor(public readonly frameId: FrameId | undefined) {}
 
     public isDestroyed(): boolean {
         return this._isDestroyed;

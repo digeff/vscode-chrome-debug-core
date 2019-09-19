@@ -3,7 +3,6 @@
  *--------------------------------------------------------*/
 
 import { Logger, logger } from 'vscode-debugadapter';
-import { IExtensibilityPoints } from '../../extensibility/extensibilityPoints';
 import { LogLevel } from 'vscode-debugadapter/lib/logger';
 import * as _ from 'lodash';
 
@@ -16,7 +15,7 @@ export interface ILoggingConfiguration {
 export interface ILogger {
     verbose(entry: string): void;
     log(entry: string): void;
-    install(extensibilityPoints: IExtensibilityPoints, configuration: ILoggingConfiguration): this;
+    install(possiblyLogFilePath: string | undefined, configuration: ILoggingConfiguration): this;
 }
 
 export class Logging implements ILogger {
@@ -28,17 +27,17 @@ export class Logging implements ILogger {
         logger.log(entry);
     }
 
-    public install(extensibilityPoints: IExtensibilityPoints, configuration: ILoggingConfiguration): this {
-        this.configure(extensibilityPoints, configuration);
+    public install(possiblyLogFilePath: string | undefined, configuration: ILoggingConfiguration): this {
+        this.configure(possiblyLogFilePath, configuration);
         return this;
     }
 
-    public configure(extensibilityPoints: IExtensibilityPoints, configuration: ILoggingConfiguration): void {
+    public configure(possiblyLogFilePath: string | undefined, configuration: ILoggingConfiguration): void {
         const logToFile = configuration.logLevel !== LogLevel.Stop;
 
         // The debug configuration provider should have set logFilePath on the launch config. If not, default to 'true' to use the
         // "legacy" log file path from the CDA subclass
-        const logFilePath = _.defaultTo(configuration.logFilePath, _.defaultTo(extensibilityPoints.logFilePath, logToFile));
+        const logFilePath = _.defaultTo(configuration.logFilePath, _.defaultTo(possiblyLogFilePath, logToFile));
         logger.setup(LogLevel.Warn /* This controls the console logging not the file logging */,
             logFilePath, configuration.shouldLogTimestamps);
 

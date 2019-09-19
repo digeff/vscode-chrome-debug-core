@@ -11,6 +11,7 @@ import { TYPES } from '../../dependencyInjection.ts/types';
 import { CDTPDomainsEnabler } from '../infrastructure/cdtpDomainsEnabler';
 import { FrameId } from '../cdtpPrimitives';
 import { IExecutionContext } from '../../internal/scripts/executionContext';
+import * as _ from 'lodash';
 
 export interface IExecutionContextEventsProvider {
     onExecutionContextsCleared(listener: (args: void) => void): void;
@@ -27,7 +28,7 @@ export class CDTPExecutionContextEventsProvider extends CDTPEventsEmitterDiagnos
         this._scriptsRegistry.markExecutionContextAsDestroyed(params.executionContextId));
 
     public readonly onExecutionContextCreated = this.addApiListener('executionContextCreated', async (params: CDTP.Runtime.ExecutionContextCreatedEvent) =>
-        this._scriptsRegistry.registerExecutionContext(params.context.id, <FrameId>params.context.auxData.frameId));
+        this._scriptsRegistry.registerExecutionContext(params.context.id, <FrameId>_.get(params, 'context.auxData.frameId')));
 
     constructor(
         @inject(TYPES.CDTPClient) private readonly _protocolApi: CDTP.ProtocolApi,

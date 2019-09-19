@@ -26,7 +26,7 @@ export class CDTPScriptsRegistry {
     private _idToExecutionContext = new ValidatedMap<CDTP.Runtime.ExecutionContextId, ExecutionContext>();
     private _scripts = new CDTPCurrentGeneration();
 
-    public registerExecutionContext(executionContextId: CDTP.Runtime.ExecutionContextId, frameId: FrameId): IExecutionContext {
+    public registerExecutionContext(executionContextId: CDTP.Runtime.ExecutionContextId, frameId: FrameId | undefined): IExecutionContext {
         const executionContext = new ExecutionContext(frameId);
         this._idToExecutionContext.set(executionContextId, executionContext);
         return executionContext;

@@ -9,17 +9,17 @@ import { BaseCDAState } from './baseCDAState';
 import { logger, TerminatedEvent } from 'vscode-debugadapter';
 import { ISession } from '../session';
 import { telemetry } from '../../../telemetry';
-import { ChromeConnection } from '../../chromeConnection';
+import { IChromeConnection } from '../../chromeConnection';
 import { IRestartRequestArgs } from '../../../debugAdapterInterfaces';
-import { IDebuggeeRunner, IDebuggeeLauncher, TerminatingReason } from '../../debugeeStartup/debugeeLauncher';
+import { IDebuggeeRunner, IDebuggeeLauncher, TerminatingReasonID } from '../../debugeeStartup/debugeeLauncher';
 import { TerminatedCDA } from './terminatedCDA';
 
-export type TerminatingCDAProvider = (reason: TerminatingReason) => TerminatingCDA;
+export type TerminatingCDAProvider = (reason: TerminatingReasonID) => TerminatingCDA;
 export class TerminatingCDA extends BaseCDAState {
     constructor(
         @inject(TYPES.ISession) protected readonly _session: ISession,
-        @inject(TYPES.ChromeConnection) private readonly _chromeConnection: ChromeConnection,
-        @inject(TYPES.TerminatingReason) private readonly _reason: TerminatingReason,
+        @inject(TYPES.ChromeConnection) private readonly _chromeConnection: IChromeConnection,
+        @inject(TYPES.TerminatingReason) private readonly _reason: TerminatingReasonID,
         @inject(TYPES.IDebuggeeRunner) public readonly _debuggeeRunner: IDebuggeeRunner,
         @inject(TYPES.IDebuggeeLauncher) public readonly _debuggeeLauncher: IDebuggeeLauncher,
     ) {
@@ -45,7 +45,7 @@ export class TerminatingCDA extends BaseCDAState {
         return new TerminatedCDA(this._session).install();
     }
 
-    public async terminateSession(reason: TerminatingReason, restart?: IRestartRequestArgs): Promise<void> {
+    public async terminateSession(reason: TerminatingReasonID, restart?: IRestartRequestArgs): Promise<void> {
         // TODO: Review the order of calls in this method, and make sure it's the proper one
         logger.log(`Terminated: ${reason}`);
 

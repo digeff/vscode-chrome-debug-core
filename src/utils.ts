@@ -354,7 +354,7 @@ export function mkdirs(dirsPath: string): void {
 }
 
 // ---- globbing support -------------------------------------------------
-export function extendObject<T>(objectCopy: T, object: T): T {
+export function extendObject<T extends object>(objectCopy: T, object: T): T {
     for (let key in object) {
         if (object.hasOwnProperty(key)) {
             objectCopy[key] = object[key];

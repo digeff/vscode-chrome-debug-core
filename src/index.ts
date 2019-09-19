@@ -36,7 +36,7 @@ import { Version } from './chrome/utils/version';
 import { parseResourceIdentifier, IResourceIdentifier } from './chrome/internal/sources/resourceIdentifier';
 import { ChromeDebugAdapter } from './chrome/client/chromeDebugAdapter/chromeDebugAdapterV2';
 import { IExtensibilityPoints, OnlyProvideCustomLauncherExtensibilityPoints } from './chrome/extensibility/extensibilityPoints';
-import { IDebuggeeLauncher, ILaunchResult, IDebuggeeRunner, IDebuggeeInitializer, TerminatingReason } from './chrome/debugeeStartup/debugeeLauncher';
+import { IDebuggeeLauncher, ILaunchResult, IDebuggeeRunner, IDebuggeeInitializer, TerminatingReasonID } from './chrome/debugeeStartup/debugeeLauncher';
 import { inject, injectable, postConstruct, interfaces, multiInject } from 'inversify';
 import { ConnectedCDAConfiguration, IConnectedCDAConfiguration } from './chrome/client/chromeDebugAdapter/cdaConfiguration';
 import { IInstallableComponent, ICommandHandlerDeclarer, IServiceComponent, CommandHandlerDeclaration, ICommandHandlerDeclaration } from './chrome/internal/features/components';
@@ -62,7 +62,7 @@ import { SourceResolver } from './chrome/internal/sources/sourceResolver';
 import { ICDTPDebuggeeExecutionEventsProvider, PausedEvent } from './chrome/cdtpDebuggee/eventsProviders/cdtpDebuggeeExecutionEventsProvider';
 import { ScenarioType } from './chrome/client/chromeDebugAdapter/unconnectedCDA';
 import { ILoggingConfiguration } from './chrome/internal/services/logging';
-import { IFinishedStartingUpEventArguments, StepProgressEventsEmitter, ExecutionTimingsReporter } from './executionTimingsReporter';
+import { IFinishedStartingUpEventArguments, StepProgressEventsEmitter, ExecutionTimingsReporter, IExecutionTimingsReporter } from './executionTimingsReporter';
 import { ILogEventsProvider, ILogEntry } from './chrome/cdtpDebuggee/eventsProviders/cdtpLogEventsProvider';
 import { IDOMInstrumentationBreakpointsSetter } from './chrome/cdtpDebuggee/features/cdtpDOMInstrumentationBreakpointsSetter';
 import { IDebuggeePausedHandler } from './chrome/internal/features/debuggeePausedHandler';
@@ -79,6 +79,10 @@ import { SourceContents } from './chrome/internal/sources/sourceContents';
 import { IExecutionContextEventsProvider } from './chrome/cdtpDebuggee/eventsProviders/cdtpExecutionContextEventsProvider';
 import { IPossiblyRetrievableText, RetrievableText, NonRetrievableText, ISourceTextRetriever, GetSourceTextRetrievability } from './chrome/internal/sources/sourceTextRetriever';
 import { IScriptSourcesRetriever } from './chrome/cdtpDebuggee/features/cdtpScriptSourcesRetriever';
+import { DebugProtocol } from 'vscode-debugprotocol';
+import { IChromeConnection } from './chrome/chromeConnection';
+import { SetBreakpointsRequestHandler } from './chrome/internal/breakpoints/features/setBreakpointsRequestHandler';
+import { createSetBreakpointsRequestHandler } from './chrome/internal/breakpoints/createSetBreakpointsRequestHandler';
 
 export {
     chromeConnection,
@@ -223,7 +227,7 @@ export {
 
     IEventsToClientReporter,
 
-    TerminatingReason,
+    TerminatingReasonID as TerminatingReason,
 
     UserPageLaunchedError,
 
@@ -250,4 +254,14 @@ export {
     GetSourceTextRetrievability,
 
     IScriptSourcesRetriever,
+
+    IExecutionTimingsReporter,
+
+    DebugProtocol,
+
+    IChromeConnection,
+
+    SetBreakpointsRequestHandler,
+
+    createSetBreakpointsRequestHandler
 };

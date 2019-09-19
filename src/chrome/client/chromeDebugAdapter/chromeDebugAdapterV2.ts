@@ -3,8 +3,8 @@
  *--------------------------------------------------------*/
 
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { ChromeDebugSession, IChromeDebugSessionOpts } from '../../chromeDebugSession';
-import { StepProgressEventsEmitter, IObservableEvents, IStepStartedEventsEmitter, IFinishedStartingUpEventsEmitter, ExecutionTimingsReporter } from '../../../executionTimingsReporter';
+import { IChromeDebugSessionOpts } from '../../chromeDebugSession';
+import { StepProgressEventsEmitter, IObservableEvents, IStepStartedEventsEmitter, IFinishedStartingUpEventsEmitter, IExecutionTimingsReporter } from '../../../executionTimingsReporter';
 import { UninitializedCDA } from './uninitializedCDA';
 import { IDebugAdapter, IDebugAdapterState, ITelemetryPropertyCollector } from '../../../debugAdapterInterfaces';
 import { CommandText } from '../requests';
@@ -14,18 +14,19 @@ import { logger } from 'vscode-debugadapter';
 import { isUndefined } from '../../utils/typedOperators';
 import { TYPES } from '../../dependencyInjection.ts/types';
 import { InternalError } from '../../utils/internalError';
+import { ISession } from '../session';
 
 export class ChromeDebugAdapter implements IDebugAdapter, IObservableEvents<IStepStartedEventsEmitter & IFinishedStartingUpEventsEmitter>{
     public readonly events = new StepProgressEventsEmitter();
-    private readonly _diContainer = createDIContainer(this, this._rawDebugSession, this._debugSessionOptions).bindAll();
+    private readonly _diContainer = createDIContainer(this, this._rawDebugSession, this._debugSessionOptions, this.reporter).bindAll();
 
     // TODO: Find a better way to initialize the component instead of using waitUntilInitialized
     private waitUntilInitialized = Promise.resolve(<UninitializedCDA><unknown>null);
 
     private _state: IDebugAdapterState;
 
-    constructor(private readonly _debugSessionOptions: IChromeDebugSessionOpts, private readonly _rawDebugSession: ChromeDebugSession,
-        reporter: ExecutionTimingsReporter) {
+    constructor(private readonly _debugSessionOptions: IChromeDebugSessionOpts, private readonly _rawDebugSession: ISession,
+        private readonly reporter: IExecutionTimingsReporter) {
         const uninitializedCDA = this._diContainer.createComponent<UninitializedCDA>(TYPES.UninitializedCDA);
         this.waitUntilInitialized = uninitializedCDA.install();
         this._state = uninitializedCDA;
@@ -46,6 +47,7 @@ export class ChromeDebugAdapter implements IDebugAdapter, IObservableEvents<ISte
                 return capabilities;
             case 'launch':
             case 'attach':
+            case 'attachToExistingConnection':
                 this.changeStateTo(<IDebugAdapterState>response);
                 return {};
             default:

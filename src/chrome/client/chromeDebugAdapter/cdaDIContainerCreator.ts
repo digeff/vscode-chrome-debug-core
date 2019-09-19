@@ -4,7 +4,7 @@ import { Protocol as CDTP } from 'devtools-protocol';
 import * as utils from '../../../utils';
 import { DependencyInjection } from '../../dependencyInjection.ts/di';
 import { TYPES } from '../../dependencyInjection.ts/types';
-import { ChromeDebugSession, IChromeDebugSessionOpts } from '../../chromeDebugSession';
+import { IChromeDebugSessionOpts } from '../../chromeDebugSession';
 import { DelayMessagesUntilInitializedSession } from '../delayMessagesUntilInitializedSession';
 import { DoNotPauseWhileSteppingSession } from '../doNotPauseWhileSteppingSession';
 import { UnconnectedCDA } from './unconnectedCDA';
@@ -20,28 +20,44 @@ import { ChromeTargetDiscovery } from '../../chromeTargetDiscoveryStrategy';
 import { ChromeConnection } from '../../chromeConnection';
 import { telemetry } from '../../../telemetry';
 import { isDefined, isNotEmpty } from '../../utils/typedOperators';
-import { TerminatingReason } from '../../debugeeStartup/debugeeLauncher';
+import { TerminatingReasonID, TerminatingReason } from '../../debugeeStartup/debugeeLauncher';
+import { ISession } from '../session';
+import { IExecutionTimingsReporter } from '../../../executionTimingsReporter';
 
-export function createDIContainer(chromeDebugAdapter: ChromeDebugAdapter, rawDebugSession: ChromeDebugSession, debugSessionOptions: IChromeDebugSessionOpts): DependencyInjection {
+export function createDIContainer(chromeDebugAdapter: ChromeDebugAdapter, rawDebugSession: ISession, debugSessionOptions: IChromeDebugSessionOpts,
+    reporter: IExecutionTimingsReporter): DependencyInjection {
+    const componentCustomizationCallback = debugSessionOptions.extensibilityPoints.componentCustomizationCallback;
+
+    const diContainer = new DependencyInjection('ChromeDebugAdapter', componentCustomizationCallback);
+
+    diContainer.configureValue(TYPES.ChromeDebugAdapter, chromeDebugAdapter);
+
     const session = new DelayMessagesUntilInitializedSession(new DoNotPauseWhileSteppingSession(rawDebugSession));
+    diContainer.configureValue(TYPES.ISession, session);
 
-    const diContainer = new DependencyInjection('ChromeDebugAdapter', debugSessionOptions.extensibilityPoints.componentCustomizationCallback);
-
-    return diContainer
-    .configureValue(TYPES.ExecutionTimingsReporter, rawDebugSession.reporter)
-    .configureValue(TYPES.ISession, session)
-    .configureValue(TYPES.ITelemetryReporter, telemetry)
-    .configureValue(TYPES.ChromeDebugAdapter, chromeDebugAdapter)
+    diContainer
         .configureValue(TYPES.IChromeDebugSessionOpts, debugSessionOptions)
-        .configureValue(TYPES.UnconnectedCDAProvider, (clientCapabilities: IClientCapabilities) => {
-            diContainer.configureValue<IClientCapabilities>(TYPES.IClientCapabilities, clientCapabilities);
-            return diContainer.createComponent<UnconnectedCDA>(TYPES.UnconnectedCDA);
-        })
         .configureClass(TYPES.IDebuggeeRunner, debugSessionOptions.extensibilityPoints.debuggeeRunner)
         .configureClass(TYPES.IDebuggeeInitializer, debugSessionOptions.extensibilityPoints.debuggeeInitializer)
-        .configureClass(TYPES.IDebuggeeLauncher, debugSessionOptions.extensibilityPoints.debuggeeLauncher)
-        .configureClass(TYPES.ChromeTargetDiscovery, ChromeTargetDiscovery)
-        .configureClass(TYPES.ChromeConnection, ChromeConnection)
+        .configureClass(TYPES.IDebuggeeLauncher, debugSessionOptions.extensibilityPoints.debuggeeLauncher);
+
+    diContainer.configureValue(TYPES.ExecutionTimingsReporter, reporter);
+
+    diContainer.configureValue(TYPES.UnconnectedCDAProvider, (clientCapabilities: IClientCapabilities) => {
+        diContainer.configureValue<IClientCapabilities>(TYPES.IClientCapabilities, clientCapabilities);
+        return diContainer.createComponent<UnconnectedCDA>(TYPES.UnconnectedCDA);
+    });
+
+    diContainer.configureValue(TYPES.TerminatingCDAProvider, (reason: TerminatingReasonID) => {
+        diContainer.configureValue<TerminatingReason>(TYPES.TerminatingReason, new TerminatingReason(reason));
+        return diContainer.createComponent<TerminatingCDA>(TYPES.TerminatingCDA);
+    });
+
+    diContainer.configureClass(TYPES.ChromeConnection, ChromeConnection);
+    diContainer.configureClass(TYPES.ChromeTargetDiscovery, ChromeTargetDiscovery);
+
+    return diContainer
+        .configureValue(TYPES.ITelemetryReporter, telemetry)
         .configureValue(TYPES.ILoggerSetter, (logger: Logging) => {
             diContainer.configureValue<Logging>(TYPES.ILogger, logger);
         })
@@ -54,10 +70,6 @@ export function createDIContainer(chromeDebugAdapter: ChromeDebugAdapter, rawDeb
             const customizedProtocolApi = debugSessionOptions.extensibilityPoints.customizeProtocolApi(protocolApi);
             diContainer.configureValue<CDTP.ProtocolApi>(TYPES.CDTPClient, customizedProtocolApi);
             return diContainer.createComponent<ConnectedCDA>(TYPES.ConnectedCDA);
-        })
-        .configureValue(TYPES.TerminatingCDAProvider, (reason: TerminatingReason) => {
-            diContainer.configureValue<TerminatingReason>(TYPES.TerminatingReason, reason);
-            return diContainer.createComponent<TerminatingCDA>(TYPES.TerminatingCDA);
         });
 }
 

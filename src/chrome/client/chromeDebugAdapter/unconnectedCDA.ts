@@ -18,7 +18,8 @@ import { InternalError } from '../../utils/internalError';
 
 export enum ScenarioType {
     Launch,
-    Attach
+    Attach,
+    AttachToExistingConnection
 }
 
 // TODO: This file needs a lot of work. We need to improve/simplify all this code when possible
@@ -41,6 +42,8 @@ export class UnconnectedCDA implements IDebugAdapterState {
                 return this.launch(<ILaunchRequestArgs>args, telemetryPropertyCollector);
             case 'attach':
                 return this.attach(<IAttachRequestArgs>args, telemetryPropertyCollector);
+            case 'attachToExistingConnection':
+                return this.attachToExistingConnection(<IAttachRequestArgs>args, telemetryPropertyCollector);
             case 'disconnect':
                 throw new InternalError('error.unconnectedDA.alreadyDisconnected', 'The debug adapter is already disconnected');
             default:
@@ -56,6 +59,10 @@ export class UnconnectedCDA implements IDebugAdapterState {
     public async attach(args: IAttachRequestArgs, telemetryPropertyCollector: ITelemetryPropertyCollector): Promise<IDebugAdapterState> {
         const updatedArgs = Object.assign({}, { port: 9229 }, args);
         return this.createConnection(ScenarioType.Attach, updatedArgs, telemetryPropertyCollector);
+    }
+
+    public async attachToExistingConnection(args: IAttachRequestArgs, telemetryPropertyCollector: ITelemetryPropertyCollector): Promise<IDebugAdapterState> {
+        return this.createConnection(ScenarioType.AttachToExistingConnection, args, telemetryPropertyCollector);
     }
 
     private parseLoggingConfiguration(args: ILaunchRequestArgs | IAttachRequestArgs): ILoggingConfiguration {
@@ -88,7 +95,7 @@ export class UnconnectedCDA implements IDebugAdapterState {
 
         utils.setCaseSensitivePaths(this._clientCapabilities.clientID !== 'visualstudio'); // TODO: Find a way to remove this
 
-        const logging = new Logging().install(this._debugSessionOptions.extensibilityPoints, this.parseLoggingConfiguration(args));
+        const logging = new Logging().install(this._debugSessionOptions.extensibilityPoints.logFilePath, this.parseLoggingConfiguration(args));
         this._loggerSetter(logging);
 
         const state = (await this._connectingCDAProvider(this.createConfiguration(args, scenarioType)).install());

@@ -5,12 +5,12 @@
 import { inject, injectable } from 'inversify';
 import { TYPES } from '../../dependencyInjection.ts/types';
 import { BaseCDAState } from './baseCDAState';
-import { ChromeConnection } from '../../chromeConnection';
+import { IChromeConnection } from '../../chromeConnection';
 import { ConnectedCDA, ConnectedCDAProvider } from './connectedCDA';
 import { ConnectedCDAConfiguration } from './cdaConfiguration';
 import { ITelemetryPropertyCollector } from '../../../telemetry';
 import { ISession } from '../session';
-import { ExecutionTimingsReporter, StepProgressEventsEmitter } from '../../../executionTimingsReporter';
+import { StepProgressEventsEmitter, IExecutionTimingsReporter } from '../../../executionTimingsReporter';
 
 export type ConnectingCDAProvider = (configuration: ConnectedCDAConfiguration) => ConnectingCDA;
 
@@ -21,8 +21,8 @@ export class ConnectingCDA extends BaseCDAState {
     constructor(
         @inject(TYPES.ISession) protected readonly _session: ISession,
         @inject(TYPES.ConnectedCDAProvider) private readonly _connectedCDAProvider: ConnectedCDAProvider,
-        @inject(TYPES.ExecutionTimingsReporter) reporter: ExecutionTimingsReporter,
-        @inject(TYPES.ChromeConnection) private readonly _chromeConnection: ChromeConnection,
+        @inject(TYPES.ExecutionTimingsReporter) reporter: IExecutionTimingsReporter,
+        @inject(TYPES.ChromeConnection) private readonly _chromeConnection: IChromeConnection,
     ) {
         super([], {});
         reporter.subscribeTo(this.events);

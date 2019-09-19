@@ -28,7 +28,7 @@ export class DependencyInjection {
         }
     }
 
-    public configureClass<T>(interfaceClass: interfaces.ServiceIdentifier<T>, value: interfaces.Newable<T>): this {
+    public configureClass<T extends object>(interfaceClass: interfaces.ServiceIdentifier<T>, value: interfaces.Newable<T>): this {
         this._container.bind(interfaceClass).to(value).inSingletonScope().onActivation(createWrapWithLoggerActivator(this._loggingConfiguration, interfaceClass, this._componentCustomizationCallback));
         return this;
     }
@@ -38,7 +38,7 @@ export class DependencyInjection {
         return this;
     }
 
-    public configureValue<T>(valueClass: interfaces.ServiceIdentifier<T>, value: T): this {
+    public configureValue<T extends object>(valueClass: interfaces.ServiceIdentifier<T>, value: T): this {
         this._container.bind(valueClass).toConstantValue(value).onActivation(createWrapWithLoggerActivator(this._loggingConfiguration, valueClass, this._componentCustomizationCallback));
         return this;
     }
@@ -77,7 +77,7 @@ export class DependencyInjection {
             if (isValueComponent(entry[0])) {
                 this.configureValue(entry[0], entry[1]);
             } else {
-                this.configureClass(entry[0], <interfaces.Newable<unknown>>entry[1]);
+                this.configureClass(entry[0], <interfaces.Newable<object>>entry[1]);
             }
         }
 

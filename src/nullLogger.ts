@@ -4,7 +4,6 @@
 
 import { ILogger, ILoggingConfiguration } from './chrome/internal/services/logging';
 import { Logger } from 'vscode-debugadapter';
-import { IExtensibilityPoints } from './chrome/extensibility/extensibilityPoints';
 
 /**
  * Implements ILogger as a no-op
@@ -26,7 +25,7 @@ export class NullLogger implements ILogger {
         // no-op
     }
 
-    install(_extensibilityPoints: IExtensibilityPoints, _configuration: ILoggingConfiguration): this {
+    install(_possiblyLogFilePath: string | undefined, _configuration: ILoggingConfiguration): this {
         return this;
     }
 }

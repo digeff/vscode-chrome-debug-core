@@ -6,7 +6,7 @@ import * as nls from 'vscode-nls';
 
 import * as WebSocket from 'ws';
 
-import { StepProgressEventsEmitter, IObservableEvents, IStepStartedEventsEmitter, ExecutionTimingsReporter } from '../executionTimingsReporter';
+import { StepProgressEventsEmitter, IObservableEvents, IStepStartedEventsEmitter, IExecutionTimingsReporter } from '../executionTimingsReporter';
 import * as errors from '../errors';
 import * as utils from '../utils';
 import { logger } from 'vscode-debugadapter';
@@ -19,7 +19,7 @@ import { Protocol as CDTP } from 'devtools-protocol';
 import { TYPES } from './dependencyInjection.ts/types';
 import { inject, injectable } from 'inversify';
 import { ConnectedCDAConfiguration } from './client/chromeDebugAdapter/cdaConfiguration';
-import { IDebuggeeLauncher, TerminatingReason } from './debugeeStartup/debugeeLauncher';
+import { IDebuggeeLauncher, TerminatingReasonID } from './debugeeStartup/debugeeLauncher';
 import { ScenarioType } from './client/chromeDebugAdapter/unconnectedCDA';
 import { IAttachRequestArgs } from '../debugAdapterInterfaces';
 import { ITelemetryPropertyCollector } from '../telemetry';
@@ -111,11 +111,20 @@ export interface IChromeError {
     data: string;
 }
 
+export interface IChromeConnection {
+    readonly api: CDTP.ProtocolApi;
+    readonly isAttached: boolean;
+
+    open(telemetryPropertyCollector: ITelemetryPropertyCollector): void;
+    onClose(handler: () => void): void;
+    close(reason: TerminatingReasonID): void;
+}
+
 /**
  * Connects to a target supporting the Chrome Debug Protocol and sends and receives messages
  */
 @injectable()
-export class ChromeConnection implements IObservableEvents<IStepStartedEventsEmitter> {
+export class ChromeConnection implements IChromeConnection, IObservableEvents<IStepStartedEventsEmitter> {
     public static readonly ATTACH_TIMEOUT = 10000; // ms
 
     private _socket: WebSocket | null = null;
@@ -126,7 +135,7 @@ export class ChromeConnection implements IObservableEvents<IStepStartedEventsEmi
 
     constructor(@inject(TYPES.ChromeTargetDiscovery) private readonly _targetDiscoveryStrategy: ITargetDiscoveryStrategy & IObservableEvents<IStepStartedEventsEmitter>,
         @inject(TYPES.IDebuggeeLauncher) private readonly _debuggeeLauncher: IDebuggeeLauncher,
-        @inject(TYPES.ExecutionTimingsReporter) reporter: ExecutionTimingsReporter,
+        @inject(TYPES.ExecutionTimingsReporter) reporter: IExecutionTimingsReporter,
         @inject(TYPES.ConnectedCDAConfiguration) private readonly _configuration: ConnectedCDAConfiguration) {
         this._targetFilter = _configuration.extensibilityPoints.targetFilter;
         reporter.subscribeTo(this.events);
@@ -209,7 +218,7 @@ export class ChromeConnection implements IObservableEvents<IStepStartedEventsEmi
             });
     }
 
-    public async close(reason: TerminatingReason) {
+    public async close(reason: TerminatingReasonID) {
         this.validateConnectionIsOpen();
         this._socket!.close();
         this._socket = null;

@@ -3,7 +3,7 @@
  *--------------------------------------------------------*/
 
 import { Protocol as CDTP } from 'devtools-protocol';
-import { ChromeConnection, ITargetFilter } from '../chromeConnection';
+import { ITargetFilter } from '../chromeConnection';
 import { BasePathTransformer } from '../../transformers/basePathTransformer';
 import { LineColTransformer } from '../../transformers/lineNumberTransformer';
 import { ILaunchRequestArgs, IAttachRequestArgs } from '../../debugAdapterInterfaces';
@@ -26,7 +26,6 @@ export interface IExtensibilityPoints {
     targetFilter?: ITargetFilter;
     logFilePath: string;
 
-    chromeConnection: typeof ChromeConnection;
     pathTransformer?: { new(configuration: IConnectedCDAConfiguration): BasePathTransformer };
     lineColTransformer?: { new(configuration: IConnectedCDAConfiguration): LineColTransformer };
 
@@ -41,7 +40,6 @@ export class OnlyProvideCustomLauncherExtensibilityPoints implements IExtensibil
     public readonly isPromiseRejectExceptionFilterEnabled = false;
 
     targetFilter?: ITargetFilter;
-    chromeConnection: typeof ChromeConnection = ChromeConnection;
     pathTransformer?: new (configuration: IConnectedCDAConfiguration) => BasePathTransformer;
     lineColTransformer?: new (configuration: IConnectedCDAConfiguration) => LineColTransformer;
 

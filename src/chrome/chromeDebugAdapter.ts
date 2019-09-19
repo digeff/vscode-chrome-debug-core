@@ -11,7 +11,7 @@ import {
     ICompletionsResponseBody, ITimeTravelRuntime
 } from '../debugAdapterInterfaces';
 
-import { ChromeConnection } from './chromeConnection';
+import { IChromeConnection } from './chromeConnection';
 import * as ChromeUtils from './chromeUtils';
 import { Protocol as CDTP } from 'devtools-protocol';
 import { PropertyContainer, ScopeContainer, ExceptionContainer, isIndexedPropName, IVariableContainer } from './variables';
@@ -111,7 +111,7 @@ export class ChromeDebugLogic {
     private _currentLogMessage = Promise.resolve();
     privaRejectExceptionFilterEnabled = false;
 
-    private readonly _chromeConnection: ChromeConnection;
+    private readonly _chromeConnection: IChromeConnection;
     private readonly _sourceMapTransformer: BaseSourceMapTransformer;
     public _promiseRejectExceptionFilterEnabled = false;
     public _pauseOnPromiseRejections = true;
@@ -123,7 +123,7 @@ export class ChromeDebugLogic {
         @inject(TYPES.BaseSourceMapTransformer) sourceMapTransformer: BaseSourceMapTransformer,
         @inject(TYPES.BasePathTransformer) pathTransformer: BasePathTransformer,
         @inject(TYPES.ISession) session: ISession,
-        @inject(TYPES.ChromeConnection) chromeConnection: ChromeConnection,
+        @inject(TYPES.ChromeConnection) chromeConnection: IChromeConnection,
         @inject(TYPES.CDTPScriptsRegistry) private readonly _scriptsLogic: CDTPScriptsRegistry,
         @inject(TYPES.IEventsToClientReporter) private readonly _eventSender: EventsToClientReporter,
         @inject(TYPES.ExceptionThrownEventProvider) private readonly _exceptionThrownEventProvider: CDTPExceptionThrownEventsProvider,

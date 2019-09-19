@@ -7,7 +7,7 @@ import { inject, injectable } from 'inversify';
 import { TYPES } from '../dependencyInjection.ts/types';
 import { ChromeDebugLogic } from '../chromeDebugAdapter';
 import { IDebuggeeRunner } from '../debugeeStartup/debugeeLauncher';
-import { StepProgressEventsEmitter, ExecutionTimingsReporter } from '../../executionTimingsReporter';
+import { StepProgressEventsEmitter, IExecutionTimingsReporter } from '../../executionTimingsReporter';
 import { ICommandHandlerDeclarer, ICommandHandlerDeclaration, CommandHandlerDeclaration } from '../internal/features/components';
 import { ConnectedCDAConfiguration } from './chromeDebugAdapter/cdaConfiguration';
 import { ScenarioType } from './chromeDebugAdapter/unconnectedCDA';
@@ -26,7 +26,7 @@ export class ClientLifecycleRequestsHandler implements ICommandHandlerDeclarer {
         @inject(TYPES.ChromeDebugLogic) protected readonly _chromeDebugAdapter: ChromeDebugLogic,
         @inject(TYPES.ConnectedCDAConfiguration) protected readonly _configuration: ConnectedCDAConfiguration,
         @inject(TYPES.IDebuggeeRunner) public readonly _debuggeeRunner: IDebuggeeRunner,
-        @inject(TYPES.ExecutionTimingsReporter) reporter: ExecutionTimingsReporter,
+        @inject(TYPES.ExecutionTimingsReporter) reporter: IExecutionTimingsReporter,
     ) {
         reporter.subscribeTo(this.events);
     }

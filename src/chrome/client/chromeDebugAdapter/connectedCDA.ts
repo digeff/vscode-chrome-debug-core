@@ -12,14 +12,14 @@ import { IDomainsEnabler } from '../../cdtpDebuggee/infrastructure/cdtpDomainsEn
 import { IRuntimeStarter } from '../../cdtpDebuggee/features/cdtpRuntimeStarter';
 import { InitializedEvent } from 'vscode-debugadapter';
 import { ISession } from '../session';
-import { ChromeConnection } from '../../chromeConnection';
+import { IChromeConnection } from '../../chromeConnection';
 import { ChromeDebugAdapter } from './chromeDebugAdapterV2';
 import { TerminatingCDAProvider } from './terminatingCDA';
 import { BasePathTransformer } from '../../../transformers/basePathTransformer';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { IDebuggeeInitializer, TerminatingReason } from '../../debugeeStartup/debugeeLauncher';
+import { IDebuggeeInitializer, TerminatingReasonID } from '../../debugeeStartup/debugeeLauncher';
 import { ISupportedDomains } from '../../internal/domains/supportedDomains';
-import { StepProgressEventsEmitter, ExecutionTimingsReporter } from '../../../executionTimingsReporter';
+import { StepProgressEventsEmitter, IExecutionTimingsReporter } from '../../../executionTimingsReporter';
 import { InternalError } from '../../utils/internalError';
 
 export type ConnectedCDAProvider = (protocolApi: CDTP.ProtocolApi) => ConnectedCDA;
@@ -37,13 +37,13 @@ export class ConnectedCDA extends BaseCDAState {
         @inject(TYPES.IRuntimeStarter) private readonly _runtimeStarter: IRuntimeStarter,
         @inject(TYPES.IDebuggeeInitializer) private readonly _debuggeeInitializer: IDebuggeeInitializer,
         @inject(TYPES.ISession) protected readonly _session: ISession,
-        @inject(TYPES.ChromeConnection) private readonly _chromeConnection: ChromeConnection,
+        @inject(TYPES.ChromeConnection) private readonly _chromeConnection: IChromeConnection,
         @inject(TYPES.TerminatingCDAProvider) private readonly _terminatingCDAProvider: TerminatingCDAProvider,
         @inject(TYPES.ChromeDebugAdapter) private readonly _chromeDebugAdapter: ChromeDebugAdapter,
         @multiInject(TYPES.IServiceComponent) private readonly _serviceComponents: IServiceComponent[],
         @inject(TYPES.BasePathTransformer) private readonly _basePathTransformer: BasePathTransformer,
         @multiInject(TYPES.ICommandHandlerDeclarer) requestHandlerDeclarers: ICommandHandlerDeclarer[],
-        @inject(TYPES.ExecutionTimingsReporter) reporter: ExecutionTimingsReporter,
+        @inject(TYPES.ExecutionTimingsReporter) reporter: IExecutionTimingsReporter,
         @inject(TYPES.ISupportedDomains) private readonly _supportedDomains: ISupportedDomains,
     ) {
         super(requestHandlerDeclarers, {
@@ -63,7 +63,7 @@ export class ConnectedCDA extends BaseCDAState {
         this._ignoreNextDisconnectedFromWebSocket = true;
 
         try {
-            await this.terminate(TerminatingReason.ClientRequestedToDisconnect);
+            await this.terminate(TerminatingReasonID.ClientRequestedToDisconnect);
         } finally {
             await this.shutdown();
         }
@@ -75,7 +75,7 @@ export class ConnectedCDA extends BaseCDAState {
             if (!this._ignoreNextDisconnectedFromWebSocket) {
                 // When the client requests a disconnect, we kill Chrome, which will in turn disconnect the websocket, so we'll also get this event.
                 // To avoid processing the same disconnect twice, we ignore the first disconnect from websocket after the client requests a disconnect
-                await this.terminate(TerminatingReason.DisconnectedFromWebsocket);
+                await this.terminate(TerminatingReasonID.DisconnectedFromWebsocket);
                 this._ignoreNextDisconnectedFromWebSocket = false;
             }
         });
@@ -111,7 +111,7 @@ export class ConnectedCDA extends BaseCDAState {
         return this;
     }
 
-    public async terminate(reason: TerminatingReason): Promise<void> {
+    public async terminate(reason: TerminatingReasonID): Promise<void> {
         const terminatingCDA = this._terminatingCDAProvider(reason);
         await terminatingCDA.install();
         await this._chromeDebugAdapter.terminate(terminatingCDA);
