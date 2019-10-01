@@ -11,6 +11,7 @@ import { ILaunchRequestArgs, IAttachRequestArgs, IInitializeRequestArgs } from '
 import { OnlyProvideCustomLauncherExtensibilityPoints, IExtensibilityPoints } from '../../extensibility/extensibilityPoints';
 import { ISession } from '../../client/session';
 import { ScenarioType } from '../../client/chromeDebugAdapter/unconnectedCDA';
+import { debugUndefinedProperties } from '../../logging/methodsDebugger';
 
 class DummyDebuggeeLauncher implements IDebuggeeLauncher {
     stop(_reasonToStop: TerminatingReasonID): Promise<void> {
@@ -38,8 +39,20 @@ class DummyDebuggeeRunner implements IDebuggeeRunner {
 }
 
 export class BreakpointsConfiguration implements IConnectedCDAConfiguration {
+    public constructor(private readonly _webRoot: string) {}
+
     public get args(): ILaunchRequestArgs | IAttachRequestArgs {
-        return { enableSourceMapCaching: true };
+        return debugUndefinedProperties({ enableSourceMapCaching: true,
+            pathMapping: { '/': this._webRoot },
+            sourceMapPathOverrides: {
+                'webpack:///./~/*': '${webRoot}/node_modules/*',       // Example: 'webpack:///./~/querystring/index.js' -> '/Users/me/project/node_modules/querystring/index.js'
+                'webpack:///./*':   '${webRoot}/*',                    // Example: 'webpack:///./src/app.js' -> '/Users/me/project/src/app.js',
+                'webpack:///*':     '*',                               // Example: 'webpack:///project/app.ts' -> '/project/app.ts'
+                'webpack:///src/*': '${webRoot}/*',                    // Example: 'webpack:///src/app.js' -> '/Users/me/project/app.js'
+                'meteor://💻app/*': '${webRoot}/*'                    // Example: 'meteor://💻app/main.ts' -> '/Users/me/project/main.ts'
+            },
+            outFiles: undefined
+        });
     }
 
     public get isVSClient(): boolean {
@@ -59,7 +72,10 @@ export class BreakpointsConfiguration implements IConnectedCDAConfiguration {
     }
 
     public get clientCapabilities(): IInitializeRequestArgs {
-        return { linesStartAt1: true, columnsStartAt1: true, adapterID: 'some_id' };
+        return debugUndefinedProperties({ linesStartAt1: true, columnsStartAt1: true, adapterID: 'some_id',
+        clientId: 'vscode',
+        supportsMapURLToFilePathRequest: false,
+    });
     }
 
     public get scenarioType(): ScenarioType {
@@ -71,11 +87,11 @@ export class BreakpointsConfiguration implements IConnectedCDAConfiguration {
     }
 }
 
-export function createSetBreakpointsRequestHandler(protocolApi: CDTP.ProtocolApi, session: ISession): SetBreakpointsRequestHandler {
+export function createSetBreakpointsRequestHandler(protocolApi: CDTP.ProtocolApi, session: ISession, webRoot: string): SetBreakpointsRequestHandler {
     const componentCustomizationCallback: ComponentCustomizationCallback = (_identifier, component) => component;
     const diContainer = new DependencyInjection('ChromeDebugAdapter', componentCustomizationCallback);
     diContainer.configureValue<CDTP.ProtocolApi>(TYPES.CDTPClient, protocolApi);
-    diContainer.configureValue<IConnectedCDAConfiguration>(TYPES.ConnectedCDAConfiguration, new BreakpointsConfiguration());
+    diContainer.configureValue<IConnectedCDAConfiguration>(TYPES.ConnectedCDAConfiguration, new BreakpointsConfiguration(webRoot));
 
     const logging = new Logging().install(undefined, { logLevel: LogLevel.Log, shouldLogTimestamps: true });
     diContainer.configureValue<Logging>(TYPES.ILogger, logging);

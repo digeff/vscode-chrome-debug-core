@@ -6,7 +6,7 @@ import { printTopLevelObjectDescription } from './printObjectDescription';
 import { logger } from 'vscode-debugadapter';
 import { shouldLog } from './decorators';
 
-const isLoggingEnabled = false;
+const isLoggingEnabled = true;
 
 enum Synchronicity {
     Sync,

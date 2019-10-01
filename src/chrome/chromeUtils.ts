@@ -130,7 +130,7 @@ export function targetUrlToClientPath(aUrl: string, pathMapping: IPathMapping | 
     while (pathParts.length > 0) {
         const joinedPath = '/' + pathParts.join('/');
         const clientPath = applyPathMappingsToTargetUrlPath(joinedPath, pathMapping);
-        if (utils.existsSync(clientPath)) {
+        if (clientPath && utils.existsSync(clientPath)) {
             return utils.canonicalizeUrl(clientPath);
         }
 

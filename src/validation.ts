@@ -12,9 +12,9 @@ export function zeroOrPositive(name: string, value: number) {
 
 /** Used for debugging while developing to automatically break when something unexpected happened */
 export function breakWhileDebugging() {
-    if (process.env.BREAK_WHILE_DEBUGGING === 'true') {
         // tslint:disable-next-line:no-debugger
         debugger;
+    if (process.env.BREAK_WHILE_DEBUGGING === 'true') {
     }
 }
 
